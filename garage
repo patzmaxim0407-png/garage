@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Гараж: віддай речі в добрі руки</title>
+<style>
+:root{--or:#E4572E;--cream:#FFF6EA;--ink:#2B2118;--mu:#8a7a6b;--card:#fff;--bd:#f0e2d0;--gr:#2F8F6B}
+*{box-sizing:border-box}
+body{margin:0;background:var(--cream);color:var(--ink);font:16px/1.45 system-ui,sans-serif}
+header{display:flex;align-items:center;gap:8px;padding:12px 16px;position:sticky;top:0;background:var(--cream);border-bottom:1px solid var(--bd);z-index:5}
+.logo{display:flex;align-items:center;gap:8px;font-weight:800;font-size:22px;cursor:pointer;margin-right:auto}
+.logo svg{width:36px;height:36px}
+.btn{border:0;border-radius:12px;padding:10px 14px;font:600 15px system-ui;cursor:pointer;background:var(--or);color:#fff}
+.btn.alt{background:#fff;color:var(--ink);border:1px solid var(--bd)}
+.btn.gr{background:var(--gr)}
+main{max-width:900px;margin:0 auto;padding:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:18px;overflow:hidden;display:flex;flex-direction:column}
+.card img{width:100%;aspect-ratio:4/3;object-fit:cover;background:#f4e8d8}
+.card .b{padding:12px;display:flex;flex-direction:column;gap:8px}
+.card h3{margin:0;font-size:18px}
+.card p{margin:0;color:var(--mu);font-size:14px}
+.prices{display:flex;gap:6px}
+.prices button{flex:1;padding:10px 0;border-radius:10px;border:1px solid var(--or);background:#fff1ea;color:var(--ink);font:700 15px system-ui;cursor:pointer}
+.tag{font-size:12px;color:var(--mu)}
+.hero{text-align:center;padding:18px 0 22px}
+.hero h1{margin:0 0 6px;font-size:26px}
+.hero p{margin:0 0 14px;color:var(--mu)}
+form{display:flex;flex-direction:column;gap:12px;max-width:480px;margin:0 auto}
+input,textarea{width:100%;padding:12px;border:1px solid var(--bd);border-radius:12px;font:16px system-ui;background:#fff;color:var(--ink)}
+.row3{display:flex;gap:8px}
+label{font-weight:600;font-size:14px}
+.tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.tabs .btn{flex:0 0 auto}
+.box{background:#fff;border:1px solid var(--bd);border-radius:14px;padding:12px;margin-bottom:10px}
+.ok{background:#e7f6ef;border:1px solid var(--gr);border-radius:14px;padding:12px;margin-top:6px}
+a.tg{display:inline-block;margin-top:6px;color:#fff;background:#229ED9;padding:10px 14px;border-radius:12px;text-decoration:none;font-weight:600}
+.empty{text-align:center;color:var(--mu);padding:30px}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo" onclick="go('home')">
+    <svg viewBox="0 0 48 48"><path d="M4 22 24 6l20 16v20H4Z" fill="#E4572E"/><path d="M12 34h24M12 39h24" stroke="#FFF6EA" stroke-width="2.5" stroke-linecap="round"/><path d="M24 31l-5.500-5.500C16 22.500 20.500 19.500 24 23.500c3.500-4 8-1 5.500 2Z" fill="#FFF6EA"/></svg>
+    Гараж
+  </div>
+  <button class="btn" onclick="needLogin(()=>go('add'))">Віддати</button>
+  <button class="btn alt" id="authBtn"></button>
+</header>
+<main id="app"></main>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+// ===== ВСТАВТЕ СВОЇ КЛЮЧІ З FIREBASE =====
+const firebaseConfig = {
+  apiKey: "ВСТАВТЕ",
+  authDomain: "ВСТАВТЕ",
+  projectId: "ВСТАВТЕ",
+  appId: "ВСТАВТЕ"
+};
+// =========================================
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth(), db = firebase.firestore();
+let user = null, items = [], sales = [], buys = [], view = "home", tab = "mine", revealed = {};
+const app = document.getElementById("app");
+
+function el(tag, cls, text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e;}
+function go(v){view=v;render();window.scrollTo(0,0);}
+function login(){return auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());}
+function needLogin(fn){if(user)fn();else login().then(fn).catch(()=>{});}
+function tgNick(){
+  let n=localStorage.getItem("tg_"+user.uid)||"";
+  if(!n){n=(prompt("Ваш нік у Telegram (без @), щоб з вами могли зв'язатися:")||"").replace("@","").trim();
+    if(n)localStorage.setItem("tg_"+user.uid,n);}
+  return n;
+}
+
+auth.onAuthStateChanged(u=>{
+  user=u;
+  const b=document.getElementById("authBtn");
+  b.textContent=u?"Кабінет":"Увійти";
+  b.onclick=()=>u?go("cabinet"):login();
+  if(u){
+    db.collection("requests").where("sellerId","==",u.uid).onSnapshot(s=>{sales=s.docs.map(d=>({id:d.id,...d.data()}));render();});
+    db.collection("requests").where("buyerId","==",u.uid).onSnapshot(s=>{buys=s.docs.map(d=>({id:d.id,...d.data()}));render();});
+  }else{sales=[];buys=[];}
+  render();
+});
+db.collection("items").orderBy("createdAt","desc").onSnapshot(s=>{items=s.docs.map(d=>({id:d.id,...d.data()}));render();});
+
+function render(){
+  app.innerHTML="";
+  if(view==="add")return renderAdd();
+  if(view==="cabinet"&&user)return renderCabinet();
+  renderHome();
+}
+
+function itemCard(it){
+  const c=el("div","card");
+  if(it.photo){const i=el("img");i.src=it.photo;i.alt=it.title;c.appendChild(i);}
+  const b=el("div","b");
+  b.append(el("h3","",it.title),el("p","",it.desc||""),el("div","tag","Від: "+it.ownerName));
+  if(it.status==="given"){b.appendChild(el("div","tag","✓ Вже віддано"));}
+  else if(user&&user.uid===it.ownerId){b.appendChild(el("div","tag","Це ваша річ"));}
+  else if(revealed[it.id]){
+    const o=el("div","ok");
+    o.appendChild(el("div","","Ви обрали "+revealed[it.id].price+" грн. Напишіть продавцю, домовтеся про оплату на картку та доставку:"));
+    const a=el("a","tg","Написати в Telegram");
+    a.href="https://t.me/"+it.telegram+"?text="+encodeURIComponent("Привіт! Хочу «"+it.title+"» за "+revealed[it.id].price+" грн");
+    a.target="_blank";o.appendChild(a);b.appendChild(o);
+  }else{
+    const p=el("div","prices");
+    it.prices.forEach(v=>{
+      const x=el("button","",v+" грн");
+      x.onclick=()=>needLogin(()=>pick(it,v));
+      p.appendChild(x);
+    });
+    b.appendChild(p);
+  }
+  c.appendChild(b);return c;
+}
+async function pick(it,price){
+  if(user.uid===it.ownerId)return;
+  const n=tgNick();
+  await db.collection("requests").add({itemId:it.id,itemTitle:it.title,sellerId:it.ownerId,buyerId:user.uid,buyerName:user.displayName||"Покупець",buyerTelegram:n,price:price,createdAt:Date.now()});
+  revealed[it.id]={price:price};render();
+}
+
+function renderHome(){
+  const h=el("div","hero");
+  h.append(el("h1","","Віддай непотрібне. Знайди потрібне."),el("p","","Символічні ціни, добрі руки, жодного сміття."));
+  const b=el("button","btn","Віддати річ");b.onclick=()=>needLogin(()=>go("add"));
+  h.appendChild(b);app.appendChild(h);
+  if(!items.length){app.appendChild(el("div","empty","Поки що тут порожньо. Станьте першим!"));return;}
+  const g=el("div","grid");items.forEach(i=>g.appendChild(itemCard(i)));app.appendChild(g);
+}
+
+function renderAdd(){
+  const f=el("form");
+  f.innerHTML='<h2 style="margin:0">Нова річ</h2><label>Назва<input id="t" required maxlength="60"></label><label>Опис<textarea id="d" rows="3" maxlength="300"></textarea></label><label>Три ціни, грн (на вибір покупця)</label><div class="row3"><input id="p1" type="number" min="0" required placeholder="50"><input id="p2" type="number" min="0" required placeholder="75"><input id="p3" type="number" min="0" required placeholder="120"></div><label>Фото<input id="ph" type="file" accept="image/*"></label><button class="btn" id="sv">Опублікувати</button>';
+  f.onsubmit=async e=>{
+    e.preventDefault();
+    const n=tgNick();if(!n){alert("Потрібен нік у Telegram для зв'язку.");return;}
+    const sv=f.querySelector("#sv");sv.disabled=true;sv.textContent="Публікую...";
+    let photo="";const file=f.querySelector("#ph").files[0];
+    if(file)photo=await shrink(file);
+    const prices=[1,2,3].map(k=>Number(f.querySelector("#p"+k).value)).sort((a,b)=>a-b);
+    await db.collection("items").add({title:f.querySelector("#t").value.trim(),desc:f.querySelector("#d").value.trim(),prices:prices,photo:photo,ownerId:user.uid,ownerName:user.displayName||"Продавець",telegram:n,status:"open",createdAt:Date.now()});
+    go("home");
+  };
+  app.appendChild(f);
+}
+function shrink(file){
+  return new Promise(res=>{
+    const r=new FileReader();
+    r.onload=()=>{const im=new Image();im.onload=()=>{
+      const s=Math.min(1,700/Math.max(im.width,im.height));
+      const c=document.createElement("canvas");c.width=im.width*s;c.height=im.height*s;
+      c.getContext("2d").drawImage(im,0,0,c.width,c.height);
+      res(c.toDataURL("image/jpeg",0.7));};im.src=r.result;};
+    r.readAsDataURL(file);
+  });
+}
+
+function renderCabinet(){
+  const t=el("div","tabs");
+  [["mine","Мої речі"],["sales","Запити на мої речі"],["buys","Мої покупки"]].forEach(([k,l])=>{
+    const b=el("button","btn"+(tab===k?"":" alt"),l);b.onclick=()=>{tab=k;render();};t.appendChild(b);
+  });
+  const out=el("button","btn alt","Вийти");out.onclick=()=>{auth.signOut();go("home");};t.appendChild(out);
+  app.appendChild(t);
+  if(tab==="mine"){
+    const mine=items.filter(i=>i.ownerId===user.uid);
+    if(!mine.length)app.appendChild(el("div","empty","Ви ще нічого не віддавали."));
+    mine.forEach(i=>{
+      const bx=el("div","box");
+      bx.append(el("b","",i.title),el("div","tag",i.prices.join(" / ")+" грн · "+(i.status==="given"?"віддано":"активна")));
+      const r=el("div");r.style.cssText="display:flex;gap:8px;margin-top:8px";
+      const g=el("button","btn gr",i.status==="given"?"Повернути в список":"Віддано");
+      g.onclick=()=>db.collection("items").doc(i.id).update({status:i.status==="given"?"open":"given"});
+      const d=el("button","btn alt","Видалити");
+      d.onclick=()=>{if(confirm("Видалити?"))db.collection("items").doc(i.id).delete();};
+      r.append(g,d);bx.appendChild(r);app.appendChild(bx);
+    });
+  }
+  if(tab==="sales"){
+    if(!sales.length)app.appendChild(el("div","empty","Запитів поки немає."));
+    sales.forEach(s=>{
+      const bx=el("div","box");
+      bx.append(el("b","",s.itemTitle+" — "+s.price+" грн"),el("div","tag","Хоче: "+s.buyerName));
+      if(s.buyerTelegram){const a=el("a","tg","Написати покупцю");a.href="https://t.me/"+s.buyerTelegram;a.target="_blank";bx.appendChild(a);}
+      app.appendChild(bx);
+    });
+  }
+  if(tab==="buys"){
+    if(!buys.length)app.appendChild(el("div","empty","Ви ще нічого не обирали."));
+    buys.forEach(s=>{
+      const it=items.find(i=>i.id===s.itemId);
+      const bx=el("div","box");
+      bx.append(el("b","",s.itemTitle+" — "+s.price+" грн"));
+      if(it){const a=el("a","tg","Написати продавцю");a.href="https://t.me/"+it.telegram+"?text="+encodeURIComponent("Привіт! Хочу «"+it.title+"» за "+s.price+" грн");a.target="_blank";bx.appendChild(a);}
+      app.appendChild(bx);
+    });
+  }
+}
+</script>
+</body>
+</html>
