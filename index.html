@@ -206,5 +206,39 @@ function renderCabinet(){
     });
 </scriptя>
 </body>
+  <button id="google-login-btn">Увійти через Google</button>
+import { initializeApp } from "firebase/app";
+import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+
+// Конфігурація вашого проекту Firebase
+const firebaseConfig = {
+  apiKey: "ВАШ_API_KEY", // знайдіть його в налаштуваннях проекту
+  authDomain: "garage-86431.firebaseapp.com",
+  projectId: "garage-86431",
+  // додайте інші параметри вашого проекту за потреби
+};
+
+// Ініціалізація Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+
+// Функція для запуску входу через Google
+async function signInWithGoogle() {
+  try {
+    const result = await signInWithPopup(auth, provider);
+    
+    // Користувач успішно увійшов!
+    const user = result.user;
+    console.log("Привіт, ", user.displayName);
+    
+  } catch (error) {
+    console.error("Помилка під час входу:", error.message);
+  }
+}
+
+// Прив'язка функції до кліку на кнопку
+document.getElementById("google-login-btn").addEventListener("click", signInWithGoogle);
+
 </html>
 
