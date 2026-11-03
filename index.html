@@ -205,7 +205,20 @@ function renderCabinet(){
       app.appendChild(bx);
     });
   }
-}
-</script>
+    <button onclick="loginWithGoogle()">Увійти через Google</button>
+
+    <script>
+        function loginWithGoogle() {
+            signInWithPopup(auth, googleProvider)
+            .then((result) => {
+                const user = result.user;
+                console.log("Успішний вхід:", user.email);
+            })
+            .catch((error) => {
+                console.error("Помилка входу:", error.message);
+            });
+        }
+    </script>
 </body>
 </html>
+
