@@ -108,7 +108,7 @@ function itemCard(it){
   else if(revealed[it.id]){
     const o=el("div","ok");
     o.appendChild(el("div","","Ви обрали "+revealed[it.id].price+" грн. Напишіть продавцю, домовтеся про оплату на картку та доставку:"));
-    const a=el("a","tg","Написати в Telegram");
+    const a=el("a","tg","Написати в Messenger");
     a.href="https://t.me/"+it.telegram+"?text="+encodeURIComponent("Привіт! Хочу «"+it.title+"» за "+revealed[it.id].price+" грн");
     a.target="_blank";o.appendChild(a);b.appendChild(o);
   }else{
@@ -131,10 +131,10 @@ async function pick(it,price){
 
 function renderHome(){
   const h=el("div","hero");
-  h.append(el("h1","","Віддай непотрібне. Знайди потрібне."),el("p","","Символічні ціни, добрі руки, жодного сміття."));
+  h.append(el("h1","","Віддай непотрібне. Знайди потрібне."),el("p","","Символічні ціни, добрі руки."));
   const b=el("button","btn","Віддати річ");b.onclick=()=>needLogin(()=>go("add"));
   h.appendChild(b);app.appendChild(h);
-  if(!items.length){app.appendChild(el("div","empty","Поки що тут порожньо. Станьте першим!"));return;}
+  if(!items.length){app.appendChild(el("div","empty","Додай те, що хочеш ввідати в добрі руки!"));return;}
   const g=el("div","grid");items.forEach(i=>g.appendChild(itemCard(i)));app.appendChild(g);
 }
 
