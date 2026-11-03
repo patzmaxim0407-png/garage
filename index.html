@@ -57,7 +57,7 @@ a.tg{display:inline-block;margin-top:6px;color:#fff;background:#229ED9;padding:1
 <script>
 // ===== ВСТАВТЕ СВОЇ КЛЮЧІ З FIREBASE =====
 const firebaseConfig = {
-  apiKey: "AIzaSyAiQAmjnqBN82tIskGDpE7HYaf6R7UNlMA",
+  apiKey: "ВСТАВТЕ_APIKEY",
   authDomain: "garage-86431.firebaseapp.com",
   projectId: "garage-86431",
   appId: "1:510985201682:web:55e8d8e4642c0a397710cb"
@@ -124,17 +124,23 @@ function itemCard(it){
   c.appendChild(b);return c;
 }
 
+function validContact(c){
+  if(/^[+\d\s()-]{9,20}$/.test(c)){const d=c.replace(/\D/g,"");return d.length>=9&&d.length<=15;}
+  return /^(https?:\/\/t\.me\/)?@?[A-Za-z][A-Za-z0-9_]{4,31}$/.test(c);
+}
 function askContact(it,price){
   const m=el("div","modal"),bx=el("div","box");
   bx.appendChild(el("b","","Ви хочете «"+it.title+"» за "+price+" грн"));
-  const l=el("label","","Куди вам написати, якщо оберуть саме вас? (Telegram, Viber або WhatsApp: нік чи номер)");
+  const l=el("label","","Ваш Telegram (@нік) або номер телефону для Viber/WhatsApp. Сюди напише продавець, якщо оберуть вас.");
   l.style.cssText="display:block;margin:10px 0 6px";
-  const inp=el("input");inp.placeholder="@nick або +380...";
+  const inp=el("input");inp.placeholder="@maxim_k або 0991234567";
+  const hint=el("div","tag","Наприклад: @maxim_k або 0991234567");hint.style.marginTop="6px";
+  const err=el("div","tag","");err.style.cssText="color:#a00;min-height:18px;margin-top:4px";
   const row=el("div");row.style.cssText="display:flex;gap:8px;margin-top:10px";
   const ok=el("button","btn","Надіслати"),no=el("button","btn alt","Скасувати");
   no.onclick=()=>m.remove();
   ok.onclick=async()=>{
-    const c=inp.value.trim();if(!c){inp.focus();return;}
+    const c=inp.value.trim();if(!validContact(c)){err.textContent="Вкажіть нік Telegram (@нік) або номер телефону.";inp.focus();return;}
     ok.disabled=true;ok.textContent="...";
     await db.collection("requests").add({itemId:it.id,itemTitle:it.title,sellerId:it.ownerId,buyerId:user.uid,buyerName:user.displayName||"Покупець",buyerContact:c,price:price,status:"new",createdAt:Date.now()});
     db.collection("contacts").doc(it.ownerId).get().then(d=>{
@@ -142,7 +148,7 @@ function askContact(it,price){
     }).catch(()=>{});
     m.remove();
   };
-  row.append(ok,no);bx.append(l,inp,row);m.appendChild(bx);document.body.appendChild(m);inp.focus();
+  row.append(ok,no);bx.append(l,inp,hint,err,row);m.appendChild(bx);document.body.appendChild(m);inp.focus();
 }
 
 function renderHome(){
