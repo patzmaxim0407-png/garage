@@ -180,6 +180,17 @@ function shrink(file){
   });
 }
 
+function contactLinks(c,title,price){
+  c=c.trim();if(!c)return[];
+  const msg=encodeURIComponent("Привіт! Ви обрані: «"+title+"» за "+price+" грн. Домовимось про оплату та доставку?");
+  const digits=c.replace(/[^\d]/g,"");
+  if(/^[+\d\s()-]{9,20}$/.test(c)){
+    let n=digits;if(n.length===10&&n[0]==="0")n="38"+n;
+    return[["Viber","viber://chat?number=%2B"+n],["WhatsApp","https://wa.me/"+n+"?text="+msg],["Telegram","https://t.me/+"+n]];
+  }
+  const nick=c.replace(/^@/,"").replace(/^https?:\/\/t\.me\//,"").trim();
+  return[["Написати в Telegram","https://t.me/"+nick+"?text="+msg]];
+}
 async function choose(s){
   await db.collection("requests").doc(s.id).update({status:"accepted"});
   await db.collection("items").doc(s.itemId).update({status:"given"});
@@ -211,8 +222,13 @@ function renderCabinet(){
     sales.slice().sort((a,b)=>b.createdAt-a.createdAt).forEach(s=>{
       const it=items.find(i=>i.id===s.itemId);
       const bx=el("div","box");
-      bx.append(el("b","",s.itemTitle+" — "+s.price+" грн"),el("div","tag","Хоче: "+s.buyerName),el("div","","Контакт: "+s.buyerContact));
-      if(s.status==="accepted"){bx.appendChild(el("div","tag","✓ Ви обрали цього покупця"));}
+      bx.append(el("b","",s.itemTitle+" — "+s.price+" грн"),el("div","tag","Хоче: "+s.buyerName),el("div","","Контакт: "+(s.buyerContact||"не вказано (запит створено до оновлення)")));
+      if(s.status==="accepted"){
+        bx.appendChild(el("div","tag","✓ Ви обрали цього покупця. Напишіть йому:"));
+        const w=el("div");w.style.cssText="display:flex;gap:8px;flex-wrap:wrap";
+        contactLinks(s.buyerContact||"",s.itemTitle,s.price).forEach(([l,h])=>{const a=el("a","tg",l);a.href=h;a.target="_blank";a.rel="noopener";w.appendChild(a);});
+        bx.appendChild(w);
+      }
       else if(it&&it.status==="given"){bx.appendChild(el("div","tag","Річ уже віддано"));}
       else{const b=el("button","btn gr","Обрати цього покупця");b.style.marginTop="8px";b.onclick=()=>choose(s);bx.appendChild(b);}
       app.appendChild(bx);
