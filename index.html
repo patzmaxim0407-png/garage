@@ -69,7 +69,7 @@ const app = document.getElementById("app");
 render();
 function el(tag, cls, text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e;}
 function go(v){view=v;render();window.scrollTo(0,0);}
-function login(){return auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());}
+function login(){return auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e=>{alert("Не вдалося увійти: "+(e.code||e.message));});}
 function needLogin(fn){if(user)fn();else login().then(fn).catch(()=>{});}
 function tgNick(){
   let n=localStorage.getItem("tg_"+user.uid)||"";
