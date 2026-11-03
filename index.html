@@ -46,7 +46,7 @@ a.tg{display:inline-block;margin-top:6px;color:#fff;background:#229ED9;padding:1
     Гараж
   </div>
   <button class="btn" onclick="needLogin(()=>go('add'))">Віддати</button>
-<button class="btn alt" id="authBtn" onclick="login()">Увійти</button>
+  <button class="btn alt" id="authBtn" onclick="login()">Увійти</button>
 </header>
 <main id="app"></main>
 
@@ -62,11 +62,17 @@ const firebaseConfig = {
   appId: "1:510985201682:web:55e8d8e4642c0a397710cb"
 };
 // =========================================
+function showErr(m){const d=document.createElement("div");d.style.cssText="background:#fde2e2;color:#a00;padding:10px;font:14px system-ui;position:fixed;bottom:0;left:0;right:0;z-index:99";d.textContent="Помилка: "+m;document.body.appendChild(d);}
+window.addEventListener("error",e=>showErr(e.message));
+window.addEventListener("unhandledrejection",e=>showErr(e.reason&&e.reason.message||e.reason));
+if(firebaseConfig.apiKey.indexOf("ВСТАВТЕ")>-1)showErr("вставте apiKey у файл (рядок apiKey)");
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth(), db = firebase.firestore();
 let user = null, items = [], sales = [], buys = [], view = "home", tab = "mine", revealed = {};
 const app = document.getElementById("app");
+document.getElementById("authBtn").textContent="Увійти";
 render();
+
 function el(tag, cls, text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e;}
 function go(v){view=v;render();window.scrollTo(0,0);}
 function login(){return auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e=>{alert("Не вдалося увійти: "+(e.code||e.message));});}
@@ -82,7 +88,7 @@ auth.onAuthStateChanged(u=>{
   user=u;
   const b=document.getElementById("authBtn");
   b.textContent=u?"Кабінет":"Увійти";
-  b.onclick=()=>u?go("cabinet"):login();
+  b.onclick=()=>{if(u)go("cabinet");else login();};
   if(u){
     db.collection("requests").where("sellerId","==",u.uid).onSnapshot(s=>{sales=s.docs.map(d=>({id:d.id,...d.data()}));render();});
     db.collection("requests").where("buyerId","==",u.uid).onSnapshot(s=>{buys=s.docs.map(d=>({id:d.id,...d.data()}));render();});
@@ -108,7 +114,7 @@ function itemCard(it){
   else if(revealed[it.id]){
     const o=el("div","ok");
     o.appendChild(el("div","","Ви обрали "+revealed[it.id].price+" грн. Напишіть продавцю, домовтеся про оплату на картку та доставку:"));
-    const a=el("a","tg","Написати в Messenger");
+    const a=el("a","tg","Написати в Telegram");
     a.href="https://t.me/"+it.telegram+"?text="+encodeURIComponent("Привіт! Хочу «"+it.title+"» за "+revealed[it.id].price+" грн");
     a.target="_blank";o.appendChild(a);b.appendChild(o);
   }else{
@@ -131,10 +137,10 @@ async function pick(it,price){
 
 function renderHome(){
   const h=el("div","hero");
-  h.append(el("h1","","Віддай непотрібне. Знайди потрібне."),el("p","","Символічні ціни, добрі руки."));
+  h.append(el("h1","","Віддай непотрібне. Знайди потрібне."),el("p","","Символічні ціни, добрі руки, жодного сміття."));
   const b=el("button","btn","Віддати річ");b.onclick=()=>needLogin(()=>go("add"));
   h.appendChild(b);app.appendChild(h);
-  if(!items.length){app.appendChild(el("div","empty","Додай те, що хочеш ввідати в добрі руки!"));return;}
+  if(!items.length){app.appendChild(el("div","empty","Поки що тут порожньо. Станьте першим!"));return;}
   const g=el("div","grid");items.forEach(i=>g.appendChild(itemCard(i)));app.appendChild(g);
 }
 
