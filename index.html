@@ -207,5 +207,38 @@ function renderCabinet(){
   }
 }
 </script>
+    <button id="google-login-btn">Увійти через Google</button>
+
+    <script type="module">
+        import { initializeApp } from "firebase/app";
+        import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+
+        const firebaseConfig = {
+          apiKey: "AIzaSyAiQAmjnqBN82tIskGDpE7HYaf6R7UNlMA",
+          authDomain: "garage-86431.firebaseapp.com",
+          projectId: "garage-86431",
+          storageBucket: "garage-86431.appspot.com",
+          messagingSenderId: "510985201682",
+          appId: "1:510985201682:web:55e8d8e4642c0a397710cb",
+          measurementId: "G-3YECTTEF0Y"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        document.getElementById("google-login-btn").addEventListener("click", async () => {
+            try {
+                const result = await signInWithPopup(auth, provider);
+                const user = result.user;
+                console.log("Привіт, ", user.displayName);
+            } catch (error) {
+                console.error("Помилка під час входу:", error.message);
+            }
+        });
+    </script>
+</body>
+</html>
+
 </body>
 </html>
