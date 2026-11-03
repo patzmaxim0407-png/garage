@@ -49,7 +49,6 @@ a.tg{display:inline-block;margin-top:6px;color:#fff;background:#229ED9;padding:1
   <button class="btn alt" id="authBtn"></button>
 </header>
 <main id="app"></main>
-
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -77,7 +76,6 @@ function tgNick(){
     if(n)localStorage.setItem("tg_"+user.uid,n);}
   return n;
 }
-
 auth.onAuthStateChanged(u=>{
   user=u;
   const b=document.getElementById("authBtn");
@@ -90,14 +88,12 @@ auth.onAuthStateChanged(u=>{
   render();
 });
 db.collection("items").orderBy("createdAt","desc").onSnapshot(s=>{items=s.docs.map(d=>({id:d.id,...d.data()}));render();});
-
 function render(){
   app.innerHTML="";
   if(view==="add")return renderAdd();
   if(view==="cabinet"&&user)return renderCabinet();
   renderHome();
 }
-
 function itemCard(it){
   const c=el("div","card");
   if(it.photo){const i=el("img");i.src=it.photo;i.alt=it.title;c.appendChild(i);}
@@ -128,7 +124,6 @@ async function pick(it,price){
   await db.collection("requests").add({itemId:it.id,itemTitle:it.title,sellerId:it.ownerId,buyerId:user.uid,buyerName:user.displayName||"Покупець",buyerTelegram:n,price:price,createdAt:Date.now()});
   revealed[it.id]={price:price};render();
 }
-
 function renderHome(){
   const h=el("div","hero");
   h.append(el("h1","","Віддай непотрібне. Знайди потрібне."),el("p","","Символічні ціни, добрі руки, жодного сміття."));
@@ -137,7 +132,6 @@ function renderHome(){
   if(!items.length){app.appendChild(el("div","empty","Поки що тут порожньо. Станьте першим!"));return;}
   const g=el("div","grid");items.forEach(i=>g.appendChild(itemCard(i)));app.appendChild(g);
 }
-
 function renderAdd(){
   const f=el("form");
   f.innerHTML='<h2 style="margin:0">Нова річ</h2><label>Назва<input id="t" required maxlength="60"></label><label>Опис<textarea id="d" rows="3" maxlength="300"></textarea></label><label>Три ціни, грн (на вибір покупця)</label><div class="row3"><input id="p1" type="number" min="0" required placeholder="50"><input id="p2" type="number" min="0" required placeholder="75"><input id="p3" type="number" min="0" required placeholder="120"></div><label>Фото<input id="ph" type="file" accept="image/*"></label><button class="btn" id="sv">Опублікувати</button>';
@@ -164,7 +158,6 @@ function shrink(file){
     r.readAsDataURL(file);
   });
 }
-
 function renderCabinet(){
   const t=el("div","tabs");
   [["mine","Мої речі"],["sales","Запити на мої речі"],["buys","Мої покупки"]].forEach(([k,l])=>{
