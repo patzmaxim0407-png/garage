@@ -636,6 +636,8 @@
 
   </main>
 
+  <!-- МОДАЛЬНІ ВІКНА (Кабінет, Додавання, Покупка) -->
+
   <!-- Вікно додавання / редагування речі -->
   <dialog id="itemDialog">
     <div class="modal-head">
@@ -703,7 +705,7 @@
       <button class="close" type="button" id="closeCabinet">×</button>
     </div>
     <div class="form-body">
-      <h3>Мої дані</h3>
+      <h3>Мої дані профілю</h3>
       <div class="field">
         <label>Ваше ім'я / назва профілю</label>
         <input id="profileName" type="text">
@@ -712,7 +714,7 @@
 
       <hr style="margin: 24px 0; border: 0; border-top: 1px solid var(--line);">
 
-      <h3>Мої товари та відгуки покупців</h3>
+      <h3>Мої товари, запити та продажі</h3>
       <div id="myItemsContainer"></div>
     </div>
   </dialog>
@@ -865,14 +867,13 @@
         const isOwner = currentUser && item.ownerUid === currentUser.uid && !item.demo;
         const isGiven = item.status === "given";
 
-        // Формуємо плашки цін
         let priceHtml = "";
         if (item.prices && Array.isArray(item.prices)) {
           priceHtml = `<div class="price-options">` + 
             item.prices.map(p => `<span class="price-badge">${Number(p) <= 0 ? "Безкоштовно" : Number(p) + " грн"}</span>`).join("") + 
             `</div>`;
         } else {
-          priceHtml = `<div class="price-options"><span class="price-badge">${money(item.price || 0)}</span></div>`;
+          priceHtml = `<div class="price-options"><span class="price-badge">Договірна</span></div>`;
         }
 
         card.innerHTML = `
@@ -896,7 +897,6 @@
           </div>
         `;
 
-        // Кнопка зв'язку для покупця
         const contactBtn = card.querySelector(".contact-btn");
         if (contactBtn) {
           contactBtn.addEventListener("click", () => {
@@ -908,13 +908,11 @@
           });
         }
 
-        // Кнопка редагування
         const editBtn = card.querySelector(".edit-btn");
         if (editBtn) {
           editBtn.addEventListener("click", () => openForm(item));
         }
 
-        // Кнопка управління/продажу в кабінеті
         const manageBtn = card.querySelector(".manage-btn");
         if (manageBtn) {
           manageBtn.addEventListener("click", () => openCabinet());
@@ -1010,7 +1008,7 @@
         $("itemCategory").value = item.category || "Інше";
         $("itemDescription").value = item.description || "";
         
-        const prices = item.prices || [item.price || 0];
+        const prices = item.prices || [0];
         $("price1").value = prices[0] !== undefined ? prices[0] : 0;
         $("price2").value = prices[1] !== undefined ? prices[1] : "";
         $("price3").value = prices[2] !== undefined ? prices[2] : "";
@@ -1040,36 +1038,67 @@
         return;
       }
 
-      container.innerHTML = myItems.map(item => {
-        const inquiries = item.inquiries || [];
-        const isGiven = item.status === "given";
+      const activeItems = myItems.filter(i => i.status !== "given");
+      const givenItems = myItems.filter(i => i.status === "given");
 
-        let inquiriesHtml = "";
-        if (inquiries.length > 0) {
-          inquiriesHtml = `<div style="margin-top:10px; background:var(--cream); padding:10px; border-radius:10px;">
-            <strong>Відгукнулися покупці:</strong><br>
-            <ul>` + inquiries.map((inq, idx) => `
-              <li style="margin: 6px 0;">
-                Контакт: <b>${escapeHtml(inq.contact)}</b> (Ціна: ${inq.chosenPrice} грн) 
-                ${!isGiven ? `<button class="btn btn-primary" style="font-size:0.75rem; padding:3px 8px; margin-left:8px;" onclick="confirmSale('${item.id}', '${inq.contact}')">Підтвердити продаж</button>` : ""}
+      let html = "";
+
+      if (activeItems.length > 0) {
+        html += `<h4 style="margin: 10px 0; color: var(--green);">Активні товари та запити покупців</h4>`;
+        html += activeItems.map(item => generateCabinetItemCard(item)).join("");
+      }
+
+      if (givenItems.length > 0) {
+        html += `<h4 style="margin: 20px 0 10px; color: var(--muted);">Продані / Передані товари</h4>`;
+        html += givenItems.map(item => generateCabinetItemCard(item)).join("");
+      }
+
+      container.innerHTML = html;
+    }
+
+    function generateCabinetItemCard(item) {
+      const inquiries = item.inquiries || [];
+      const isGiven = item.status === "given";
+
+      let inquiriesHtml = "";
+      if (inquiries.length > 0) {
+        inquiriesHtml = `
+          <div style="margin-top:10px; background:var(--cream); padding:12px; border-radius:10px;">
+            <strong style="font-size: 0.9rem; color: var(--green-deep);">Запити від покупців (${inquiries.length}):</strong>
+            <ul style="margin: 6px 0 0 16px; padding: 0;">` + 
+            inquiries.map((inq) => `
+              <li style="margin: 6px 0; font-size: 0.9rem;">
+                Контакт: <b>${escapeHtml(inq.contact)}</b> 
+                <span class="pill" style="font-size: 0.75rem; padding: 2px 6px;">Ціна: ${inq.chosenPrice} грн</span>
+                ${!isGiven ? `
+                  <button class="btn btn-primary" style="font-size:0.75rem; padding:4px 10px; margin-left:8px;" 
+                    onclick="confirmSale('${item.id}', '${escapeHtml(inq.contact)}')">
+                    Підтвердити продаж
+                  </button>` : ` <span style="color: var(--green); font-weight: 700;">✓ Продано цьому покупцю</span>`}
               </li>
-            `).join("") + `</ul></div>`;
-        } else {
-          inquiriesHtml = `<p class="muted" style="font-size:0.85rem; margin-top:6px;">Ще ніхто не залишив запит на цей товар.</p>`;
-        }
+            `).join("") + `
+            </ul>
+          </div>`;
+      } else {
+        inquiriesHtml = `<p class="muted" style="font-size:0.85rem; margin-top:8px;">Поки немає запитів від покупців на цей товар.</p>`;
+      }
 
-        return `
-          <div style="border:1px solid var(--line); border-radius:12px; padding:14px; margin-bottom:12px; background:white;">
-            <strong>${escapeHtml(item.title)}</strong> — <span class="muted">${item.category}</span>
-            <div style="font-size:0.9rem;">Статус: <b>${isGiven ? "Передано далі" : "Активно"}</b></div>
-            ${inquiriesHtml}
-            <div style="margin-top:10px; display:flex; gap:8px;">
-              <button class="btn btn-outline" style="font-size:0.8rem; padding:6px 10px;" onclick="openFormById('${item.id}')">Редагувати</button>
-              <button class="btn btn-danger" style="font-size:0.8rem; padding:6px 10px;" onclick="deleteItem('${item.id}')">Видалити</button>
-            </div>
+      return `
+        <div style="border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:14px; background:white; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <strong style="font-size: 1.1rem;">${escapeHtml(item.title)}</strong>
+            <span class="pill ${isGiven ? "given" : ""}">${isGiven ? "Продано / Передано" : "Активно"}</span>
           </div>
-        `;
-      }).join("");
+          <div style="font-size:0.9rem; color: var(--muted); margin-top: 4px;">Категорія: ${escapeHtml(item.category)}</div>
+          
+          ${inquiriesHtml}
+
+          <div style="margin-top:12px; display:flex; gap:8px; flex-wrap: wrap;">
+            <button class="btn btn-outline" style="font-size:0.8rem; padding:6px 12px;" onclick="openFormById('${item.id}')">Редагувати</button>
+            <button class="btn btn-danger" style="font-size:0.8rem; padding:6px 12px;" onclick="deleteItem('${item.id}')">Видалити</button>
+          </div>
+        </div>
+      `;
     }
 
     window.openFormById = function(id) {
@@ -1078,7 +1107,6 @@
       if (item) openForm(item);
     }
 
-    // Підтвердження продажу покупцю
     window.confirmSale = async function(itemId, buyerContact) {
       if (!confirm(`Підтвердити продаж та відкрити чат із покупцем (${buyerContact})?`)) return;
       try {
@@ -1095,7 +1123,6 @@
       }
     }
 
-    // Збереження профілю
     async function saveProfile() {
       if (!currentUser) return;
       const newName = $("profileName").value.trim();
@@ -1109,13 +1136,12 @@
       }
     }
 
-    // Вікно зв'язку для покупця (вибір опції ціни та залишення контакту)
     function openBuyDialog(item) {
       currentInquiryItem = item;
       const select = $("selectedPriceOption");
       select.innerHTML = "";
       
-      const prices = item.prices && item.prices.length ? item.prices : [item.price || 0];
+      const prices = item.prices && item.prices.length ? item.prices : [0];
       prices.forEach(p => {
         const opt = document.createElement("option");
         opt.value = p;
@@ -1153,7 +1179,6 @@
       }
     }
 
-    // Стиснення зображень
     function shrinkImage(file) {
       return new Promise((resolve, reject) => {
         if (!file) return resolve("");
@@ -1178,7 +1203,6 @@
       });
     }
 
-    // Збереження оголошення
     async function saveItem(event) {
       event.preventDefault();
       if (!currentUser || !db) return;
@@ -1199,13 +1223,12 @@
       try {
         const imageUrl = file ? await shrinkImage(file) : (existing?.imageUrl || "");
         
-        // Збираємо три ціни
         const p1 = Number($("price1").value || 0);
         const p2 = $("price2").value !== "" ? Number($("price2").value) : null;
         const p3 = $("price3").value !== "" ? Number($("price3").value) : null;
         let prices = [p1];
-        if (p2 !== null) prices.push(p2);
-        if (p3 !== null) prices.push(p3);
+        if (p2 !== null && !isNaN(p2)) prices.push(p2);
+        if (p3 !== null && !isNaN(p3)) prices.push(p3);
 
         const data = {
           title: $("itemTitle").value.trim(),
@@ -1256,7 +1279,6 @@
       }
     }
 
-    // Слухачі подій
     $("loginBtn").addEventListener("click", login);
     $("logoutBtn").addEventListener("click", logout);
     $("cabinetBtn").addEventListener("click", openCabinet);
