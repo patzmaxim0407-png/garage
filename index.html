@@ -102,6 +102,12 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
 .linkbtn{color:inherit;text-decoration:underline;cursor:pointer}
 .flinks{display:flex;flex-direction:column;gap:4px;align-items:flex-start}
 .fbottom{flex-basis:100%;border-top:1px solid var(--line);padding-top:12px;margin-top:4px}
+.plist{max-height:190px;overflow:auto;border:1px solid var(--line);border-radius:10px;margin-top:4px;background:#fff}
+.plist:empty{display:none}
+.plist button{display:block;width:100%;text-align:left;background:#fff;border:0;border-bottom:1px solid var(--line);padding:9px 12px;cursor:pointer;font:inherit;color:var(--ink)}
+.plist button:hover{background:var(--accent)}
+.pricetag{font-weight:800;color:var(--green);font-size:1.05rem;margin:6px 0 0}
+.ttnbox{background:var(--accent);border-radius:12px;padding:10px 12px;margin-top:10px;font-weight:700;overflow-wrap:anywhere}
 </style>
 </head>
 <body>
@@ -119,13 +125,13 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
   <div id="homeView">
     <section class="hero" id="heroSec">
       <div>
-        <div class="eyebrow">Символічні ціни · Добрі руки</div>
+        <div class="eyebrow">Купуй за комфортною ціною · Добрі руки</div>
         <h1>Передай далі.</h1>
-        <p>Сучасний простір усвідомленого споживання. Символічна ціна, добрі руки.</p>
+        <p>Сучасний простір усвідомленого споживання. Обери комфортну ціну, і річ знайде нових господарів.</p>
         <button class="btn btn-primary" id="heroAddBtn">Віддати річ ↗</button>
       </div>
       <aside class="hero-card"><div class="symbol">↗</div>
-        <div><strong>Символічні ціни.<br>Добрі руки.</strong><span>Менше зайвого. Більше повторного використання.</span></div>
+        <div><strong>Комфортні ціни.<br>Добрі руки.</strong><span>Менше зайвого. Більше повторного використання.</span></div>
       </aside>
     </section>
     <section>
@@ -146,10 +152,10 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
       <a href="#" class="linkbtn" id="rulesLink">Правила розміщення</a>
       <a href="#" class="linkbtn doc-link" data-doc="offer">Публічна оферта</a>
       <a href="#" class="linkbtn doc-link" data-doc="privacy">Політика конфіденційності</a>
-      <a href="#" class="linkbtn doc-link" data-doc="pay">Оплата й повернення</a>
+      <a href="#" class="linkbtn doc-link" data-doc="pay">Доставка й розрахунки</a>
       <a href="#" class="linkbtn doc-link" data-doc="contacts">Контакти</a>
     </div>
-    <div class="fbottom small">© 2026 GARAGE 2 · Київ, Україна · Оплата: Visa, Mastercard, Apple Pay, Google Pay, застосунок monobank</div>
+    <div class="fbottom small">© 2026 GARAGE 2 · Київ, Україна · Доставка: Нова пошта</div>
   </footer>
 </main>
 
@@ -160,13 +166,14 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
     <div class="field"><label for="itemTitle">Назва *</label><input id="itemTitle" maxlength="90" required placeholder="Наприклад, настільна лампа"></div>
     <div class="field"><label for="itemCategory">Категорія *</label><select id="itemCategory" required><option>Одяг</option><option>Дім</option><option>Техніка</option><option>Книги</option><option>Дитяче</option><option>Спорт</option><option>Інше</option></select></div>
     <div class="field"><label for="itemDescription">Опис</label><textarea id="itemDescription" maxlength="1200" placeholder="Стан речі, розмір, особливості…"></textarea></div>
-    <div class="field"><label>Три ціни, грн (покупець обирає одну; 0 = безкоштовно) *</label>
-      <div class="row3"><input id="p1" type="number" min="0" max="1000000" required placeholder="50"><input id="p2" type="number" min="0" max="1000000" required placeholder="75"><input id="p3" type="number" min="0" max="1000000" required placeholder="120"></div></div>
+    <div class="field"><label for="minPrice">Мінімальна ціна, грн (0 = віддам безкоштовно) *</label>
+      <input id="minPrice" type="number" min="0" max="1000000" required placeholder="50">
+      <small class="muted">Оберіть комфортну для вас ціну. Покупці запропонують свою суму не менше цієї, а ви оберете найкращу пропозицію.</small></div>
     <div class="field"><label for="itemImages">Фото (до 4 штук)</label><input id="itemImages" type="file" accept="image/*" multiple><small class="muted" id="photoNote">Фото зменшуються у браузері. На картці вони показуються квадратними. Лише сама річ, без людей і особистих даних.</small></div>
     <label class="chk" id="rulesRow"><input type="checkbox" id="rulesOkBox"><span>Я прочитав(ла) <a href="#" class="linkbtn" id="rulesLink2">правила розміщення</a> і підтверджую, що моя річ їм відповідає.</span></label>
-    <div class="muted small">Розміщення оголошення коштує 3 грн (оплата карткою через monobank). Обмін речами між людьми безкоштовний.</div>
+    <div class="muted small">Розміщення безкоштовне. Коли ви оберете покупця, сайт створить ТТН Нової пошти, і вам лишиться віднести посилку у відділення.</div>
     <div class="err" id="formErr"></div>
-    <div class="form-actions"><button type="button" class="btn btn-soft" id="cancelDialog">Скасувати</button><button class="btn btn-primary" id="saveBtn" type="submit">Оплатити й опублікувати (3 грн)</button></div>
+    <div class="form-actions"><button type="button" class="btn btn-soft" id="cancelDialog">Скасувати</button><button class="btn btn-primary" id="saveBtn" type="submit">Опублікувати</button></div>
   </form>
 </dialog>
 
@@ -179,7 +186,7 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
 <dialog id="rulesDialog">
   <div class="modal-head"><h2>Правила розміщення</h2><button class="close" type="button" id="closeRules" aria-label="Закрити">×</button></div>
   <div class="form-body rules">
-    <p style="margin-top:0">GARAGE 2 це місце, де люди передають нормальні речі за символічну ціну. Розміщуючи оголошення, ви погоджуєтесь із цими правилами.</p>
+    <p style="margin-top:0">GARAGE 2 це місце, де люди передають нормальні речі за комфортною для обох сторін ціною. Розміщуючи оголошення, ви погоджуєтесь із цими правилами.</p>
     <h3 class="ok">✓ Можна</h3>
     <ul>
       <li>Нові та вживані речі, які ви маєте право передавати: одяг, взуття, книги, речі для дому, іграшки, спорттовари, дитячі речі, інструменти.</li>
@@ -203,28 +210,49 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
     </ul>
     <h3>Безпечна угода</h3>
     <ul>
-      <li>Сайт лише з'єднує людей. Оплату й доставку ви домовляєтесь між собою.</li>
+      <li>Розрахунок за річ ви домовляєтесь між собою, а доставку оформлює сайт через Нову пошту.</li>
       <li>Не надсилайте передоплату незнайомцям і ніколи не повідомляйте дані картки, CVV чи коди з SMS.</li>
       <li>Огляньте річ при отриманні, перш ніж платити.</li>
+    </ul>
+    <h3>Ціна та доставка</h3>
+    <ul>
+      <li>Продавець задає мінімальну ціну, покупці пропонують свою, не нижчу за мінімальну. Продавець сам обирає покупця й не зобов'язаний обирати найвищу пропозицію.</li>
+      <li>Покупець вказує отримувача, телефон і відділення Нової пошти. Коли продавець обирає покупця, сайт створює ТТН, а продавець відносить посилку у відділення.</li>
+      <li>Доставку оплачує отримувач у відділенні. Не відмовляйтесь від посилки без причини: витрати на повернення можуть бути стягнуті з покупця.</li>
     </ul>
     <h3>Відповідальність</h3>
     <ul>
       <li>Продавець відповідає за законність речі та правдивість опису.</li>
       <li>Адміністрація може без попередження видалити оголошення й заблокувати акаунт за порушення правил.</li>
-      <li>Оплата за розміщення оголошення, видаленого за порушення правил, не повертається.</li>
     </ul>
     <p class="small muted" id="rulesContact" hidden></p>
     <div class="form-actions"><button type="button" class="btn btn-primary" id="rulesOk">Зрозуміло</button></div>
   </div>
 </dialog>
 
-<dialog id="contactDialog">
-  <div class="modal-head"><h2>Ваш вибір</h2><button class="close" type="button" id="closeContact" aria-label="Закрити">×</button></div>
-  <form class="form-body" id="contactForm">
-    <p id="contactTitle" style="margin-top:0;font-weight:800"></p>
-    <div class="field"><label for="contactInput">Ваш Telegram (@нік) або номер телефону для Viber/WhatsApp. Сюди напише продавець, якщо оберуть вас.</label><input id="contactInput" placeholder="@maxim_k або 0991234567"><small class="muted">Наприклад: @maxim_k або 0991234567</small></div>
-    <div class="err" id="contactErr"></div>
-    <div class="form-actions"><button type="button" class="btn btn-soft" id="cancelContact">Скасувати</button><button class="btn btn-primary" id="sendContact" type="submit">Надіслати</button></div>
+<dialog id="offerDialog">
+  <div class="modal-head"><h2>Запропонувати ціну</h2><button class="close" type="button" id="closeOffer" aria-label="Закрити">×</button></div>
+  <form class="form-body" id="offerForm">
+    <p id="offerTitle" style="margin-top:0;font-weight:800"></p>
+    <p class="muted small" id="offerMin"></p>
+    <div class="field"><label for="offerPrice">Ваша ціна, грн</label><input id="offerPrice" type="number" min="0" step="1" required></div>
+    <div class="field"><label for="offerName">Отримувач (Прізвище Ім’я По батькові)</label><input id="offerName" maxlength="80" placeholder="Петренко Іван Іванович" required></div>
+    <div class="field"><label for="offerPhone">Телефон отримувача</label><input id="offerPhone" type="tel" placeholder="0991234567" required></div>
+    <div id="offerShip"></div>
+    <div class="muted small">Продавець побачить ці дані, щоб відправити річ Новою поштою. Доставку оплачує отримувач у відділенні за тарифами Нової пошти.</div>
+    <div class="err" id="offerErr"></div>
+    <div class="form-actions"><button type="button" class="btn btn-soft" id="cancelOffer">Скасувати</button><button class="btn btn-primary" id="sendOffer" type="submit">Запропонувати</button></div>
+  </form>
+</dialog>
+
+<dialog id="ttnDialog">
+  <div class="modal-head"><h2>Створити ТТН</h2><button class="close" type="button" id="closeTtn" aria-label="Закрити">×</button></div>
+  <form class="form-body" id="ttnForm">
+    <p id="ttnInfo" style="margin-top:0"></p>
+    <div class="field"><label for="ttnWeight">Орієнтовна вага посилки, кг</label><input id="ttnWeight" type="number" min="0.1" max="30" step="0.1" value="1" required></div>
+    <div class="muted small">Накладну буде створено в кабінеті Нової пошти. Після цього віднесіть посилку у відділення й назвіть номер ТТН. Не відправляйте річ, доки не домовились із покупцем про розрахунок.</div>
+    <div class="err" id="ttnErr"></div>
+    <div class="form-actions"><button type="button" class="btn btn-soft" id="cancelTtn">Скасувати</button><button class="btn btn-primary" id="sendTtn" type="submit">Обрати й створити ТТН</button></div>
   </form>
 </dialog>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -267,7 +295,7 @@ const money = n => Number(n) <= 0 ? "Безкоштовно" : Number(n).toLocal
 const icons = {"Одяг":"♧","Дім":"⌂","Техніка":"⌁","Книги":"▤","Дитяче":"☆","Спорт":"↗","Інше":"◇"};
 let noticeTimer = null;
 
-const OWNER = {name: "ФОП Пац Максим Сергійович", address: "Київ, Україна", email: "biznes.ua24@gmail.com", phone: "", telegram: ""}; // заповніть дані власника сайту
+const OWNER = {name: "ФОП Пац Максим Сергійович", code: "3562901597", address: "Київ, Україна", email: "biznes.ua24@gmail.com", phone: "", telegram: ""}; // заповніть дані власника сайту
 function ownerList() {
   const L = [];
   if (OWNER.name) L.push("Адміністрація: " + OWNER.name);
@@ -285,49 +313,56 @@ const DOCS = {
     <ul><li>Ця публічна оферта (далі: Оферта) є пропозицією Адміністрації укласти договір про надання послуги розміщення оголошень на сайті GARAGE 2 (далі: Сайт) на умовах, викладених нижче.</li>
     <li>Акцептом Оферти є реєстрація на Сайті, створення оголошення або сплата за розміщення. Користуючись Сайтом, ви погоджуєтесь з Офертою, Правилами розміщення та Політикою конфіденційності.</li></ul>
     <h3>2. Послуга та вартість</h3>
-    <ul><li>Адміністрація надає Користувачеві технічну можливість розмістити на Сайті оголошення про передачу речі.</li>
-    <li>Вартість розміщення одного оголошення становить 3 грн. Оголошення публікується після підтвердження оплати.</li>
-    <li>Оголошення діє, доки Користувач його не видалить або Адміністрація не видалить його за порушення Правил.</li>
-    <li>Перегляд Сайту, вибір ціни та зв'язок покупця з продавцем безкоштовні.</li></ul>
-    <h3>3. Роль Сайту</h3>
+    <ul><li>Адміністрація надає Користувачеві технічну можливість розмістити на Сайті оголошення про передачу речі, отримувати пропозиції ціни від покупців і оформити відправлення Новою поштою.</li>
+    <li>Розміщення оголошення та користування Сайтом наразі безкоштовні.</li>
+    <li>Адміністрація може запровадити комісію за успішні угоди. Про це буде повідомлено на Сайті заздалегідь, а нові умови не поширюються на вже оформлені угоди.</li></ul>
+    <h3>3. Ціна та вибір покупця</h3>
+    <ul><li>Продавець встановлює мінімальну ціну. Покупці пропонують свою ціну не нижче мінімальної.</li>
+    <li>Продавець вільно обирає покупця: це може бути не найвища пропозиція, або жодна. Сайт не є аукціоном і не зобов'язує продавця передати річ.</li></ul>
+    <h3>4. Доставка та розрахунки</h3>
+    <ul><li>Після вибору покупця Сайт створює експрес-накладну (ТТН) Нової пошти за даними сторін. Продавець відносить посилку у вказане відділення й називає номер ТТН.</li>
+    <li>Доставку оплачує отримувач у відділенні за тарифами Нової пошти.</li>
+    <li>Розрахунок за річ відбувається між продавцем і покупцем. Адміністрація не приймає та не гарантує такі розрахунки. Онлайн-оплата на Сайті може бути додана пізніше.</li>
+    <li>Витрати на повернення посилки, що виникли через відмову або неотримання її покупцем, відшкодовує покупець.</li></ul>
+    <h3>5. Роль Сайту</h3>
     <ul><li>Сайт лише з'єднує людей. Адміністрація не є стороною угоди між продавцем і покупцем, не продає речі, не приймає оплату за них і не гарантує їхню якість, стан чи законність.</li>
-    <li>Розрахунки, передачу та доставку речі продавець і покупець домовляються між собою самостійно.</li></ul>
-    <h3>4. Обов'язки користувачів</h3>
+    <li>Розрахунки за річ продавець і покупець домовляються між собою самостійно; доставку оформлює Сайт, як описано вище.</li></ul>
+    <h3>6. Обов'язки користувачів</h3>
     <ul><li>Надавати правдиву інформацію й мати право розпоряджатися річчю.</li>
     <li>Не розміщувати речі, заборонені Правилами розміщення, і не вводити інших в оману.</li>
     <li>Не передавати доступ до свого акаунта третім особам.</li></ul>
-    <h3>5. Права Адміністрації</h3>
+    <h3>7. Права Адміністрації</h3>
     <ul><li>Видаляти оголошення й блокувати акаунти за порушення Правил або законодавства без попередження.</li>
     <li>Змінювати Оферту та вартість розміщення. Нова редакція діє з моменту публікації на Сайті, нова вартість діє для нових оголошень.</li>
     <li>Тимчасово обмежувати роботу Сайту для технічних робіт.</li></ul>
-    <h3>6. Відповідальність</h3>
+    <h3>8. Відповідальність</h3>
     <ul><li>Користувачі самостійно відповідають за свої оголошення й угоди між собою.</li>
     <li>Адміністрація не відповідає за збитки, що виникли через дії користувачів або через обставини непереборної сили.</li></ul>
-    <h3>7. Персональні дані</h3>
+    <h3>9. Персональні дані</h3>
     <p>Обробка даних описана в Політиці конфіденційності.</p>
-    <h3>8. Застосовне право та спори</h3>
+    <h3>10. Застосовне право та спори</h3>
     <p>Оферта регулюється законодавством України. Спори вирішуються шляхом переговорів, а за неможливості домовитись у суді за місцезнаходженням Адміністрації.</p>
-    <h3>9. Реквізити Адміністрації</h3>` + ownerList()},
+    <h3>11. Реквізити Адміністрації</h3>` + ownerList()},
   privacy: {title: "Політика конфіденційності", html: () => `
     <p class="small muted">Редакція від 4 листопада 2026 р.</p>
     <h3>Які дані ми збираємо</h3>
     <ul><li>З вашого Google-акаунта: ім'я та адреса електронної пошти (пароль ми не отримуємо).</li>
-    <li>Профіль: ім'я та контакт для зв'язку (Telegram, Viber або WhatsApp), які ви вказали.</li>
+    <li>Профіль: ім'я; для продавців ще й дані відправника (ПІБ, телефон, місто та відділення Нової пошти).</li>
     <li>Оголошення: назва, опис, ціни, фото.</li>
-    <li>Запити покупців: ім'я, контакт, обрана ціна.</li>
+    <li>Пропозиції покупців: запропонована ціна та дані доставки (ПІБ отримувача, телефон, місто й відділення Нової пошти).</li>
     <li>Технічні дані, потрібні для входу й роботи Сайту.</li></ul>
     <h3>Навіщо ми це робимо</h3>
     <ul><li>Для входу, публікації оголошень та сповіщення продавця про запит.</li>
-    <li>Для зв'язку вибраної пари продавця й покупця.</li>
-    <li>Для оплати розміщення та захисту від зловживань.</li></ul>
+    <li>Для оформлення відправлення Новою поштою та зв'язку сторін щодо розрахунку.</li>
+    <li>Для захисту від зловживань і підтримки роботи Сайту.</li></ul>
     <h3>Хто бачить ваші дані</h3>
     <ul><li>Оголошення (назва, опис, фото, ім'я продавця) бачать усі відвідувачі.</li>
-    <li>Контакт покупця бачить лише продавець, якому надійшов запит. Контакт продавця бачить лише покупець, якого він обрав.</li>
+    <li>Дані доставки покупця (ПІБ, телефон, місто, відділення) бачить лише продавець, якому надійшла пропозиція. Покупець бачить ім'я продавця, номер ТТН і статус посилки.</li>
     <li>Адресу пошти вашого Google-акаунта бачить лише Адміністрація; на неї продавцю надходять листи-сповіщення.</li></ul>
-    <h3>Платежі</h3>
-    <p>Оплату розміщення приймає monobank на власній платіжній сторінці. Дані вашої картки Сайт не отримує й не зберігає.</p>
+    <h3>Доставка</h3>
+    <p>Щоб створити ТТН, ми передаємо Новій пошті дані відправника й отримувача (ПІБ, телефон, місто, відділення). Інші цілі для цих даних ми не використовуємо.</p>
     <h3>Сервіси третіх осіб</h3>
-    <p>Для роботи Сайту ми користуємось Google (Firebase) для входу, бази даних і серверних функцій, Brevo для надсилання листів-сповіщень та monobank для платежів. Ці сервіси можуть обробляти дані на своїх серверах.</p>
+    <p>Для роботи Сайту ми користуємось Google (Firebase) для входу, бази даних і серверних функцій, Brevo для листів-сповіщень та Новою поштою для створення накладних і відстеження посилок. Ці сервіси можуть обробляти дані на своїх серверах.</p>
     <h3>Технічні файли</h3>
     <p>Сайт використовує лише технічні дані браузера, потрібні для збереження входу. Рекламних і аналітичних файлів ми не застосовуємо.</p>
     <h3>Строки зберігання та видалення</h3>
@@ -335,21 +370,19 @@ const DOCS = {
     <h3>Ваші права</h3>
     <p>Ви можете отримати доступ до своїх даних, виправити їх, видалити або відкликати згоду. Ми не продаємо ваші дані. Для запитів скористайтеся контактами нижче.</p>
     <h3>Контакти</h3>` + ownerList()},
-  pay: {title: "Оплата й повернення коштів", html: () => `
+  pay: {title: "Доставка й розрахунки", html: () => `
     <p class="small muted">Редакція від 4 листопада 2026 р.</p>
     <h3>Вартість</h3>
-    <p>Розміщення одного оголошення коштує 3 грн. Решта можливостей Сайту безкоштовні.</p>
-    <h3>Як відбувається оплата</h3>
-    <ul><li>Оплата проходить на захищеній сторінці monobank: банківською карткою Visa або Mastercard, через Apple Pay, Google Pay або застосунок monobank. Валюта платежу: гривня.</li>
-    <li>Дані картки обробляє банк. Сайт їх не бачить і не зберігає.</li></ul>
-    <h3>Коли оголошення стає активним</h3>
-    <p>Одразу після підтвердження платежу. Якщо оплату не завершено, оголошення зберігається в Кабінеті як чернетка: його можна оплатити пізніше або видалити.</p>
-    <h3>Повернення коштів</h3>
-    <ul><li>Ми повертаємо кошти, якщо оплату списано, а оголошення не опубліковано через технічну помилку Сайту, або якщо за одне оголошення списано двічі.</li>
-    <li>Кошти не повертаються, якщо оголошення видалено за порушення Правил, якщо ви самі видалили опубліковане оголошення чи акаунт або передумали.</li>
-    <li>Для повернення напишіть на контакти нижче протягом 14 днів з дати платежу. Кошти повертаються на ту саму картку; строк зарахування залежить від банку.</li></ul>
-    <h3>Оплата речей між користувачами</h3>
-    <p>Розрахунки за самі речі відбуваються між продавцем і покупцем поза Сайтом. Сайт не приймає ці кошти й не відповідає за такі розрахунки.</p>
+    <p>Розміщення оголошень і користування Сайтом безкоштовні. Адміністрація може запровадити комісію за успішні угоди й повідомить про це на Сайті заздалегідь.</p>
+    <h3>Як відбувається доставка</h3>
+    <ul><li>Покупець пропонує ціну й вказує отримувача, телефон та відділення Нової пошти.</li>
+    <li>Продавець обирає покупця. Сайт створює ТТН і показує його обом сторонам.</li>
+    <li>Продавець відносить посилку у відділення, назвавши номер ТТН. Статус посилки можна подивитись у Кабінеті.</li>
+    <li>Доставку оплачує отримувач у відділенні за тарифами Нової пошти.</li></ul>
+    <h3>Розрахунок за річ</h3>
+    <p>Продавець і покупець домовляються про розрахунок між собою (продавець бачить телефон отримувача). Сайт не приймає ці кошти й не відповідає за такі розрахунки. Радимо відправляти посилку після того, як сторони погодили розрахунок.</p>
+    <h3>Відмова та повернення посилки</h3>
+    <p>Якщо отримувач відмовився від посилки або не забрав її, витрати на повернення відшкодовує покупець. Адміністрація може вимагати їх відшкодування.</p>
     <h3>Контакти для звернень</h3>` + ownerList()},
   contacts: {title: "Контакти", html: () => `
     <p><b>GARAGE 2</b>: платформа для передачі речей за символічну ціну.</p>
@@ -478,6 +511,35 @@ function renderHome() {
   list.forEach(i => g.appendChild(card(i)));
 }
 
+const minPriceOf = it => it.minPrice != null ? Number(it.minPrice) : ((it.prices && it.prices.length) ? Math.min.apply(null, it.prices.map(Number)) : (Number(it.price) || 0));
+const priceFrom = it => {const m = minPriceOf(it); return m <= 0 ? "Безкоштовно · запропонуйте свою ціну" : "Від " + m.toLocaleString("uk-UA") + " грн · запропонуйте свою ціну";};
+const normPhone = p => {let d = String(p || "").replace(/\D/g, ""); if (d.length === 10 && d[0] === "0") d = "38" + d; if (d.length === 9) d = "380" + d; return d;};
+const validPhone = p => /^380\d{9}$/.test(normPhone(p));
+function shipPicker(root, init) {
+  init = init || {};
+  const st = {cityRef: init.cityRef || "", cityName: init.cityName || "", whRef: init.whRef || "", whName: init.whName || ""};
+  root.innerHTML = '<div class="field"><label>Місто</label><input class="pc" placeholder="Почніть вводити назву міста" autocomplete="off"><div class="plist pcl"></div></div><div class="field"><label>Відділення або поштомат Нової пошти</label><input class="pw" placeholder="Номер або адреса відділення" autocomplete="off"><div class="plist pwl"></div></div>';
+  const ci = root.querySelector(".pc"), cl = root.querySelector(".pcl"), wi = root.querySelector(".pw"), wl = root.querySelector(".pwl");
+  ci.value = st.cityName; wi.value = st.whName;
+  let t1, t2;
+  const list = (box, items, pick) => {box.innerHTML = ""; items.forEach(x => {const b = el("button", "", x.label); b.type = "button"; b.onclick = () => {pick(x); box.innerHTML = "";}; box.appendChild(b);});};
+  async function loadW(q) {
+    if (!st.cityRef) return;
+    try {const r = await fns.httpsCallable("npWarehouses")({cityRef: st.cityRef, q: q}); list(wl, r.data.map(w => ({...w, label: w.name})), w => {st.whRef = w.ref; st.whName = w.name; wi.value = w.name;});}
+    catch (e) {wl.textContent = "Не вдалося завантажити відділення: " + (e.message || e.code);}
+  }
+  ci.oninput = () => {
+    st.cityRef = ""; st.cityName = ""; st.whRef = ""; st.whName = ""; wi.value = ""; wl.innerHTML = ""; clearTimeout(t1);
+    const q = ci.value.trim(); if (q.length < 2) {cl.innerHTML = ""; return;}
+    t1 = setTimeout(async () => {
+      try {const r = await fns.httpsCallable("npCities")({q: q}); list(cl, r.data.map(c => ({...c, label: c.name + (c.area ? " (" + c.area + " обл.)" : "")})), c => {st.cityRef = c.ref; st.cityName = c.name; ci.value = c.name; loadW("");});}
+      catch (e) {cl.textContent = "Не вдалося завантажити міста: " + (e.message || e.code);}
+    }, 350);
+  };
+  wi.onfocus = () => {if (st.cityRef && !st.whRef) loadW(wi.value.trim());};
+  wi.oninput = () => {st.whRef = ""; st.whName = ""; clearTimeout(t2); t2 = setTimeout(() => loadW(wi.value.trim()), 350);};
+  return {get: () => ({...st}), ok: () => !!(st.cityRef && st.whRef)};
+}
 function card(it) {
   const c = el("article", "item"), ph = photosOf(it), given = it.status === "given";
   const own = currentUser && it.ownerId === currentUser.uid;
@@ -487,16 +549,12 @@ function card(it) {
     (ph.length > 1 ? '<div class="hint">← гортайте фото (' + ph.length + ") →</div>" : "") +
     '<div class="item-body"><div class="item-meta"><span>' + esc(it.category || "Інше") + '</span><span class="pill ' + (given ? "given" : "") + '">' + (given ? "Передано далі" : "Доступна") + "</span></div>" +
     "<h3>" + esc(it.title || "Без назви") + '</h3><div class="item-desc">' + esc(it.desc || it.description || "Без опису") + "</div>" +
-    '<div class="muted small">Від: ' + (it.ownerId ? '<a href="#seller=' + esc(it.ownerId) + '" style="color:inherit;text-decoration:underline">' + esc(it.ownerName || "Користувач") + '</a>' : esc(it.ownerName || "Користувач")) + '</div><div class="act"></div></div>';
+    '<div class="muted small">Від: ' + (it.ownerId ? '<a href="#seller=' + esc(it.ownerId) + '" style="color:inherit;text-decoration:underline">' + esc(it.ownerName || "Користувач") + '</a>' : esc(it.ownerName || "Користувач")) + '</div><div class="pricetag">' + esc(priceFrom(it)) + '</div><div class="act"></div></div>';
   const act = c.querySelector(".act");
   if (given) act.appendChild(el("div", "muted small", "✓ Річ уже передано"));
   else if (own) act.appendChild(el("div", "muted small", "Це ваша річ"));
-  else if (mine) act.appendChild(el("div", "notice", "Ви обрали " + money(mine.price) + ". Продавець напише вам, якщо обере вас."));
-  else {
-    const p = el("div", "prices");
-    (it.prices || [it.price || 0]).forEach(v => {const b = el("button", "", money(v)); b.type = "button"; b.onclick = () => pickPrice(it, v); p.appendChild(b);});
-    act.appendChild(p);
-  }
+  else if (mine) act.appendChild(el("div", "notice", "Ви запропонували " + money(mine.price) + ". Продавець обере покупця, і ви побачите ТТН у кабінеті."));
+  else {const ob = el("button", "btn btn-primary", "Запропонувати ціну"); ob.type = "button"; ob.style.width = "100%"; ob.onclick = () => openOffer(it); act.appendChild(ob);}
   if (!it.demo && !given) {
     const sh = el("button", "btn btn-soft btn-sm", "↗ Поділитись"); sh.type = "button"; sh.style.marginTop = "8px";
     sh.onclick = () => shareLink(siteBase() + "#item=" + it.id, it.title);
@@ -505,29 +563,35 @@ function card(it) {
   return c;
 }
 
-/* ---------- вибір ціни покупцем ---------- */
-function pickPrice(it, price) {
+/* ---------- пропозиція ціни покупцем ---------- */
+let offerPicker = null, pendingTtn = null;
+function openOffer(it) {
   if (it.demo) {showNotice("Це демо-картка. Увійдіть і опублікуйте реальну річ."); return;}
   needLogin(() => {
-    pending = {it, price};
-    $("contactTitle").textContent = "«" + it.title + "»: " + money(price);
-    $("contactInput").value = profile.contact || ""; $("contactErr").textContent = "";
-    $("contactDialog").showModal();
+    pending = {it}; const min = minPriceOf(it), rv = profile.recv || {};
+    $("offerTitle").textContent = "«" + it.title + "»";
+    $("offerMin").textContent = min > 0 ? "Мінімальна ціна: " + min + " грн. Запропонуйте свою суму, продавець обере найкращу пропозицію." : "Річ можна забрати безкоштовно, але ви можете запропонувати свою ціну.";
+    $("offerPrice").min = min; $("offerPrice").value = min;
+    $("offerName").value = rv.name || ""; $("offerPhone").value = rv.phone || ""; $("offerErr").textContent = "";
+    offerPicker = shipPicker($("offerShip"), rv);
+    $("offerDialog").showModal();
   });
 }
-$("contactForm").addEventListener("submit", async e => {
+$("offerForm").addEventListener("submit", async e => {
   e.preventDefault();
-  const c = $("contactInput").value.trim();
-  if (!validContact(c)) {$("contactErr").textContent = "Вкажіть нік Telegram (@нік) або номер телефону."; return;}
-  const {it, price} = pending, b = $("sendContact"); b.disabled = true; b.textContent = "…";
+  const it = pending.it, min = minPriceOf(it), err = $("offerErr"), b = $("sendOffer");
+  const price = Math.round(Number($("offerPrice").value)), name = $("offerName").value.trim().replace(/\s+/g, " "), phone = $("offerPhone").value.trim(), sh = offerPicker.get();
+  if (isNaN(price) || price < min) {err.textContent = "Ціна не може бути меншою за " + min + " грн."; return;}
+  if (name.split(" ").length < 2) {err.textContent = "Вкажіть прізвище та ім’я отримувача."; return;}
+  if (!validPhone(phone)) {err.textContent = "Вкажіть номер телефону, наприклад 0991234567."; return;}
+  if (!offerPicker.ok()) {err.textContent = "Оберіть місто та відділення зі списку."; return;}
+  b.disabled = true; b.textContent = "…"; err.textContent = "";
   try {
-    await db.collection("requests").add({itemId: it.id, itemTitle: it.title, sellerId: it.ownerId, buyerId: currentUser.uid, buyerName: pname("Покупець"), buyerContact: c, price: price, status: "new", createdAt: Date.now()});
-    if (EMAILJS.service) db.collection("contacts").doc(it.ownerId).get().then(d => {
-      if (d.exists && d.data().email) sendMail({to_email: d.data().email, item_title: it.title, price: price, buyer_name: pname("Покупець"), buyer_contact: c});
-    }).catch(() => {});
-    $("contactDialog").close(); showNotice("Дякуємо! Продавець напише вам, якщо обере вас.");
-  } catch (er) {$("contactErr").textContent = "Не вдалося надіслати: " + (er.code || er.message);}
-  b.disabled = false; b.textContent = "Надіслати";
+    await db.collection("requests").add({itemId: it.id, itemTitle: it.title, sellerId: it.ownerId, buyerId: currentUser.uid, buyerName: name, buyerPhone: normPhone(phone), cityRef: sh.cityRef, cityName: sh.cityName, whRef: sh.whRef, whName: sh.whName, price: price, status: "new", createdAt: Date.now()});
+    db.collection("profiles").doc(currentUser.uid).set({recv: {name: name, phone: phone, ...sh}}, {merge: true}).catch(() => {});
+    $("offerDialog").close(); showNotice("Дякуємо! Продавець обере покупця, і ви побачите ТТН у кабінеті.");
+  } catch (er) {err.textContent = "Не вдалося надіслати: " + (er.code || er.message);}
+  b.disabled = false; b.textContent = "Запропонувати";
 });
 
 /* ---------- форма речі ---------- */
@@ -545,11 +609,11 @@ function openForm(it) {
   if (demoMode) {showNotice("Спершу вставте apiKey Firebase у файл.", true); return;}
   needLogin(() => {
     $("itemForm").reset(); $("formErr").textContent = ""; $("rulesRow").hidden = !!it; $("rulesOkBox").checked = !!it; $("editingId").value = it ? it.id : "";
-    $("dialogTitle").textContent = it ? "Редагувати річ" : "Віддати річ"; $("saveBtn").textContent = it ? "Зберегти" : "Оплатити й опублікувати (3 грн)";
+    $("dialogTitle").textContent = it ? "Редагувати річ" : "Віддати річ"; $("saveBtn").textContent = it ? "Зберегти" : "Опублікувати";
     const locked = !!(it && sales.some(s => s.itemId === it.id));
-    ["p1", "p2", "p3"].forEach((id, k) => {$(id).disabled = locked; if (it) $(id).value = (it.prices || [])[k];});
+    $("minPrice").disabled = locked; if (it) $("minPrice").value = minPriceOf(it);
     if (it) {$("itemTitle").value = it.title || ""; $("itemCategory").value = it.category || "Інше"; $("itemDescription").value = it.desc || it.description || "";}
-    $("photoNote").textContent = it ? (locked ? "Ціни змінити не можна: покупці вже обрали їх. " : "") + "Нові фото замінять поточні. Якщо не вибирати, лишаться старі." : "Фото зменшуються у браузері й показуються квадратними. Лише сама річ, без людей і особистих даних.";
+    $("photoNote").textContent = it ? (locked ? "Мінімальну ціну змінити не можна: вже є пропозиції. " : "") + "Нові фото замінять поточні. Якщо не вибирати, лишаться старі." : "Фото зменшуються у браузері й показуються квадратними. Лише сама річ, без людей і особистих даних.";
     $("itemDialog").showModal();
   });
 }
@@ -565,28 +629,21 @@ $("itemForm").addEventListener("submit", async e => {
     if (!data.title) throw new Error("Вкажіть назву.");
     const locked = !!(it && sales.some(s => s.itemId === it.id));
     if (!locked) {
-      data.prices = ["p1", "p2", "p3"].map(k => Math.max(0, Number($(k).value))).sort((a, b) => a - b);
-      if (data.prices.some(isNaN)) throw new Error("Вкажіть три ціни.");
+      const mp = Math.round(Number($("minPrice").value));
+      if (isNaN(mp) || mp < 0) throw new Error("Вкажіть мінімальну ціну (0 = безкоштовно).");
+      data.minPrice = mp; data.prices = [mp];
     }
     if (photos.length) {data.photos = photos; data.photo = photos[0];}
     if (it) {await db.collection("items").doc(it.id).update(data); $("itemDialog").close(); showNotice("Зміни збережено.");}
     else {
-      const ref = await db.collection("items").add({...data, ownerId: currentUser.uid, ownerName: pname("Продавець"), status: "pending", createdAt: Date.now(), rulesAcceptedAt: Date.now()});
-      $("itemDialog").close(); showNotice("Переходимо до оплати розміщення…"); await payFor(ref.id);
+      await db.collection("items").add({...data, ownerId: currentUser.uid, ownerName: pname("Продавець"), status: "open", createdAt: Date.now(), rulesAcceptedAt: Date.now()});
+      $("itemDialog").close(); showNotice("Річ опубліковано. Передай далі!");
     }
   } catch (er) {$("formErr").textContent = er.message || "Не вдалося зберегти.";}
-  b.disabled = false; b.textContent = id ? "Зберегти" : "Оплатити й опублікувати (3 грн)";
+  b.disabled = false; b.textContent = id ? "Зберегти" : "Опублікувати";
 });
 
 /* ---------- кабінет ---------- */
-async function choose(s) {
-  if (!profile.contact) {alert("Спочатку вкажіть свій контакт у вкладці «Профіль», щоб покупець зміг вам написати."); tab = "profile"; render(); return;}
-  try {
-    await db.collection("requests").doc(s.id).update({status: "accepted", sellerContact: profile.contact, sellerName: pname("Продавець")});
-    await db.collection("items").doc(s.itemId).update({status: "given"});
-    showNotice("Покупця обрано. Напишіть йому за контактом нижче.");
-  } catch (er) {showNotice("Не вдалося: " + (er.code || er.message), true);}
-}
 async function deleteAccount() {
   if (!confirm("Видалити акаунт назавжди? Ваші речі, запити й профіль будуть видалені. Цю дію не можна скасувати.")) return;
   try {
@@ -595,7 +652,7 @@ async function deleteAccount() {
     const jobs = [];
     allItems.filter(i => i.ownerId === u.uid).forEach(i => jobs.push(db.collection("items").doc(i.id).delete()));
     sales.concat(buys).forEach(r => jobs.push(db.collection("requests").doc(r.id).delete()));
-    jobs.push(db.collection("profiles").doc(u.uid).delete(), db.collection("contacts").doc(u.uid).delete());
+    jobs.push(db.collection("profiles").doc(u.uid).delete());
     await Promise.all(jobs);
     await u.delete();
     view = "home"; showNotice("Акаунт і всі ваші дані видалено.");
@@ -610,6 +667,36 @@ function headRow(item, nodes) {
   const r = el("div", "rowflex"), info = el("div"); info.style.minWidth = "0";
   nodes.forEach(n => info.appendChild(n)); r.append(thumbOf(item), info); return r;
 }
+function openTtn(s) {
+  const sh = profile.ship;
+  if (!sh || !sh.cityRef || !sh.whRef || !sh.name || !sh.phone) {
+    alert("Спершу заповніть дані відправника у вкладці «Профіль»: ПІБ, телефон і відділення, з якого ви відправите посилку.");
+    tab = "profile"; render(); return;
+  }
+  pendingTtn = s;
+  $("ttnInfo").innerHTML = "<b>" + esc(s.itemTitle) + "</b>: " + esc(money(s.price)) + "<br>Отримувач: " + esc(s.buyerName) + ", " + esc(s.buyerPhone || "") + "<br>Доставка: " + esc((s.cityName || "") + ", " + (s.whName || "")) + "<br>Ви відправите з: " + esc((sh.cityName || "") + ", " + (sh.whName || ""));
+  $("ttnErr").textContent = ""; $("ttnDialog").showModal();
+}
+$("ttnForm").addEventListener("submit", async e => {
+  e.preventDefault(); const b = $("sendTtn"); b.disabled = true; b.textContent = "Створюємо ТТН…"; $("ttnErr").textContent = "";
+  try {
+    const r = await fns.httpsCallable("createTTN")({requestId: pendingTtn.id, weight: Number($("ttnWeight").value)});
+    $("ttnDialog").close(); showNotice("ТТН створено: " + r.data.ttn + ". Віднесіть посилку у відділення й назвіть цей номер.");
+  } catch (er) {$("ttnErr").textContent = er.message || er.code;}
+  b.disabled = false; b.textContent = "Обрати й створити ТТН";
+});
+function ttnBlock(s, bx) {
+  bx.appendChild(el("div", "ttnbox", "ТТН: " + s.ttn));
+  const out = el("div", "muted small"); out.style.marginTop = "6px";
+  const tb = el("button", "btn btn-soft btn-sm", "Статус посилки"); tb.style.marginTop = "8px";
+  tb.onclick = async () => {
+    tb.disabled = true; out.textContent = "Перевіряємо…";
+    try {const r = await fns.httpsCallable("npTrack")({requestId: s.id}); out.textContent = "Статус: " + r.data.status + (r.data.eta ? " (орієнтовна доставка: " + r.data.eta + ")" : "");}
+    catch (e) {out.textContent = "Не вдалося отримати статус: " + (e.message || e.code);}
+    tb.disabled = false;
+  };
+  bx.append(tb, out);
+}
 function renderCabinet() {
   const v = $("cabinetView"); v.innerHTML = "";
   const h = el("div", "section-head"); h.innerHTML = '<div><div class="eyebrow">Особистий кабінет</div><h2>Ваш кабінет</h2></div>';
@@ -623,12 +710,13 @@ function renderCabinet() {
   const none = txt => v.appendChild(el("div", "empty", txt));
   if (tab === "sales") {
     if (!sales.length) none("Запитів поки немає.");
-    sales.slice().sort((a, b) => b.createdAt - a.createdAt).forEach(s => {
+    const latest = {}; sales.forEach(s => latest[s.itemId] = Math.max(latest[s.itemId] || 0, s.createdAt || 0));
+    sales.slice().sort((a, b) => (latest[b.itemId] - latest[a.itemId]) || (a.itemId < b.itemId ? -1 : a.itemId > b.itemId ? 1 : 0) || (b.price - a.price)).forEach(s => {
       const it = allItems.find(i => i.id === s.itemId), bx = el("div", "cardbox");
-      bx.appendChild(headRow(it, [el("b", "", s.itemTitle + ": " + money(s.price)), el("div", "muted small", "Хоче: " + s.buyerName)])); bx.append(el("div", "", "Контакт: " + (s.buyerContact || "не вказано")));
-      if (s.status === "accepted") {bx.appendChild(el("div", "muted small", "✓ Ви обрали цього покупця. Напишіть йому:")); bx.appendChild(linksRow(s.buyerContact, s.itemTitle, s.price));}
+      bx.appendChild(headRow(it, [el("b", "", s.itemTitle + ": " + money(s.price)), el("div", "muted small", "Отримувач: " + s.buyerName + (s.buyerPhone ? ", тел. " + s.buyerPhone : "")), el("div", "muted small", "Доставка: " + (s.cityName || "—") + (s.whName ? ", " + s.whName : ""))]));
+      if (s.status === "accepted") {bx.appendChild(el("div", "muted small", "✓ Ви обрали цього покупця. Віднесіть посилку у відділення й назвіть номер ТТН:")); if (s.ttn) ttnBlock(s, bx);}
       else if (it && it.status === "given") bx.appendChild(el("div", "muted small", "Річ уже віддано іншому"));
-      else {const b = el("button", "btn btn-primary btn-sm", "Обрати цього покупця"); b.style.marginTop = "10px"; b.onclick = () => choose(s); bx.appendChild(b);}
+      else {const b = el("button", "btn btn-primary btn-sm", "Обрати й створити ТТН"); b.style.marginTop = "10px"; b.onclick = () => openTtn(s); bx.appendChild(b);}
       v.appendChild(bx);
     });
   }
@@ -642,39 +730,43 @@ function renderCabinet() {
     }
     mine.forEach(i => {
       const bx = el("div", "cardbox"), n = sales.filter(s => s.itemId === i.id).length;
-      bx.appendChild(headRow(i, [el("b", "", i.title), el("div", "muted small", (i.prices || []).map(money).join(" / ") + " · " + (i.status === "pending" ? "чекає оплати" : i.status === "given" ? "передано" : "доступна") + " · запитів: " + n)]));
+      bx.appendChild(headRow(i, [el("b", "", i.title), el("div", "muted small", priceFrom(i).replace(" · запропонуйте свою ціну", "") + " · " + (i.status === "pending" ? "не опубліковано" : i.status === "given" ? "передано" : "доступна") + " · пропозицій: " + n)]));
       const r = el("div", "row");
       const ed = el("button", "btn btn-soft btn-sm", "Редагувати"); ed.onclick = () => openForm(i);
-      const g = i.status === "pending" ? el("button", "btn btn-primary btn-sm", "Сплатити 3 грн") : el("button", "btn btn-soft btn-sm", i.status === "given" ? "Повернути в список" : "Позначити переданою");
-      g.onclick = i.status === "pending" ? () => payFor(i.id) : () => db.collection("items").doc(i.id).update({status: i.status === "given" ? "open" : "given"});
+      const g = i.status === "pending" ? el("button", "btn btn-primary btn-sm", "Опублікувати безкоштовно") : el("button", "btn btn-soft btn-sm", i.status === "given" ? "Повернути в список" : "Позначити переданою");
+      g.onclick = () => db.collection("items").doc(i.id).update({status: (i.status === "open") ? "given" : "open"});
       const d = el("button", "btn btn-danger btn-sm", "Видалити"); d.onclick = () => {if (confirm("Видалити «" + i.title + "»?")) db.collection("items").doc(i.id).delete();};
       const shr = el("button", "btn btn-soft btn-sm", "↗ Поділитись"); shr.onclick = () => shareLink(siteBase() + "#item=" + i.id, i.title);
       if (i.status === "open") r.append(ed, g, shr, d); else r.append(ed, g, d); bx.appendChild(r); v.appendChild(bx);
     });
   }
   if (tab === "buys") {
-    if (!buys.length) none("Ви ще нічого не обирали.");
+    if (!buys.length) none("Ви ще нічого не пропонували.");
     buys.slice().sort((a, b) => b.createdAt - a.createdAt).forEach(s => {
       const it = allItems.find(i => i.id === s.itemId), bx = el("div", "cardbox");
-      bx.appendChild(headRow(it, [el("b", "", s.itemTitle + ": " + money(s.price))]));
+      bx.appendChild(headRow(it, [el("b", "", s.itemTitle + ": " + money(s.price)), el("div", "muted small", "Доставка: " + (s.cityName || "—") + (s.whName ? ", " + s.whName : ""))]));
       let st = "Очікує вибору продавця";
-      if (s.status === "accepted") st = "🎉 Вас обрано! Контакт продавця: " + (s.sellerContact || "очікуйте повідомлення");
+      if (s.status === "accepted") st = "🎉 Вас обрано! Продавець" + (s.sellerName ? " (" + s.sellerName + ")" : "") + " відправляє річ Новою поштою. Доставку оплачуєте у відділенні.";
       else if (it && it.status === "given") st = "Річ передали іншому";
       bx.appendChild(el("div", "muted small", st));
-      if (s.status === "accepted" && s.sellerContact) bx.appendChild(linksRow(s.sellerContact, s.itemTitle, s.price));
+      if (s.status === "accepted" && s.ttn) ttnBlock(s, bx);
       v.appendChild(bx);
     });
   }
   if (tab === "profile") {
-    const f = el("form", "cardbox");
-    f.innerHTML = '<div class="field"><label>Ім’я, яке бачать інші</label><input id="pn" maxlength="40"></div><div class="field"><label>Контакт для зв’язку (Telegram @нік або номер для Viber/WhatsApp)</label><input id="pc" placeholder="@maxim_k або 0991234567"></div><div class="muted small">Контакт бачить лише людина, з якою ви домовилися: покупець після вашого вибору, або ви після вибору покупця.</div><div class="err" id="pe"></div><button class="btn btn-primary" id="ps">Зберегти</button>';
-    f.querySelector("#pn").value = profile.name || currentUser.displayName || ""; f.querySelector("#pc").value = profile.contact || "";
+    const f = el("form", "cardbox"), sh = profile.ship || {};
+    f.innerHTML = '<div class="field"><label>Пошта, з якою ви увійшли (Google)</label><input id="pe0" disabled></div><div class="field"><label>Ім’я, яке бачать інші</label><input id="pn" maxlength="40"></div><h3 style="margin:14px 0 6px">Дані відправника (для ТТН)</h3><div class="field"><label>Відправник (Прізвище Ім’я По батькові)</label><input id="sn" maxlength="80" placeholder="Петренко Іван Іванович"></div><div class="field"><label>Телефон відправника</label><input id="sp" type="tel" placeholder="0991234567"></div><div id="shipBox"></div><div class="muted small">Ці дані потрібні, коли ви обираєте покупця: Нова пошта створить ТТН, а ви віднесете посилку у вказане відділення.</div><div class="err" id="pe"></div><button class="btn btn-primary" id="ps">Зберегти</button>';
+    f.querySelector("#pe0").value = currentUser.email || "—";
+    f.querySelector("#pn").value = profile.name || currentUser.displayName || "";
+    f.querySelector("#sn").value = sh.name || ""; f.querySelector("#sp").value = sh.phone || "";
+    const pk = shipPicker(f.querySelector("#shipBox"), sh);
     f.onsubmit = async e => {
       e.preventDefault();
-      const n = f.querySelector("#pn").value.trim(), c = f.querySelector("#pc").value.trim(), er = f.querySelector("#pe");
-      if (c && !validContact(c)) {er.textContent = "Вкажіть нік Telegram (@нік) або номер телефону."; return;}
+      const n = f.querySelector("#pn").value.trim(), sn = f.querySelector("#sn").value.trim().replace(/\s+/g, " "), sp = f.querySelector("#sp").value.trim(), er = f.querySelector("#pe"), g = pk.get();
+      const any = sn || sp || g.cityRef || g.whRef;
+      if (any && (sn.split(" ").length < 2 || !validPhone(sp) || !pk.ok())) {er.style.color = "var(--danger)"; er.textContent = "Для ТТН вкажіть прізвище та ім’я, телефон, місто й відділення (зі списку), або залиште ці поля порожніми."; return;}
       try {
-        await db.collection("profiles").doc(currentUser.uid).set({name: n, contact: c});
+        await db.collection("profiles").doc(currentUser.uid).set({name: n, ship: any ? {name: sn, phone: normPhone(sp), ...g} : firebase.firestore.FieldValue.delete()}, {merge: true});
         await Promise.all(allItems.filter(i => i.ownerId === currentUser.uid).map(i => db.collection("items").doc(i.id).update({ownerName: n || currentUser.displayName || "Продавець"})));
         er.style.color = "var(--green)"; er.textContent = "Збережено ✓";
       } catch (x) {er.style.color = "var(--danger)"; er.textContent = "Не вдалося: " + (x.code || x.message);}
@@ -696,7 +788,8 @@ window.addEventListener("hashchange", () => {readHash(); view = "home"; render()
 $("heroAddBtn").onclick = () => openForm(null);
 ["searchInput", "categoryFilter", "statusFilter"].forEach(id => $(id).addEventListener(id === "searchInput" ? "input" : "change", renderHome));
 ["closeDialog", "cancelDialog"].forEach(id => $(id).onclick = () => $("itemDialog").close());
-["closeContact", "cancelContact"].forEach(id => $(id).onclick = () => $("contactDialog").close());
+["closeOffer", "cancelOffer"].forEach(id => $(id).onclick = () => $("offerDialog").close());
+["closeTtn", "cancelTtn"].forEach(id => $(id).onclick = () => $("ttnDialog").close());
 readHash();
 $("rulesLink").onclick = e => {e.preventDefault(); openRules();};
 $("rulesLink2").onclick = e => {e.preventDefault(); openRules();};
