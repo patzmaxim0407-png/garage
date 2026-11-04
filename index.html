@@ -18,6 +18,7 @@ main{max-width:900px;margin:0 auto;padding:16px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:18px;overflow:hidden;display:flex;flex-direction:column}
 .card img{width:100%;aspect-ratio:4/3;object-fit:cover;background:#f4e8d8}
+.gal{display:flex;overflow-x:auto;scroll-snap-type:x mandatory}.gal img{flex:0 0 100%;scroll-snap-align:start}
 .card .b{padding:12px;display:flex;flex-direction:column;gap:8px}
 .card h3{margin:0;font-size:18px}
 .card p{margin:0;color:var(--mu);font-size:14px}
@@ -112,7 +113,8 @@ function render(){
 
 function itemCard(it){
   const c=el("div","card");
-  if(it.photo){const i=el("img");i.src=it.photo;i.alt=it.title;c.appendChild(i);}
+  const pl=(it.photos&&it.photos.length)?it.photos:(it.photo?[it.photo]:[]);
+  if(pl.length){const g=el("div","gal");pl.forEach(u=>{const i=el("img");i.src=u;i.alt=it.title;g.appendChild(i);});c.appendChild(g);if(pl.length>1)c.appendChild(el("div","tag","← гортайте фото ("+pl.length+") →")).style.cssText="text-align:center;padding:4px";}
   const b=el("div","b");
   b.append(el("h3","",it.title),el("p","",it.desc||""),el("div","tag","Від: "+it.ownerName));
   const mine=buys.find(x=>x.itemId===it.id);
@@ -165,7 +167,7 @@ function renderHome(){
 
 function renderAdd(it){
   const f=el("form");
-  f.innerHTML='<h2 style="margin:0" id="ft">Нова річ</h2><label>Назва<input id="t" required maxlength="60"></label><label>Опис<textarea id="d" rows="3" maxlength="300"></textarea></label><label>Три ціни, грн (на вибір покупця)</label><div class="row3"><input id="p1" type="number" min="0" required placeholder="50"><input id="p2" type="number" min="0" required placeholder="75"><input id="p3" type="number" min="0" required placeholder="120"></div><label>Фото<input id="ph" type="file" accept="image/*"></label><div class="tag" id="pn2"></div><button class="btn" id="sv">Опублікувати</button>';
+  f.innerHTML='<h2 style="margin:0" id="ft">Нова річ</h2><label>Назва<input id="t" required maxlength="60"></label><label>Опис<textarea id="d" rows="3" maxlength="300"></textarea></label><label>Три ціни, грн (на вибір покупця)</label><div class="row3"><input id="p1" type="number" min="0" required placeholder="50"><input id="p2" type="number" min="0" required placeholder="75"><input id="p3" type="number" min="0" required placeholder="120"></div><label>Фото (до 4 штук)<input id="ph" type="file" accept="image/*" multiple></label><div class="tag" id="pn2"></div><button class="btn" id="sv">Опублікувати</button>';
   const locked=!!(it&&sales.some(x=>x.itemId===it.id));
   if(it){
     f.querySelector("#ft").textContent="Редагування";
@@ -178,17 +180,17 @@ function renderAdd(it){
   f.onsubmit=async e=>{
     e.preventDefault();
     const sv=f.querySelector("#sv");sv.disabled=true;sv.textContent="Публікую...";
-    let photo="";const file=f.querySelector("#ph").files[0];
-    if(file)photo=await shrink(file);
+    const photos=[];for(const x of [...f.querySelector("#ph").files].slice(0,4))photos.push(await shrink(x));
+    const photo=photos[0]||"";
     const prices=[1,2,3].map(k=>Number(f.querySelector("#p"+k).value)).sort((a,b)=>a-b);
     if(it){
       const upd={title:f.querySelector("#t").value.trim(),desc:f.querySelector("#d").value.trim()};
-      if(photo)upd.photo=photo;
+      if(photos.length){upd.photo=photo;upd.photos=photos;}
       if(!locked)upd.prices=[1,2,3].map(k=>Number(f.querySelector("#p"+k).value)).sort((a,b)=>a-b);
       await db.collection("items").doc(it.id).update(upd);
       tab="mine";go("cabinet");return;
     }
-    await db.collection("items").add({title:f.querySelector("#t").value.trim(),desc:f.querySelector("#d").value.trim(),prices:prices,photo:photo,ownerId:user.uid,ownerName:pname("Продавець"),status:"open",createdAt:Date.now()});
+    await db.collection("items").add({title:f.querySelector("#t").value.trim(),desc:f.querySelector("#d").value.trim(),prices:prices,photo:photo,photos:photos,ownerId:user.uid,ownerName:pname("Продавець"),status:"open",createdAt:Date.now()});
     go("home");
   };
   app.appendChild(f);
