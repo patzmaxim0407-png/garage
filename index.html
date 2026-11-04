@@ -95,6 +95,8 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
   .top-actions .btn { font-size: .78rem !important; padding: 8px 12px !important; white-space: nowrap !important; }
   .footer { flex-direction: column !important; gap: 6px !important; }
 }
+.rowflex{display:flex;gap:12px;align-items:flex-start}
+.thumb{width:64px;height:64px;flex:0 0 64px;border-radius:12px;object-fit:cover;background:#E6EDE6;display:grid;place-items:center;color:var(--green);font-size:1.5rem}
 </style>
 </head>
 <body>
@@ -438,6 +440,15 @@ async function deleteAccount() {
     view = "home"; showNotice("Акаунт і всі ваші дані видалено.");
   } catch (er) {showNotice("Не вдалося видалити акаунт: " + (er.code || er.message), true);}
 }
+function thumbOf(item) {
+  const ph = item ? photosOf(item) : [];
+  if (ph.length) {const i = el("img", "thumb"); i.src = ph[0]; i.alt = (item && item.title) || ""; return i;}
+  return el("div", "thumb", item ? (icons[item.category] || "◇") : "◇");
+}
+function headRow(item, nodes) {
+  const r = el("div", "rowflex"), info = el("div"); info.style.minWidth = "0";
+  nodes.forEach(n => info.appendChild(n)); r.append(thumbOf(item), info); return r;
+}
 function renderCabinet() {
   const v = $("cabinetView"); v.innerHTML = "";
   const h = el("div", "section-head"); h.innerHTML = '<div><div class="eyebrow">Особистий кабінет</div><h2>Ваш кабінет</h2></div>';
@@ -453,7 +464,7 @@ function renderCabinet() {
     if (!sales.length) none("Запитів поки немає.");
     sales.slice().sort((a, b) => b.createdAt - a.createdAt).forEach(s => {
       const it = allItems.find(i => i.id === s.itemId), bx = el("div", "cardbox");
-      bx.append(el("b", "", s.itemTitle + ": " + money(s.price)), el("div", "muted small", "Хоче: " + s.buyerName), el("div", "", "Контакт: " + (s.buyerContact || "не вказано")));
+      bx.appendChild(headRow(it, [el("b", "", s.itemTitle + ": " + money(s.price)), el("div", "muted small", "Хоче: " + s.buyerName)])); bx.append(el("div", "", "Контакт: " + (s.buyerContact || "не вказано")));
       if (s.status === "accepted") {bx.appendChild(el("div", "muted small", "✓ Ви обрали цього покупця. Напишіть йому:")); bx.appendChild(linksRow(s.buyerContact, s.itemTitle, s.price));}
       else if (it && it.status === "given") bx.appendChild(el("div", "muted small", "Річ уже віддано іншому"));
       else {const b = el("button", "btn btn-primary btn-sm", "Обрати цього покупця"); b.style.marginTop = "10px"; b.onclick = () => choose(s); bx.appendChild(b);}
@@ -470,7 +481,7 @@ function renderCabinet() {
     }
     mine.forEach(i => {
       const bx = el("div", "cardbox"), n = sales.filter(s => s.itemId === i.id).length;
-      bx.append(el("b", "", i.title), el("div", "muted small", (i.prices || []).map(money).join(" / ") + " · " + (i.status === "pending" ? "чекає оплати" : i.status === "given" ? "передано" : "доступна") + " · запитів: " + n));
+      bx.appendChild(headRow(i, [el("b", "", i.title), el("div", "muted small", (i.prices || []).map(money).join(" / ") + " · " + (i.status === "pending" ? "чекає оплати" : i.status === "given" ? "передано" : "доступна") + " · запитів: " + n)]));
       const r = el("div", "row");
       const ed = el("button", "btn btn-soft btn-sm", "Редагувати"); ed.onclick = () => openForm(i);
       const g = i.status === "pending" ? el("button", "btn btn-primary btn-sm", "Сплатити 3 грн") : el("button", "btn btn-soft btn-sm", i.status === "given" ? "Повернути в список" : "Позначити переданою");
@@ -484,7 +495,7 @@ function renderCabinet() {
     if (!buys.length) none("Ви ще нічого не обирали.");
     buys.slice().sort((a, b) => b.createdAt - a.createdAt).forEach(s => {
       const it = allItems.find(i => i.id === s.itemId), bx = el("div", "cardbox");
-      bx.appendChild(el("b", "", s.itemTitle + ": " + money(s.price)));
+      bx.appendChild(headRow(it, [el("b", "", s.itemTitle + ": " + money(s.price))]));
       let st = "Очікує вибору продавця";
       if (s.status === "accepted") st = "🎉 Вас обрано! Контакт продавця: " + (s.sellerContact || "очікуйте повідомлення");
       else if (it && it.status === "given") st = "Річ передали іншому";
