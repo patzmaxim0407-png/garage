@@ -110,7 +110,7 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
 <main class="container">
   <div id="notice" role="status" aria-live="polite"></div>
   <div id="homeView">
-    <section class="hero">
+    <section class="hero" id="heroSec">
       <div>
         <div class="eyebrow">Символічні ціни · Добрі руки</div>
         <h1>Передай далі.</h1>
@@ -122,7 +122,7 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
       </aside>
     </section>
     <section>
-      <div class="section-head"><div><div class="eyebrow">Дай другий дім</div><h2>Речі, які передають далі</h2></div><span class="muted" id="itemCount">Завантаження…</span></div>
+      <div class="section-head"><div><div class="eyebrow" id="listEyebrow">Дай другий дім</div><h2 id="listTitle">Речі, які передають далі</h2></div><button class="btn btn-soft" id="allBtn" hidden>← Усі речі</button><span class="muted" id="itemCount">Завантаження…</span></div>
       <div class="toolbar">
         <div class="search-wrap"><span class="search-icon">⌕</span><input id="searchInput" type="search" placeholder="Пошук за назвою або описом…" autocomplete="off"></div>
         <select id="categoryFilter"><option value="">Усі категорії</option><option>Одяг</option><option>Дім</option><option>Техніка</option><option>Книги</option><option>Дитяче</option><option>Спорт</option><option>Інше</option></select>
@@ -180,7 +180,19 @@ const EMAILJS = {service: "", template: "", key: ""};
 const demoMode = !firebaseConfig.apiKey || firebaseConfig.apiKey.indexOf("ВСТАВТЕ") > -1;
 let auth = null, db = null, fns = null, currentUser = null, profile = {};
 let allItems = [], sales = [], buys = [], unsubs = [];
-let view = "home", tab = "sales", pending = null;
+let view = "home", tab = "sales", pending = null, sellerFilter = null, focusItem = null;
+const siteBase = () => location.origin + location.pathname;
+function readHash() {
+  const m = location.hash.slice(1).match(/^(seller|item)=([\w-]+)$/);
+  sellerFilter = m && m[1] === "seller" ? m[2] : null;
+  focusItem = m && m[1] === "item" ? m[2] : null;
+}
+async function shareLink(url, title) {
+  try {if (navigator.share) {await navigator.share({title: title || "GARAGE 2", url: url}); return;}}
+  catch (e) {if (e && e.name === "AbortError") return;}
+  try {await navigator.clipboard.writeText(url); showNotice("Посилання скопійовано: " + url);}
+  catch (e) {prompt("Скопіюйте посилання:", url);}
+}
 const $ = id => document.getElementById(id);
 const el = (tag, cls, text) => {const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e;};
 const esc = v => String(v == null ? "" : v).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -288,10 +300,17 @@ function render() {
 function renderHome() {
   const q = $("searchInput").value.trim().toLocaleLowerCase("uk"), cat = $("categoryFilter").value, st = $("statusFilter").value;
   const list = allItems.filter(i => {
+    if (focusItem) return i.id === focusItem && i.status !== "pending";
+    if (sellerFilter && i.ownerId !== sellerFilter) return false;
     const hay = ((i.title || "") + " " + (i.desc || i.description || "") + " " + (i.category || "")).toLocaleLowerCase("uk");
     const given = i.status === "given";
     return i.status !== "pending" && (!q || hay.includes(q)) && (!cat || (i.category || "Інше") === cat) && (st === "all" || (st === "given" ? given : !given));
   });
+  const sl = sellerFilter ? allItems.find(i => i.ownerId === sellerFilter) : null;
+  $("heroSec").hidden = !!(sellerFilter || focusItem);
+  $("allBtn").hidden = !(sellerFilter || focusItem);
+  $("listEyebrow").textContent = sellerFilter ? "Продавець" : "Дай другий дім";
+  $("listTitle").textContent = sellerFilter ? "Речі від " + (sl ? sl.ownerName : "продавця") : (focusItem ? "Річ за посиланням" : "Речі, які передають далі");
   $("itemCount").textContent = list.length + " " + (list.length === 1 ? "річ" : "речей");
   const g = $("itemsGrid"); g.innerHTML = ""; $("emptyState").hidden = list.length > 0;
   list.forEach(i => g.appendChild(card(i)));
@@ -306,7 +325,7 @@ function card(it) {
     (ph.length > 1 ? '<div class="hint">← гортайте фото (' + ph.length + ") →</div>" : "") +
     '<div class="item-body"><div class="item-meta"><span>' + esc(it.category || "Інше") + '</span><span class="pill ' + (given ? "given" : "") + '">' + (given ? "Передано далі" : "Доступна") + "</span></div>" +
     "<h3>" + esc(it.title || "Без назви") + '</h3><div class="item-desc">' + esc(it.desc || it.description || "Без опису") + "</div>" +
-    '<div class="muted small">Від: ' + esc(it.ownerName || "Користувач") + '</div><div class="act"></div></div>';
+    '<div class="muted small">Від: ' + (it.ownerId ? '<a href="#seller=' + esc(it.ownerId) + '" style="color:inherit;text-decoration:underline">' + esc(it.ownerName || "Користувач") + '</a>' : esc(it.ownerName || "Користувач")) + '</div><div class="act"></div></div>';
   const act = c.querySelector(".act");
   if (given) act.appendChild(el("div", "muted small", "✓ Річ уже передано"));
   else if (own) act.appendChild(el("div", "muted small", "Це ваша річ"));
@@ -315,6 +334,11 @@ function card(it) {
     const p = el("div", "prices");
     (it.prices || [it.price || 0]).forEach(v => {const b = el("button", "", money(v)); b.type = "button"; b.onclick = () => pickPrice(it, v); p.appendChild(b);});
     act.appendChild(p);
+  }
+  if (!it.demo && !given) {
+    const sh = el("button", "btn btn-soft btn-sm", "↗ Поділитись"); sh.type = "button"; sh.style.marginTop = "8px";
+    sh.onclick = () => shareLink(siteBase() + "#item=" + it.id, it.title);
+    c.querySelector(".item-body").appendChild(sh);
   }
   return c;
 }
@@ -439,6 +463,11 @@ function renderCabinet() {
   if (tab === "mine") {
     const mine = allItems.filter(i => i.ownerId === currentUser.uid);
     if (!mine.length) none("Ви ще нічого не віддавали.");
+    if (mine.some(i => i.status === "open")) {
+      const sb = el("button", "btn btn-primary", "↗ Поділитись усіма моїми речами"); sb.style.marginBottom = "12px";
+      sb.onclick = () => shareLink(siteBase() + "#seller=" + currentUser.uid, "Мої речі на GARAGE 2");
+      v.appendChild(sb);
+    }
     mine.forEach(i => {
       const bx = el("div", "cardbox"), n = sales.filter(s => s.itemId === i.id).length;
       bx.append(el("b", "", i.title), el("div", "muted small", (i.prices || []).map(money).join(" / ") + " · " + (i.status === "pending" ? "чекає оплати" : i.status === "given" ? "передано" : "доступна") + " · запитів: " + n));
@@ -447,7 +476,8 @@ function renderCabinet() {
       const g = i.status === "pending" ? el("button", "btn btn-primary btn-sm", "Сплатити 3 грн") : el("button", "btn btn-soft btn-sm", i.status === "given" ? "Повернути в список" : "Позначити переданою");
       g.onclick = i.status === "pending" ? () => payFor(i.id) : () => db.collection("items").doc(i.id).update({status: i.status === "given" ? "open" : "given"});
       const d = el("button", "btn btn-danger btn-sm", "Видалити"); d.onclick = () => {if (confirm("Видалити «" + i.title + "»?")) db.collection("items").doc(i.id).delete();};
-      r.append(ed, g, d); bx.appendChild(r); v.appendChild(bx);
+      const shr = el("button", "btn btn-soft btn-sm", "↗ Поділитись"); shr.onclick = () => shareLink(siteBase() + "#item=" + i.id, i.title);
+      if (i.status === "open") r.append(ed, g, shr, d); else r.append(ed, g, d); bx.appendChild(r); v.appendChild(bx);
     });
   }
   if (tab === "buys") {
@@ -488,11 +518,14 @@ function renderCabinet() {
 $("loginBtn").onclick = login;
 $("logoutBtn").onclick = () => {if (auth) auth.signOut(); setView("home"); showNotice("Ви вийшли з акаунта.");};
 $("cabinetBtn").onclick = () => setView("cabinet");
-$("brand").onclick = () => setView("home");
+$("brand").onclick = () => {if (location.hash) location.hash = ""; setView("home");};
+$("allBtn").onclick = () => {location.hash = "";};
+window.addEventListener("hashchange", () => {readHash(); view = "home"; render(); window.scrollTo(0, 0);});
 $("heroAddBtn").onclick = () => openForm(null);
 ["searchInput", "categoryFilter", "statusFilter"].forEach(id => $(id).addEventListener(id === "searchInput" ? "input" : "change", renderHome));
 ["closeDialog", "cancelDialog"].forEach(id => $(id).onclick = () => $("itemDialog").close());
 ["closeContact", "cancelContact"].forEach(id => $(id).onclick = () => $("contactDialog").close());
+readHash();
 startApp();
 </script>
 </body>
