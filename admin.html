@@ -133,9 +133,9 @@ function render() {
       return [esc(i.title), sellerOf(i), pill(s[0], s[1]), fmt(i.createdAt), i.payError ? esc(i.payError) + '<br><span class="muted small">' + fmt(i.payErrorAt) + "</span>" : "—"]; });
   }
   if (tab === "requests") {
-    head = ["Річ", "Покупець", "Продавець", "Ціна", "Статус", "Дата"];
+    head = ["Річ", "Покупець", "Продавець", "Ціна", "Статус", "Дата", "ТТН"];
     rows = D.requests.slice().sort((a, b) => b.createdAt - a.createdAt).map(r => { const u = U[r.sellerId];
-      return [esc(r.itemTitle), esc(r.buyerName), esc((u && (u.name || u.email)) || "—"), r.price, pill(r.status === "accepted" ? "Покупця обрано" : "Очікує вибору", r.status === "accepted" ? "sold" : "wait"), fmt(r.createdAt)]; });
+      return [esc(r.itemTitle), esc(r.buyerName), esc((u && (u.name || u.email)) || "—"), r.price, pill(r.status === "accepted" ? "Покупця обрано" : "Очікує вибору", r.status === "accepted" ? "sold" : "wait"), fmt(r.createdAt), esc(r.ttn || "—")]; });
   }
   const shown = rows.filter(r => !q || r.join(" ").replace(/<[^>]+>/g, " ").toLowerCase().includes(q));
   $("thead").innerHTML = "<tr>" + head.map(h => "<th>" + h + "</th>").join("") + "</tr>";
