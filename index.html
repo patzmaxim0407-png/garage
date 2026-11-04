@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#1B4D3E">
-  <title>GARAGE 2 — Маркет ретейлу</title>
+  <title>GARAGE 2 — Маркет ресейлу</title>
 
   <style>
     :root {
@@ -27,8 +27,7 @@
       margin: 0;
       background: var(--cream);
       color: var(--ink);
-      font: 16px/1.5 Inter, -apple-system,
-        BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font: 16px/1.5 Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
     button, input, textarea, select { font: inherit; }
@@ -319,11 +318,20 @@
       overflow-wrap: anywhere;
     }
 
-    .price {
-      margin: 16px 0 12px;
-      font-weight: 850;
-      font-size: 1.12rem;
-      color: var(--green);
+    .price-options {
+      margin: 14px 0 10px;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .price-badge {
+      background: var(--accent);
+      color: var(--green-deep);
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: .9rem;
     }
 
     .item-footer {
@@ -371,7 +379,7 @@
     dialog {
       border: 0;
       padding: 0;
-      width: min(560px, calc(100% - 28px));
+      width: min(600px, calc(100% - 28px));
       border-radius: 22px;
       box-shadow: 0 25px 90px rgba(0,0,0,.25);
     }
@@ -400,7 +408,7 @@
       font-size: 1.6rem;
     }
 
-    .form-body { padding: 24px; }
+    .form-body { padding: 24px; max-height: 80vh; overflow-y: auto; }
 
     .field { margin-bottom: 16px; }
 
@@ -422,8 +430,14 @@
     }
 
     .field textarea {
-      min-height: 100px;
+      min-height: 90px;
       resize: vertical;
+    }
+
+    .prices-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
     }
 
     .form-actions {
@@ -458,6 +472,7 @@
       }
       .hero-card { min-height: 190px; }
       .grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .prices-grid { grid-template-columns: 1fr; }
     }
 
     @media (max-width: 560px) {
@@ -488,13 +503,17 @@
     <div class="topbar-inner">
       <div class="brand">
         GARAGE 2
-        <small>РЕЧІ ДЛЯ НАСТУПНОГО ЖИТТЯ</small>
+        <small>МАРКЕТ РЕСЕЙЛУ</small>
       </div>
 
       <div class="top-actions">
         <span class="user-status" id="userStatus">
           Ви не увійшли
         </span>
+
+        <button class="btn btn-light" id="cabinetBtn" hidden>
+          Особистий кабінет
+        </button>
 
         <button class="btn btn-light" id="loginBtn">
           Увійти через Google
@@ -512,7 +531,7 @@
     <!-- Головний екран -->
     <section class="hero">
       <div>
-        <div class="eyebrow">Маркет ретейлу</div>
+        <div class="eyebrow">Маркет ресейлу</div>
 
         <h1>
           Передай<br>
@@ -520,10 +539,8 @@
         </h1>
 
         <p>
-          Речі, які більше не потрібні тобі, можуть стати
-          знахідкою для когось іншого. Не обов’язково
-          викидати чи продавати дорого — передай далі
-          за символічну ціну або просто так.
+          Сучасний простір усвідомленого споживання. Обирайте серед трьох опцій ціни, 
+          надавайте речам друге життя легко та безпечно.
         </p>
 
         <button class="btn btn-primary" id="heroAddBtn">
@@ -536,12 +553,12 @@
 
         <div>
           <strong>
-            Символічні ціни.<br>
+            Гнучкі ціни.<br>
             Добрі руки.
           </strong>
 
           <span>
-            Менше зайвого. Більше повторного використання.
+            Менше зайвого. Більше циклічності.
           </span>
         </div>
       </aside>
@@ -552,8 +569,8 @@
 
       <div class="section-head">
         <div>
-          <div class="eyebrow">Тут починаються нові історії.</div>
-          <h2>Речі, які передають далі</h2>
+          <div class="eyebrow">Знайди свою знахідку</div>
+          <h2>Речі з історією</h2>
         </div>
 
         <span class="muted" id="itemCount">
@@ -609,50 +626,33 @@
     <footer class="footer">
       <div>
         <b>GARAGE 2</b><br>
-        Маркет ретейлу — передай далі.
+        Маркет ресейлу — передай далі.
       </div>
 
       <div>
-        Символічні ціни. Добрі руки.
+        Сучасний підхід до вживаних речей.
       </div>
     </footer>
 
   </main>
 
-  <!-- Вікно додавання речі -->
+  <!-- Вікно додавання / редагування речі -->
   <dialog id="itemDialog">
-
     <div class="modal-head">
       <h2 id="dialogTitle">Додати річ</h2>
-
-      <button
-        class="close"
-        type="button"
-        id="closeDialog"
-        aria-label="Закрити"
-      >
-        ×
-      </button>
+      <button class="close" type="button" id="closeDialog">×</button>
     </div>
 
     <form class="form-body" id="itemForm">
-
       <input type="hidden" id="editingId">
 
       <div class="field">
         <label for="itemTitle">Назва *</label>
-
-        <input
-          id="itemTitle"
-          maxlength="90"
-          required
-          placeholder="Наприклад, настільна лампа"
-        >
+        <input id="itemTitle" maxlength="90" required placeholder="Наприклад, вінтажна куртка">
       </div>
 
       <div class="field">
         <label for="itemCategory">Категорія *</label>
-
         <select id="itemCategory" required>
           <option value="Одяг">Одяг</option>
           <option value="Дім">Дім</option>
@@ -666,90 +666,88 @@
 
       <div class="field">
         <label for="itemDescription">Опис</label>
+        <textarea id="itemDescription" maxlength="1200" placeholder="Стан, розмір, особливості…"></textarea>
+      </div>
 
-        <textarea
-          id="itemDescription"
-          maxlength="1200"
-          placeholder="Стан речі, розмір, особливості…"
-        ></textarea>
+      <!-- ТРИ ОПЦІЇ ЦІНИ -->
+      <div class="field">
+        <label>Три варіанти ціни (грн, 0 — безкоштовно)</label>
+        <div class="prices-grid">
+          <input id="price1" type="number" min="0" placeholder="Ціна 1" value="0" required>
+          <input id="price2" type="number" min="0" placeholder="Ціна 2 (опція)">
+          <input id="price3" type="number" min="0" placeholder="Ціна 3 (опція)">
+        </div>
       </div>
 
       <div class="field">
-        <label for="itemPrice">
-          Ціна, грн (0 — віддам безкоштовно)
-        </label>
-
-        <input
-          id="itemPrice"
-          type="number"
-          min="0"
-          max="1000000"
-          step="1"
-          value="0"
-          required
-        >
+        <label for="itemContact">Контакт для зв’язку (Telegram @username або номер телефону) *</label>
+        <input id="itemContact" maxlength="160" required placeholder="@username або +380...">
       </div>
 
       <div class="field">
-        <label for="itemContact">
-          Контакт для зв’язку *
-        </label>
-
-        <input
-          id="itemContact"
-          maxlength="160"
-          required
-          placeholder="Telegram, телефон або інший контакт"
-        >
-      </div>
-
-      <div class="field">
-        <label for="itemImage">
-          Фото (необов’язково)
-        </label>
-
-        <input
-          id="itemImage"
-          type="file"
-          accept="image/*"
-        >
-
-        <small class="muted">
-          Фото зменшується у браузері перед завантаженням.
-        </small>
+        <label for="itemImage">Фото (необов’язково)</label>
+        <input id="itemImage" type="file" accept="image/*">
       </div>
 
       <div class="form-actions">
-
-        <button
-          type="button"
-          class="btn btn-soft"
-          id="cancelDialog"
-        >
-          Скасувати
-        </button>
-
-        <button
-          class="btn btn-primary"
-          id="saveBtn"
-          type="submit"
-        >
-          Опублікувати
-        </button>
-
+        <button type="button" class="btn btn-soft" id="cancelDialog">Скасувати</button>
+        <button class="btn btn-primary" id="saveBtn" type="submit">Опублікувати</button>
       </div>
-
     </form>
   </dialog>
 
-  <!-- Firebase -->
+  <!-- Особистий кабінет -->
+  <dialog id="cabinetDialog">
+    <div class="modal-head">
+      <h2>Особистий кабінет</h2>
+      <button class="close" type="button" id="closeCabinet">×</button>
+    </div>
+    <div class="form-body">
+      <h3>Мої дані</h3>
+      <div class="field">
+        <label>Ваше ім'я / назва профілю</label>
+        <input id="profileName" type="text">
+      </div>
+      <button class="btn btn-primary" id="saveProfileBtn" type="button">Зберегти профіль</button>
+
+      <hr style="margin: 24px 0; border: 0; border-top: 1px solid var(--line);">
+
+      <h3>Мої товари та відгуки покупців</h3>
+      <div id="myItemsContainer"></div>
+    </div>
+  </dialog>
+
+  <!-- Модальне вікно відгуку покупця -->
+  <dialog id="buyDialog">
+    <div class="modal-head">
+      <h2 id="buyModalTitle">Зв'язатися з продавцем</h2>
+      <button class="close" type="button" id="closeBuyDialog">×</button>
+    </div>
+    <div class="form-body">
+      <p class="muted">Оберіть зручну ціну та залиште свої контактні дані, щоб продавець міг зв'язатися з вами:</p>
+      
+      <div class="field">
+        <label>Оберіть цінову опцію</label>
+        <select id="selectedPriceOption"></select>
+      </div>
+
+      <div class="field">
+        <label>Ваш контакт (Telegram або Телефон)</label>
+        <input id="buyerContactInput" placeholder="@username або +380..." required>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-primary" id="submitInquiryBtn" type="button">Надіслати запит продавцю</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
   <script>
-    // Firebase Console → Project settings → Your apps
-    // Замініть значення на конфігурацію свого проєкту.
     const firebaseConfig = {
       apiKey: "AIzaSyAiQAmjnqBN82tIskGDpE7HYaf6R7UNlMA",
       authDomain: "garage-86431.firebaseapp.com",
@@ -757,18 +755,16 @@
       appId: "1:510985201682:web:55e8d8e4642c0a397710cb"
     };
 
-    const demoMode =
-      !firebaseConfig.apiKey ||
-      firebaseConfig.apiKey === "ВСТАВТЕ_APIKEY";
+    const demoMode = !firebaseConfig.apiKey || firebaseConfig.apiKey === "ВСТАВТЕ_APIKEY";
 
     let auth = null;
     let db = null;
     let currentUser = null;
     let allItems = [];
     let unsubscribeItems = null;
+    let currentInquiryItem = null;
 
     const $ = id => document.getElementById(id);
-
     const grid = $("itemsGrid");
     const empty = $("emptyState");
     const notice = $("notice");
@@ -779,10 +775,11 @@
         title: "Керамічна ваза",
         category: "Дім",
         description: "Лаконічна ваза у хорошому стані.",
-        price: 100,
+        prices: [100, 80, 50],
         status: "available",
-        contact: "Приклад контакту",
+        contact: "@demo_seller",
         ownerName: "GARAGE 2",
+        inquiries: [],
         demo: true
       },
       {
@@ -790,93 +787,69 @@
         title: "Книги для нового читача",
         category: "Книги",
         description: "Кілька книжок, які хочеться передати далі.",
-        price: 0,
+        prices: [0],
         status: "available",
-        contact: "Приклад контакту",
+        contact: "+380991234567",
         ownerName: "GARAGE 2",
-        demo: true
-      },
-      {
-        id: "demo3",
-        title: "Светр базового кольору",
-        category: "Одяг",
-        description: "Приклад картки речі.",
-        price: 150,
-        status: "available",
-        contact: "Приклад контакту",
-        ownerName: "GARAGE 2",
+        inquiries: [],
         demo: true
       }
     ];
 
     function showNotice(message, isError = false) {
       notice.textContent = message;
-      notice.className = message
-        ? "notice" + (isError ? " error" : "")
-        : "";
+      notice.className = message ? "notice" + (isError ? " error" : "") : "";
     }
 
     function escapeHtml(value = "") {
       return String(value).replace(/[&<>"']/g, c => ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;"
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
       }[c]));
     }
 
-    function money(price) {
-      const n = Number(price || 0);
+    function formatPrices(prices = []) {
+      if (!prices || !prices.length) return "Договірна";
+      return prices
+        .filter(p => p !== "" && p !== null && !isNaN(p))
+        .map(p => Number(p) <= 0 ? "Безкоштовно" : `${Number(p).toLocaleString("uk-UA")} грн`)
+        .join(" / ");
+    }
 
-      return n <= 0
-        ? "Віддам безкоштовно"
-        : `${n.toLocaleString("uk-UA")} грн`;
+    // Інтелектуальний зв'язок (Telegram чи месенджери)
+    function openContactLink(contactStr) {
+      const clean = contactStr.trim();
+      if (clean.startsWith("@")) {
+        const username = clean.substring(1);
+        window.open(`https://t.me/${username}`, "_blank");
+      } else if (clean.startsWith("http://") || clean.startsWith("https://")) {
+        window.open(clean, "_blank");
+      } else {
+        window.open(`https://t.me/${clean.replace(/[^0-9+]/g, '')}`, "_blank") || alert(`Зв'яжіться за контактом: ${clean}`);
+      }
     }
 
     function iconFor(category) {
       return ({
-        "Одяг": "♧",
-        "Дім": "⌂",
-        "Техніка": "⌁",
-        "Книги": "▤",
-        "Дитяче": "☆",
-        "Спорт": "↗",
-        "Інше": "◇"
+        "Одяг": "♧", "Дім": "⌂", "Техніка": "⌁", "Книги": "▤",
+        "Дитяче": "☆", "Спорт": "↗", "Інше": "◇"
       })[category] || "◇";
     }
 
-    // Пошук та фільтрація
     function renderItems() {
-      const query = $("searchInput")
-        .value.trim().toLocaleLowerCase("uk");
-
+      const query = $("searchInput").value.trim().toLocaleLowerCase("uk");
       const category = $("categoryFilter").value;
       const status = $("statusFilter").value;
 
       const items = allItems.filter(item => {
-        const haystack = `
-          ${item.title || ""}
-          ${item.description || ""}
-          ${item.category || ""}
-        `.toLocaleLowerCase("uk");
-
+        const haystack = `${item.title || ""} ${item.description || ""} ${item.category || ""}`.toLocaleLowerCase("uk");
         return (
           (!query || haystack.includes(query)) &&
           (!category || item.category === category) &&
-          (
-            status === "all" ||
-            (
-              status === "given"
-                ? item.status === "given"
-                : item.status !== "given"
-            )
-          )
+          (status === "all" || (status === "given" ? item.status === "given" : item.status !== "given"))
         );
       });
 
-      $("itemCount").textContent =
-        `${items.length} ${items.length === 1 ? "річ" : "речей"}`;
+      $("itemCount").textContent = `${items.length} ${items.length === 1 ? "річ" : "речей"}`;
 
       grid.innerHTML = "";
       empty.hidden = items.length > 0;
@@ -886,114 +859,70 @@
         card.className = "item";
 
         const visual = item.imageUrl
-          ? `<div class="item-visual">
-               <img src="${escapeHtml(item.imageUrl)}"
-                    alt="${escapeHtml(item.title)}">
-             </div>`
-          : `<div class="item-visual">
-               ${iconFor(item.category)}
-             </div>`;
+          ? `<div class="item-visual"><img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.title)}"></div>`
+          : `<div class="item-visual">${iconFor(item.category)}</div>`;
 
-        const isOwner =
-          currentUser &&
-          item.ownerUid === currentUser.uid &&
-          !item.demo;
-
+        const isOwner = currentUser && item.ownerUid === currentUser.uid && !item.demo;
         const isGiven = item.status === "given";
+
+        // Формуємо плашки цін
+        let priceHtml = "";
+        if (item.prices && Array.isArray(item.prices)) {
+          priceHtml = `<div class="price-options">` + 
+            item.prices.map(p => `<span class="price-badge">${Number(p) <= 0 ? "Безкоштовно" : Number(p) + " грн"}</span>`).join("") + 
+            `</div>`;
+        } else {
+          priceHtml = `<div class="price-options"><span class="price-badge">${money(item.price || 0)}</span></div>`;
+        }
 
         card.innerHTML = `
           ${visual}
-
           <div class="item-body">
-
             <div class="item-meta">
               <span>${escapeHtml(item.category || "Інше")}</span>
-
-              <span class="pill ${isGiven ? "given" : ""}">
-                ${isGiven ? "Передано далі" : "Доступна"}
-              </span>
+              <span class="pill ${isGiven ? "given" : ""}">${isGiven ? "Передано далі" : "Доступна"}</span>
             </div>
-
             <h3>${escapeHtml(item.title || "Без назви")}</h3>
-
-            <div class="item-desc">
-              ${escapeHtml(item.description || "Без опису")}
-            </div>
-
-            <div class="price">${money(item.price)}</div>
-
-            <div class="muted" style="font-size:.86rem">
-              Від: ${escapeHtml(item.ownerName || "Користувач GARAGE 2")}
-            </div>
+            <div class="item-desc">${escapeHtml(item.description || "Без опису")}</div>
+            ${priceHtml}
+            <div class="muted" style="font-size:.86rem">Від: ${escapeHtml(item.ownerName || "GARAGE 2")}</div>
 
             <div class="item-footer">
-              ${
-                !isGiven
-                  ? `<button class="btn btn-soft contact-btn" type="button">
-                       Зв’язатися
-                     </button>`
-                  : ""
-              }
-
-              ${
-                isOwner && !isGiven
-                  ? `<button class="btn btn-outline given-btn" type="button">
-                       Передано
-                     </button>`
-                  : ""
-              }
-
-              ${
-                isOwner
-                  ? `<button class="btn btn-danger delete-btn" type="button">
-                       Видалити
-                     </button>`
-                  : ""
-              }
+              ${!isGiven ? `<button class="btn btn-soft contact-btn" type="button">Зв'язатися / Купити</button>` : ""}
+              ${isOwner && !isGiven ? `<button class="btn btn-outline manage-btn" type="button">Кабінет / Запити</button>` : ""}
+              ${isOwner ? `<button class="btn btn-outline edit-btn" type="button">Редагувати</button>` : ""}
+              ${isOwner ? `<button class="btn btn-danger delete-btn" type="button">Видалити</button>` : ""}
             </div>
-
           </div>
         `;
 
+        // Кнопка зв'язку для покупця
         const contactBtn = card.querySelector(".contact-btn");
-
         if (contactBtn) {
           contactBtn.addEventListener("click", () => {
-            if (!currentUser && !item.demo) {
-              showNotice(
-                "Увійдіть через Google, щоб переглянути контакт продавця.",
-                true
-              );
-              return;
-            }
-
             if (item.demo) {
-              showNotice(
-                "Це демонстраційна картка. Увійдіть і опублікуйте реальну річ."
-              );
+              alert("Це демонстраційна річ. Увійдіть через Google, щоб публікувати та купувати реальні речі.");
               return;
             }
-
-            showNotice(
-              `Контакт для «${item.title}»: ${item.contact || "Контакт не вказано"}`
-            );
+            openBuyDialog(item);
           });
         }
 
-        const givenBtn = card.querySelector(".given-btn");
+        // Кнопка редагування
+        const editBtn = card.querySelector(".edit-btn");
+        if (editBtn) {
+          editBtn.addEventListener("click", () => openForm(item));
+        }
 
-        if (givenBtn) {
-          givenBtn.addEventListener("click", () =>
-            updateItemStatus(item.id, "given")
-          );
+        // Кнопка управління/продажу в кабінеті
+        const manageBtn = card.querySelector(".manage-btn");
+        if (manageBtn) {
+          manageBtn.addEventListener("click", () => openCabinet());
         }
 
         const deleteBtn = card.querySelector(".delete-btn");
-
         if (deleteBtn) {
-          deleteBtn.addEventListener("click", () =>
-            deleteItem(item.id)
-          );
+          deleteBtn.addEventListener("click", () => deleteItem(item.id));
         }
 
         grid.appendChild(card);
@@ -1003,194 +932,248 @@
     function startDemo() {
       allItems = sampleItems.slice();
       renderItems();
-
-      showNotice(
-        "Попередній перегляд: Firebase ще не налаштовано. " +
-        "Додайте Firebase web config, щоб увімкнути публікації."
-      );
-
-      $("loginBtn").textContent =
-        "Google — налаштуйте Firebase";
-
+      showNotice("Демо-режим: налаштуйте Firebase у коді для повноцінної роботи.");
+      $("loginBtn").textContent = "Google — потрібен Firebase";
       $("loginBtn").disabled = true;
     }
 
-    // Підключення Firebase
     function startApp() {
       try {
-        if (demoMode) {
-          startDemo();
-          return;
-        }
-
+        if (demoMode) { startDemo(); return; }
         firebase.initializeApp(firebaseConfig);
-
         auth = firebase.auth();
         db = firebase.firestore();
-
       } catch (e) {
-        console.error(e);
         startDemo();
         return;
       }
 
       auth.onAuthStateChanged(user => {
         currentUser = user;
-
-        $("userStatus").textContent = user
-          ? (user.displayName || user.email || "Ви увійшли")
-          : "Ви не увійшли";
-
+        $("userStatus").textContent = user ? (user.displayName || user.email || "Ви увійшли") : "Ви не увійшли";
         $("loginBtn").hidden = !!user;
         $("logoutBtn").hidden = !user;
+        $("cabinetBtn").hidden = !user;
 
         if (unsubscribeItems) unsubscribeItems();
 
-        unsubscribeItems = db
-          .collection("items")
-          .onSnapshot(snapshot => {
-
-            allItems = snapshot.docs.map(doc => ({
-              id: doc.id,
-              ...doc.data()
-            }));
-
-            renderItems();
-
-            if (!allItems.length) {
-              showNotice(
-                "Поки що немає опублікованих речей. Додайте першу!"
-              );
-            } else {
-              showNotice("");
-            }
-
-          }, error => {
-            console.error(error);
-
-            showNotice(
-              "Не вдалося завантажити речі. Перевірте налаштування Firestore та Security Rules.",
-              true
-            );
-          });
+        unsubscribeItems = db.collection("items").onSnapshot(snapshot => {
+          allItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          renderItems();
+          if (!allItems.length) {
+            showNotice("Поки немає речей. Додайте першу!");
+          } else {
+            showNotice("");
+          }
+        }, error => {
+          console.error(error);
+          showNotice("Помилка завантаження даних із Firestore.", true);
+        });
       });
     }
 
-    // Google-вхід
     async function login() {
       if (!auth) return;
-
       try {
-        await auth.signInWithPopup(
-          new firebase.auth.GoogleAuthProvider()
-        );
-
+        await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
         showNotice("");
-
       } catch (e) {
-        showNotice(
-          "Не вдалося увійти: " + (e.message || "спробуйте ще раз"),
-          true
-        );
+        showNotice("Помилка входу: " + e.message, true);
       }
     }
 
-    // Вихід
     async function logout() {
       if (!auth) return;
-
       try {
         await auth.signOut();
         showNotice("Ви вийшли з акаунта.");
-
       } catch (e) {
-        showNotice("Не вдалося вийти з акаунта.", true);
+        showNotice("Помилка виходу.", true);
       }
     }
 
-    // Відкрити форму
+    // Вікно додавання/редагування
     function openForm(item = null) {
       if (demoMode || !currentUser) {
-        showNotice(
-          demoMode
-            ? "Щоб публікувати речі, спершу налаштуйте Firebase."
-            : "Увійдіть через Google, щоб додати річ.",
-          true
-        );
-
+        showNotice("Увійдіть через Google, щоб керувати речами.", true);
         if (!demoMode) login();
-
         return;
       }
 
       $("itemForm").reset();
-
       $("editingId").value = item ? item.id : "";
-
-      $("dialogTitle").textContent =
-        item ? "Редагувати річ" : "Додати річ";
-
-      $("saveBtn").textContent =
-        item ? "Зберегти зміни" : "Опублікувати";
+      $("dialogTitle").textContent = item ? "Редагувати річ" : "Додати річ";
+      $("saveBtn").textContent = item ? "Зберегти зміни" : "Опублікувати";
 
       if (item) {
         $("itemTitle").value = item.title || "";
         $("itemCategory").value = item.category || "Інше";
         $("itemDescription").value = item.description || "";
-        $("itemPrice").value = Number(item.price || 0);
+        
+        const prices = item.prices || [item.price || 0];
+        $("price1").value = prices[0] !== undefined ? prices[0] : 0;
+        $("price2").value = prices[1] !== undefined ? prices[1] : "";
+        $("price3").value = prices[2] !== undefined ? prices[2] : "";
         $("itemContact").value = item.contact || "";
+      } else {
+        $("price1").value = 0;
+        $("itemContact").value = currentUser.email || "";
       }
 
       $("itemDialog").showModal();
     }
 
-    // Стиснення фото
+    // Відкрити особистий кабінет
+    function openCabinet() {
+      if (!currentUser) return;
+      $("profileName").value = currentUser.displayName || "";
+      renderMyCabinetItems();
+      $("cabinetDialog").showModal();
+    }
+
+    function renderMyCabinetItems() {
+      const container = $("myItemsContainer");
+      const myItems = allItems.filter(i => i.ownerUid === currentUser.uid);
+
+      if (!myItems.length) {
+        container.innerHTML = `<p class="muted">У вас поки немає опублікованих речей.</p>`;
+        return;
+      }
+
+      container.innerHTML = myItems.map(item => {
+        const inquiries = item.inquiries || [];
+        const isGiven = item.status === "given";
+
+        let inquiriesHtml = "";
+        if (inquiries.length > 0) {
+          inquiriesHtml = `<div style="margin-top:10px; background:var(--cream); padding:10px; border-radius:10px;">
+            <strong>Відгукнулися покупці:</strong><br>
+            <ul>` + inquiries.map((inq, idx) => `
+              <li style="margin: 6px 0;">
+                Контакт: <b>${escapeHtml(inq.contact)}</b> (Ціна: ${inq.chosenPrice} грн) 
+                ${!isGiven ? `<button class="btn btn-primary" style="font-size:0.75rem; padding:3px 8px; margin-left:8px;" onclick="confirmSale('${item.id}', '${inq.contact}')">Підтвердити продаж</button>` : ""}
+              </li>
+            `).join("") + `</ul></div>`;
+        } else {
+          inquiriesHtml = `<p class="muted" style="font-size:0.85rem; margin-top:6px;">Ще ніхто не залишив запит на цей товар.</p>`;
+        }
+
+        return `
+          <div style="border:1px solid var(--line); border-radius:12px; padding:14px; margin-bottom:12px; background:white;">
+            <strong>${escapeHtml(item.title)}</strong> — <span class="muted">${item.category}</span>
+            <div style="font-size:0.9rem;">Статус: <b>${isGiven ? "Передано далі" : "Активно"}</b></div>
+            ${inquiriesHtml}
+            <div style="margin-top:10px; display:flex; gap:8px;">
+              <button class="btn btn-outline" style="font-size:0.8rem; padding:6px 10px;" onclick="openFormById('${item.id}')">Редагувати</button>
+              <button class="btn btn-danger" style="font-size:0.8rem; padding:6px 10px;" onclick="deleteItem('${item.id}')">Видалити</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    window.openFormById = function(id) {
+      $("cabinetDialog").close();
+      const item = allItems.find(i => i.id === id);
+      if (item) openForm(item);
+    }
+
+    // Підтвердження продажу покупцю
+    window.confirmSale = async function(itemId, buyerContact) {
+      if (!confirm(`Підтвердити продаж та відкрити чат із покупцем (${buyerContact})?`)) return;
+      try {
+        await db.collection("items").doc(itemId).update({
+          status: "given",
+          buyerContact: buyerContact,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        showNotice("Продаж успішно підтверджено! Статус змінено на 'Передано далі'.");
+        openContactLink(buyerContact);
+        renderMyCabinetItems();
+      } catch (e) {
+        showNotice("Помилка оновлення статусу.", true);
+      }
+    }
+
+    // Збереження профілю
+    async function saveProfile() {
+      if (!currentUser) return;
+      const newName = $("profileName").value.trim();
+      try {
+        await currentUser.updateProfile({ displayName: newName });
+        $("userStatus").textContent = newName || currentUser.email;
+        showNotice("Профіль успішно оновлено!");
+        $("cabinetDialog").close();
+      } catch (e) {
+        showNotice("Помилка збереження профілю.", true);
+      }
+    }
+
+    // Вікно зв'язку для покупця (вибір опції ціни та залишення контакту)
+    function openBuyDialog(item) {
+      currentInquiryItem = item;
+      const select = $("selectedPriceOption");
+      select.innerHTML = "";
+      
+      const prices = item.prices && item.prices.length ? item.prices : [item.price || 0];
+      prices.forEach(p => {
+        const opt = document.createElement("option");
+        opt.value = p;
+        opt.textContent = Number(p) <= 0 ? "Безкоштовно" : `${Number(p).toLocaleString("uk-UA")} грн`;
+        select.appendChild(opt);
+      });
+
+      $("buyerContactInput").value = "";
+      $("buyDialog").showModal();
+    }
+
+    async function submitInquiry() {
+      if (!currentInquiryItem) return;
+      const buyerContact = $("buyerContactInput").value.trim();
+      const chosenPrice = $("selectedPriceOption").value;
+
+      if (!buyerContact) {
+        alert("Будь ласка, вкажіть ваш контакт.");
+        return;
+      }
+
+      try {
+        const itemRef = db.collection("items").doc(currentInquiryItem.id);
+        const existingInquiries = currentInquiryItem.inquiries || [];
+        
+        await itemRef.update({
+          inquiries: [...existingInquiries, { contact: buyerContact, chosenPrice: chosenPrice, date: new Date().toISOString() }]
+        });
+
+        $("buyDialog").close();
+        showNotice("Запит успішно надіслано продавцю! Також ви можете напряму написати йому.");
+        openContactLink(currentInquiryItem.contact);
+      } catch (e) {
+        showNotice("Не вдалося надіслати запит.", true);
+      }
+    }
+
+    // Стиснення зображень
     function shrinkImage(file) {
       return new Promise((resolve, reject) => {
         if (!file) return resolve("");
-
-        if (!file.type.startsWith("image/")) {
-          return reject(new Error("Оберіть файл зображення."));
-        }
-
+        if (!file.type.startsWith("image/")) return reject(new Error("Оберіть файл зображення."));
         const reader = new FileReader();
-
-        reader.onerror = () =>
-          reject(new Error("Не вдалося прочитати фото."));
-
+        reader.onerror = () => reject(new Error("Помилка читання файлу."));
         reader.onload = () => {
           const img = new Image();
-
-          img.onerror = () =>
-            reject(new Error("Не вдалося обробити фото."));
-
+          img.onerror = () => reject(new Error("Помилка обробки зображення."));
           img.onload = () => {
             const max = 900;
-
-            const scale = Math.min(
-              1,
-              max / Math.max(img.width, img.height)
-            );
-
+            const scale = Math.min(1, max / Math.max(img.width, img.height));
             const canvas = document.createElement("canvas");
-
             canvas.width = Math.round(img.width * scale);
             canvas.height = Math.round(img.height * scale);
-
-            canvas.getContext("2d").drawImage(
-              img,
-              0,
-              0,
-              canvas.width,
-              canvas.height
-            );
-
+            canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
             resolve(canvas.toDataURL("image/jpeg", .72));
           };
-
           img.src = reader.result;
         };
-
         reader.readAsDataURL(file);
       });
     }
@@ -1198,14 +1181,10 @@
     // Збереження оголошення
     async function saveItem(event) {
       event.preventDefault();
-
       if (!currentUser || !db) return;
 
       const editId = $("editingId").value;
-
-      const existing = editId
-        ? allItems.find(x => x.id === editId)
-        : null;
+      const existing = editId ? allItems.find(x => x.id === editId) : null;
 
       if (existing && existing.ownerUid !== currentUser.uid) {
         showNotice("Ви можете редагувати лише власні речі.", true);
@@ -1213,33 +1192,32 @@
       }
 
       const file = $("itemImage").files[0];
-
       const saveBtn = $("saveBtn");
-
       saveBtn.disabled = true;
       saveBtn.textContent = "Збереження…";
 
       try {
-        const imageUrl = file
-          ? await shrinkImage(file)
-          : (existing?.imageUrl || "");
+        const imageUrl = file ? await shrinkImage(file) : (existing?.imageUrl || "");
+        
+        // Збираємо три ціни
+        const p1 = Number($("price1").value || 0);
+        const p2 = $("price2").value !== "" ? Number($("price2").value) : null;
+        const p3 = $("price3").value !== "" ? Number($("price3").value) : null;
+        let prices = [p1];
+        if (p2 !== null) prices.push(p2);
+        if (p3 !== null) prices.push(p3);
 
         const data = {
           title: $("itemTitle").value.trim(),
           category: $("itemCategory").value,
           description: $("itemDescription").value.trim(),
-          price: Math.max(0, Number($("itemPrice").value || 0)),
+          prices: prices,
           contact: $("itemContact").value.trim(),
           imageUrl,
           status: existing?.status || "available",
           ownerUid: currentUser.uid,
-          ownerName:
-            currentUser.displayName ||
-            currentUser.email ||
-            "Користувач GARAGE 2",
-
-          updatedAt:
-            firebase.firestore.FieldValue.serverTimestamp()
+          ownerName: currentUser.displayName || currentUser.email || "GARAGE 2",
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         };
 
         if (!data.title || !data.contact) {
@@ -1248,97 +1226,40 @@
 
         if (editId) {
           await db.collection("items").doc(editId).update(data);
-
         } else {
-          data.createdAt =
-            firebase.firestore.FieldValue.serverTimestamp();
-
+          data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+          data.inquiries = [];
           await db.collection("items").add(data);
         }
 
         $("itemDialog").close();
-
-        showNotice(
-          editId
-            ? "Зміни збережено."
-            : "Річ опубліковано. Передай далі!"
-        );
-
+        showNotice(editId ? "Зміни збережено." : "Річ успішно опубліковано!");
       } catch (e) {
-        console.error(e);
-
-        showNotice(
-          "Не вдалося зберегти річ: " +
-          (e.message || "перевірте Firestore Rules."),
-          true
-        );
-
+        showNotice("Не вдалося зберегти річ: " + e.message, true);
       } finally {
         saveBtn.disabled = false;
-
-        saveBtn.textContent = editId
-          ? "Зберегти зміни"
-          : "Опублікувати";
+        saveBtn.textContent = editId ? "Зберегти зміни" : "Опублікувати";
       }
     }
 
-    // Позначити річ як передану
-    async function updateItemStatus(id, status) {
-      const item = allItems.find(x => x.id === id);
-
-      if (
-        !item ||
-        !currentUser ||
-        item.ownerUid !== currentUser.uid
-      ) return;
-
-      try {
-        await db.collection("items").doc(id).update({
-          status,
-          updatedAt:
-            firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        showNotice("Статус оновлено — річ передано далі.");
-
-      } catch (e) {
-        showNotice(
-          "Не вдалося оновити статус. Перевірте Firestore Rules.",
-          true
-        );
-      }
-    }
-
-    // Видалити власне оголошення
     async function deleteItem(id) {
       const item = allItems.find(x => x.id === id);
-
-      if (
-        !item ||
-        !currentUser ||
-        item.ownerUid !== currentUser.uid
-      ) return;
-
-      if (!confirm(`Видалити «${item.title}»? Цю дію не можна скасувати.`)) {
-        return;
-      }
+      if (!item || !currentUser || item.ownerUid !== currentUser.uid) return;
+      if (!confirm(`Видалити «${item.title}»?`)) return;
 
       try {
         await db.collection("items").doc(id).delete();
         showNotice("Річ видалено.");
-
+        if ($("cabinetDialog").open) renderMyCabinetItems();
       } catch (e) {
-        showNotice(
-          "Не вдалося видалити річ. Перевірте Firestore Rules.",
-          true
-        );
+        showNotice("Не вдалося видалити річ.", true);
       }
     }
 
-    // Обробники кнопок
+    // Слухачі подій
     $("loginBtn").addEventListener("click", login);
     $("logoutBtn").addEventListener("click", logout);
-
+    $("cabinetBtn").addEventListener("click", openCabinet);
     $("heroAddBtn").addEventListener("click", () => openForm());
 
     $("searchInput").addEventListener("input", renderItems);
@@ -1346,18 +1267,15 @@
     $("statusFilter").addEventListener("change", renderItems);
 
     $("itemForm").addEventListener("submit", saveItem);
+    $("saveProfileBtn").addEventListener("click", saveProfile);
+    $("submitInquiryBtn").addEventListener("click", submitInquiry);
 
-    $("closeDialog").addEventListener("click", () =>
-      $("itemDialog").close()
-    );
+    $("closeDialog").addEventListener("click", () => $("itemDialog").close());
+    $("cancelDialog").addEventListener("click", () => $("itemDialog").close());
+    $("closeCabinet").addEventListener("click", () => $("cabinetDialog").close());
+    $("closeBuyDialog").addEventListener("click", () => $("buyDialog").close());
 
-    $("cancelDialog").addEventListener("click", () =>
-      $("itemDialog").close()
-    );
-
-    // Запуск
     startApp();
-
   </script>
 </body>
-</html> 
+</html>
