@@ -231,7 +231,7 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
 </dialog>
 
 <dialog id="offerDialog">
-  <div class="modal-head"><h2>Запропонувати ціну</h2><button class="close" type="button" id="closeOffer" aria-label="Закрити">×</button></div>
+  <div class="modal-head"><h2 id="offerHead">Запропонувати ціну</h2><button class="close" type="button" id="closeOffer" aria-label="Закрити">×</button></div>
   <form class="form-body" id="offerForm">
     <p id="offerTitle" style="margin-top:0;font-weight:800"></p>
     <p class="muted small" id="offerMin"></p>
@@ -512,7 +512,7 @@ function renderHome() {
 }
 
 const minPriceOf = it => it.minPrice != null ? Number(it.minPrice) : ((it.prices && it.prices.length) ? Math.min.apply(null, it.prices.map(Number)) : (Number(it.price) || 0));
-const priceFrom = it => {const m = minPriceOf(it); return m <= 0 ? "Безкоштовно · запропонуйте свою ціну" : "Від " + m.toLocaleString("uk-UA") + " грн · запропонуйте свою ціну";};
+const priceFrom = it => {const m = minPriceOf(it); return m <= 0 ? "Безкоштовно" : "Ціна продавця: " + m.toLocaleString("uk-UA") + " грн";};
 const normPhone = p => {let d = String(p || "").replace(/\D/g, ""); if (d.length === 10 && d[0] === "0") d = "38" + d; if (d.length === 9) d = "380" + d; return d;};
 const validPhone = p => /^380\d{9}$/.test(normPhone(p));
 function shipPicker(root, init) {
@@ -553,8 +553,13 @@ function card(it) {
   const act = c.querySelector(".act");
   if (given) act.appendChild(el("div", "muted small", "✓ Річ уже передано"));
   else if (own) act.appendChild(el("div", "muted small", "Це ваша річ"));
-  else if (mine) act.appendChild(el("div", "notice", "Ви запропонували " + money(mine.price) + ". Продавець обере покупця, і ви побачите ТТН у кабінеті."));
-  else {const ob = el("button", "btn btn-primary", "Запропонувати ціну"); ob.type = "button"; ob.style.width = "100%"; ob.onclick = () => openOffer(it); act.appendChild(ob);}
+  else if (mine) act.appendChild(el("div", "notice", "Ваш запит на " + money(mine.price) + " надіслано. Продавець обере покупця, і ви побачите ТТН у кабінеті."));
+  else {
+    const m = minPriceOf(it);
+    const b1 = el("button", "btn btn-primary", m <= 0 ? "Забрати безкоштовно" : "Купити за " + m.toLocaleString("uk-UA") + " грн"); b1.type = "button"; b1.style.width = "100%"; b1.onclick = () => openOffer(it, true);
+    const b2 = el("button", "btn btn-soft", "Запропонувати свою ціну"); b2.type = "button"; b2.style.cssText = "width:100%;margin-top:8px"; b2.onclick = () => openOffer(it, false);
+    act.append(b1, b2);
+  }
   if (!it.demo && !given) {
     const sh = el("button", "btn btn-soft btn-sm", "↗ Поділитись"); sh.type = "button"; sh.style.marginTop = "8px";
     sh.onclick = () => shareLink(siteBase() + "#item=" + it.id, it.title);
@@ -565,13 +570,15 @@ function card(it) {
 
 /* ---------- пропозиція ціни покупцем ---------- */
 let offerPicker = null, pendingTtn = null;
-function openOffer(it) {
+function openOffer(it, fixed) {
   if (it.demo) {showNotice("Це демо-картка. Увійдіть і опублікуйте реальну річ."); return;}
   needLogin(() => {
-    pending = {it}; const min = minPriceOf(it), rv = profile.recv || {};
+    pending = {it, fixed: !!fixed}; const min = minPriceOf(it), rv = profile.recv || {};
     $("offerTitle").textContent = "«" + it.title + "»";
-    $("offerMin").textContent = min > 0 ? "Мінімальна ціна: " + min + " грн. Запропонуйте свою суму, продавець обере найкращу пропозицію." : "Річ можна забрати безкоштовно, але ви можете запропонувати свою ціну.";
-    $("offerPrice").min = min; $("offerPrice").value = min;
+    $("offerHead").textContent = fixed ? (min > 0 ? "Купити за ціною продавця" : "Забрати безкоштовно") : "Запропонувати свою ціну";
+    $("offerMin").textContent = fixed ? (min > 0 ? "Ціна продавця: " + min + " грн. Продавець підтвердить, і сайт створить ТТН." : "Річ віддається безкоштовно. Продавець підтвердить, і сайт створить ТТН.") : (min > 0 ? "Мінімальна ціна: " + min + " грн. Запропонуйте свою суму, продавець обере найкращу пропозицію." : "Річ можна забрати безкоштовно, але ви можете запропонувати свою ціну.");
+    $("offerPrice").min = min; $("offerPrice").value = min; $("offerPrice").readOnly = !!fixed;
+    $("sendOffer").textContent = fixed ? "Надіслати запит" : "Запропонувати";
     $("offerName").value = rv.name || ""; $("offerPhone").value = rv.phone || ""; $("offerErr").textContent = "";
     offerPicker = shipPicker($("offerShip"), rv);
     $("offerDialog").showModal();
@@ -589,9 +596,9 @@ $("offerForm").addEventListener("submit", async e => {
   try {
     await db.collection("requests").add({itemId: it.id, itemTitle: it.title, sellerId: it.ownerId, buyerId: currentUser.uid, buyerName: name, buyerPhone: normPhone(phone), cityRef: sh.cityRef, cityName: sh.cityName, whRef: sh.whRef, whName: sh.whName, price: price, status: "new", createdAt: Date.now()});
     db.collection("profiles").doc(currentUser.uid).set({recv: {name: name, phone: phone, ...sh}}, {merge: true}).catch(() => {});
-    $("offerDialog").close(); showNotice("Дякуємо! Продавець обере покупця, і ви побачите ТТН у кабінеті.");
+    $("offerDialog").close(); showNotice(pending.fixed ? "Запит надіслано. Коли продавець підтвердить, ви побачите ТТН у кабінеті." : "Дякуємо! Продавець обере покупця, і ви побачите ТТН у кабінеті.");
   } catch (er) {err.textContent = "Не вдалося надіслати: " + (er.code || er.message);}
-  b.disabled = false; b.textContent = "Запропонувати";
+  b.disabled = false; b.textContent = pending.fixed ? "Надіслати запит" : "Запропонувати";
 });
 
 /* ---------- форма речі ---------- */
