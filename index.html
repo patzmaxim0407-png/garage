@@ -71,10 +71,11 @@ window.addEventListener("unhandledrejection",e=>showErr(e.reason&&e.reason.messa
 if(firebaseConfig.apiKey.indexOf("ВСТАВТЕ")>-1)showErr("вставте apiKey у файл (рядок apiKey)");
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth(), db = firebase.firestore();
-let user = null, items = [], sales = [], buys = [], view = "home", tab = "sales";
+let editId = null, user = null, profile = {}, items = [], sales = [], buys = [], view = "home", tab = "sales";
 const app = document.getElementById("app");
 render();
 
+function pname(d){return (profile.name||(user&&user.displayName)||d);}
 function el(tag, cls, text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e;}
 function go(v){view=v;render();window.scrollTo(0,0);}
 function login(){return auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e=>{alert("Не вдалося увійти: "+(e.code||e.message));});}
@@ -88,10 +89,11 @@ function sendMail(p){
 auth.onAuthStateChanged(u=>{
   user=u;
   if(u){
-    db.collection("contacts").doc(u.uid).set({email:u.email||""}).catch(()=>{});
+    if(EMAILJS.service)db.collection("contacts").doc(u.uid).set({email:u.email||""}).catch(()=>{});
+    db.collection("profiles").doc(u.uid).onSnapshot(d=>{profile=d.exists?d.data():{};render();});
     db.collection("requests").where("sellerId","==",u.uid).onSnapshot(s=>{sales=s.docs.map(d=>({id:d.id,...d.data()}));render();});
     db.collection("requests").where("buyerId","==",u.uid).onSnapshot(s=>{buys=s.docs.map(d=>({id:d.id,...d.data()}));render();});
-  }else{sales=[];buys=[];}
+  }else{sales=[];buys=[];profile={};}
   render();
 });
 db.collection("items").orderBy("createdAt","desc").onSnapshot(s=>{items=s.docs.map(d=>({id:d.id,...d.data()}));render();});
@@ -103,6 +105,7 @@ function render(){
   b.onclick=()=>{if(user)go("cabinet");else login();};
   app.innerHTML="";
   if(view==="add"&&user)return renderAdd();
+  if(view==="edit"&&user)return renderAdd(items.find(i=>i.id===editId));
   if(view==="cabinet"&&user)return renderCabinet();
   renderHome();
 }
@@ -133,7 +136,7 @@ function askContact(it,price){
   bx.appendChild(el("b","","Ви хочете «"+it.title+"» за "+price+" грн"));
   const l=el("label","","Ваш Telegram (@нік) або номер телефону для Viber/WhatsApp. Сюди напише продавець, якщо оберуть вас.");
   l.style.cssText="display:block;margin:10px 0 6px";
-  const inp=el("input");inp.placeholder="@maxim_k або 0991234567";
+  const inp=el("input");inp.value=profile.contact||"";inp.placeholder="@maxim_k або 0991234567";
   const hint=el("div","tag","Наприклад: @maxim_k або 0991234567");hint.style.marginTop="6px";
   const err=el("div","tag","");err.style.cssText="color:#a00;min-height:18px;margin-top:4px";
   const row=el("div");row.style.cssText="display:flex;gap:8px;margin-top:10px";
@@ -142,9 +145,9 @@ function askContact(it,price){
   ok.onclick=async()=>{
     const c=inp.value.trim();if(!validContact(c)){err.textContent="Вкажіть нік Telegram (@нік) або номер телефону.";inp.focus();return;}
     ok.disabled=true;ok.textContent="...";
-    await db.collection("requests").add({itemId:it.id,itemTitle:it.title,sellerId:it.ownerId,buyerId:user.uid,buyerName:user.displayName||"Покупець",buyerContact:c,price:price,status:"new",createdAt:Date.now()});
+    await db.collection("requests").add({itemId:it.id,itemTitle:it.title,sellerId:it.ownerId,buyerId:user.uid,buyerName:pname("Покупець"),buyerContact:c,price:price,status:"new",createdAt:Date.now()});
     db.collection("contacts").doc(it.ownerId).get().then(d=>{
-      if(d.exists&&d.data().email)sendMail({to_email:d.data().email,item_title:it.title,price:price,buyer_name:user.displayName||"Покупець",buyer_contact:c});
+      if(d.exists&&d.data().email)sendMail({to_email:d.data().email,item_title:it.title,price:price,buyer_name:pname("Покупець"),buyer_contact:c});
     }).catch(()=>{});
     m.remove();
   };
@@ -160,16 +163,32 @@ function renderHome(){
   const g=el("div","grid");items.forEach(i=>g.appendChild(itemCard(i)));app.appendChild(g);
 }
 
-function renderAdd(){
+function renderAdd(it){
   const f=el("form");
-  f.innerHTML='<h2 style="margin:0">Нова річ</h2><label>Назва<input id="t" required maxlength="60"></label><label>Опис<textarea id="d" rows="3" maxlength="300"></textarea></label><label>Три ціни, грн (на вибір покупця)</label><div class="row3"><input id="p1" type="number" min="0" required placeholder="50"><input id="p2" type="number" min="0" required placeholder="75"><input id="p3" type="number" min="0" required placeholder="120"></div><label>Фото<input id="ph" type="file" accept="image/*"></label><button class="btn" id="sv">Опублікувати</button>';
+  f.innerHTML='<h2 style="margin:0" id="ft">Нова річ</h2><label>Назва<input id="t" required maxlength="60"></label><label>Опис<textarea id="d" rows="3" maxlength="300"></textarea></label><label>Три ціни, грн (на вибір покупця)</label><div class="row3"><input id="p1" type="number" min="0" required placeholder="50"><input id="p2" type="number" min="0" required placeholder="75"><input id="p3" type="number" min="0" required placeholder="120"></div><label>Фото<input id="ph" type="file" accept="image/*"></label><div class="tag" id="pn2"></div><button class="btn" id="sv">Опублікувати</button>';
+  const locked=!!(it&&sales.some(x=>x.itemId===it.id));
+  if(it){
+    f.querySelector("#ft").textContent="Редагування";
+    f.querySelector("#t").value=it.title;f.querySelector("#d").value=it.desc||"";
+    [1,2,3].forEach((k,i)=>{const p=f.querySelector("#p"+k);p.value=it.prices[i];if(locked)p.disabled=true;});
+    f.querySelector("#sv").textContent="Зберегти";
+    f.querySelector("#pn2").textContent=(locked?"Ціни змінити не можна: покупці вже обрали їх. ":"")+"Нове фото додайте, лише якщо хочете замінити поточне.";
+    f.querySelector("#ph").removeAttribute("required");
+  }
   f.onsubmit=async e=>{
     e.preventDefault();
     const sv=f.querySelector("#sv");sv.disabled=true;sv.textContent="Публікую...";
     let photo="";const file=f.querySelector("#ph").files[0];
     if(file)photo=await shrink(file);
     const prices=[1,2,3].map(k=>Number(f.querySelector("#p"+k).value)).sort((a,b)=>a-b);
-    await db.collection("items").add({title:f.querySelector("#t").value.trim(),desc:f.querySelector("#d").value.trim(),prices:prices,photo:photo,ownerId:user.uid,ownerName:user.displayName||"Продавець",status:"open",createdAt:Date.now()});
+    if(it){
+      const upd={title:f.querySelector("#t").value.trim(),desc:f.querySelector("#d").value.trim()};
+      if(photo)upd.photo=photo;
+      if(!locked)upd.prices=[1,2,3].map(k=>Number(f.querySelector("#p"+k).value)).sort((a,b)=>a-b);
+      await db.collection("items").doc(it.id).update(upd);
+      tab="mine";go("cabinet");return;
+    }
+    await db.collection("items").add({title:f.querySelector("#t").value.trim(),desc:f.querySelector("#d").value.trim(),prices:prices,photo:photo,ownerId:user.uid,ownerName:pname("Продавець"),status:"open",createdAt:Date.now()});
     go("home");
   };
   app.appendChild(f);
@@ -198,17 +217,35 @@ function contactLinks(c,title,price){
   return[["Написати в Telegram","https://t.me/"+nick+"?text="+msg]];
 }
 async function choose(s){
-  await db.collection("requests").doc(s.id).update({status:"accepted"});
+  if(!profile.contact){alert("Спочатку вкажіть свій контакт у вкладці «Профіль», щоб покупець зміг вам написати.");tab="profile";render();return;}
+  await db.collection("requests").doc(s.id).update({status:"accepted",sellerContact:profile.contact,sellerName:pname("Продавець")});
   await db.collection("items").doc(s.itemId).update({status:"given"});
 }
 
 function renderCabinet(){
   const t=el("div","tabs");
-  [["sales","Запити на мої речі"],["mine","Мої речі"],["buys","Мої покупки"]].forEach(([k,l])=>{
+  [["sales","Запити на мої речі"],["mine","Мої речі"],["buys","Мої покупки"],["profile","Профіль"]].forEach(([k,l])=>{
     const b=el("button","btn"+(tab===k?"":" alt"),l);b.onclick=()=>{tab=k;render();};t.appendChild(b);
   });
   const out=el("button","btn alt","Вийти");out.onclick=()=>{auth.signOut();go("home");};t.appendChild(out);
   app.appendChild(t);
+  if(tab==="profile"){
+    const f=el("form");f.style.margin="0";
+    f.innerHTML='<h2 style="margin:0">Ваш профіль</h2><label>Ім\'я, яке бачать інші<input id="pn" maxlength="40"></label><label>Контакт для зв\'язку (Telegram @нік або номер для Viber/WhatsApp)<input id="pc" placeholder="@maxim_k або 0991234567"></label><div class="tag">Контакт бачить лише людина, з якою ви домовилися: покупець після вашого вибору, або ви після вибору покупця.</div><div id="pe" class="tag" style="color:#a00"></div><button class="btn" id="ps">Зберегти</button>';
+    f.querySelector("#pn").value=profile.name||(user.displayName||"");
+    f.querySelector("#pc").value=profile.contact||"";
+    f.onsubmit=async e=>{
+      e.preventDefault();
+      const n=f.querySelector("#pn").value.trim(),c=f.querySelector("#pc").value.trim(),er=f.querySelector("#pe");
+      if(c&&!validContact(c)){er.textContent="Вкажіть нік Telegram (@нік) або номер телефону.";return;}
+      const b=f.querySelector("#ps");b.disabled=true;
+      await db.collection("profiles").doc(user.uid).set({name:n,contact:c});
+      const mine=items.filter(i=>i.ownerId===user.uid);
+      await Promise.all(mine.map(i=>db.collection("items").doc(i.id).update({ownerName:n||user.displayName||"Продавець"})));
+      b.disabled=false;er.style.color="#2F8F6B";er.textContent="Збережено ✓";
+    };
+    app.appendChild(f);
+  }
   if(tab==="mine"){
     const mine=items.filter(i=>i.ownerId===user.uid);
     if(!mine.length)app.appendChild(el("div","empty","Ви ще нічого не віддавали."));
@@ -216,11 +253,12 @@ function renderCabinet(){
       const bx=el("div","box");
       bx.append(el("b","",i.title),el("div","tag",i.prices.join(" / ")+" грн · "+(i.status==="given"?"віддано":"активна")));
       const r=el("div");r.style.cssText="display:flex;gap:8px;margin-top:8px";
+      const ed=el("button","btn alt","Редагувати");ed.onclick=()=>{editId=i.id;go("edit");};
       const g=el("button","btn gr",i.status==="given"?"Повернути в список":"Віддано");
       g.onclick=()=>db.collection("items").doc(i.id).update({status:i.status==="given"?"open":"given"});
       const d=el("button","btn alt","Видалити");
       d.onclick=()=>{if(confirm("Видалити?"))db.collection("items").doc(i.id).delete();};
-      r.append(g,d);bx.appendChild(r);app.appendChild(bx);
+      r.append(ed,g,d);bx.appendChild(r);app.appendChild(bx);
     });
   }
   if(tab==="sales"){
@@ -247,9 +285,14 @@ function renderCabinet(){
       const bx=el("div","box");
       bx.appendChild(el("b","",s.itemTitle+" — "+s.price+" грн"));
       let st="Очікує вибору продавця";
-      if(s.status==="accepted")st="🎉 Вас обрано! Продавець напише вам на "+s.buyerContact;
+      if(s.status==="accepted")st="🎉 Вас обрано! Контакт продавця: "+(s.sellerContact||"очікуйте повідомлення")+". Можете написати першим.";
       else if(it&&it.status==="given")st="Річ віддали іншому";
       bx.appendChild(el("div","tag",st));
+      if(s.status==="accepted"&&s.sellerContact){
+        const w=el("div");w.style.cssText="display:flex;gap:8px;flex-wrap:wrap";
+        contactLinks(s.sellerContact,s.itemTitle,s.price).forEach(([l,h])=>{const a=el("a","tg",l);a.href=h;a.target="_blank";a.rel="noopener";w.appendChild(a);});
+        bx.appendChild(w);
+      }
       app.appendChild(bx);
     });
   }
