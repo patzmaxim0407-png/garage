@@ -146,9 +146,9 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
     <div class="field"><label>Три ціни, грн (покупець обирає одну; 0 = безкоштовно) *</label>
       <div class="row3"><input id="p1" type="number" min="0" max="1000000" required placeholder="50"><input id="p2" type="number" min="0" max="1000000" required placeholder="75"><input id="p3" type="number" min="0" max="1000000" required placeholder="120"></div></div>
     <div class="field"><label for="itemImages">Фото (до 4 штук)</label><input id="itemImages" type="file" accept="image/*" multiple><small class="muted" id="photoNote">Фото зменшуються у браузері. На картці вони показуються квадратними. Лише сама річ, без людей і особистих даних.</small></div>
-    <div class="muted small">Розміщення оголошення коштує 1 грн (оплата карткою через monobank). Обмін речами між людьми безкоштовний.</div>
+    <div class="muted small">Розміщення оголошення коштує 3 грн (оплата карткою через monobank). Обмін речами між людьми безкоштовний.</div>
     <div class="err" id="formErr"></div>
-    <div class="form-actions"><button type="button" class="btn btn-soft" id="cancelDialog">Скасувати</button><button class="btn btn-primary" id="saveBtn" type="submit">Оплатити й опублікувати (1 грн)</button></div>
+    <div class="form-actions"><button type="button" class="btn btn-soft" id="cancelDialog">Скасувати</button><button class="btn btn-primary" id="saveBtn" type="submit">Оплатити й опублікувати (3 грн)</button></div>
   </form>
 </dialog>
 
@@ -359,7 +359,7 @@ function openForm(it) {
   if (demoMode) {showNotice("Спершу вставте apiKey Firebase у файл.", true); return;}
   needLogin(() => {
     $("itemForm").reset(); $("formErr").textContent = ""; $("editingId").value = it ? it.id : "";
-    $("dialogTitle").textContent = it ? "Редагувати річ" : "Віддати річ"; $("saveBtn").textContent = it ? "Зберегти" : "Оплатити й опублікувати (1 грн)";
+    $("dialogTitle").textContent = it ? "Редагувати річ" : "Віддати річ"; $("saveBtn").textContent = it ? "Зберегти" : "Оплатити й опублікувати (3 грн)";
     const locked = !!(it && sales.some(s => s.itemId === it.id));
     ["p1", "p2", "p3"].forEach((id, k) => {$(id).disabled = locked; if (it) $(id).value = (it.prices || [])[k];});
     if (it) {$("itemTitle").value = it.title || ""; $("itemCategory").value = it.category || "Інше"; $("itemDescription").value = it.desc || it.description || "";}
@@ -388,7 +388,7 @@ $("itemForm").addEventListener("submit", async e => {
       $("itemDialog").close(); showNotice("Переходимо до оплати розміщення…"); await payFor(ref.id);
     }
   } catch (er) {$("formErr").textContent = er.message || "Не вдалося зберегти.";}
-  b.disabled = false; b.textContent = id ? "Зберегти" : "Оплатити й опублікувати (1 грн)";
+  b.disabled = false; b.textContent = id ? "Зберегти" : "Оплатити й опублікувати (3 грн)";
 });
 
 /* ---------- кабінет ---------- */
@@ -444,7 +444,7 @@ function renderCabinet() {
       bx.append(el("b", "", i.title), el("div", "muted small", (i.prices || []).map(money).join(" / ") + " · " + (i.status === "pending" ? "чекає оплати" : i.status === "given" ? "передано" : "доступна") + " · запитів: " + n));
       const r = el("div", "row");
       const ed = el("button", "btn btn-soft btn-sm", "Редагувати"); ed.onclick = () => openForm(i);
-      const g = i.status === "pending" ? el("button", "btn btn-primary btn-sm", "Сплатити 1 грн") : el("button", "btn btn-soft btn-sm", i.status === "given" ? "Повернути в список" : "Позначити переданою");
+      const g = i.status === "pending" ? el("button", "btn btn-primary btn-sm", "Сплатити 3 грн") : el("button", "btn btn-soft btn-sm", i.status === "given" ? "Повернути в список" : "Позначити переданою");
       g.onclick = i.status === "pending" ? () => payFor(i.id) : () => db.collection("items").doc(i.id).update({status: i.status === "given" ? "open" : "given"});
       const d = el("button", "btn btn-danger btn-sm", "Видалити"); d.onclick = () => {if (confirm("Видалити «" + i.title + "»?")) db.collection("items").doc(i.id).delete();};
       r.append(ed, g, d); bx.appendChild(r); v.appendChild(bx);
