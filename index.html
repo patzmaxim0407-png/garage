@@ -12,7 +12,7 @@ body{margin:0;background:var(--cream);color:var(--ink);font:16px/1.5 Inter,-appl
 button,input,textarea,select{font:inherit}button{cursor:pointer}
 .topbar{background:var(--green);color:#fff}
 .topbar-inner{max-width:1180px;margin:auto;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}
-.brand{font-size:1.15rem;font-weight:900;letter-spacing:.06em;cursor:pointer}
+.brand{font-size:1.5rem;font-weight:900;letter-spacing:.12em;cursor:pointer;white-space:nowrap}
 .brand small{display:block;font-size:.67rem;font-weight:500;letter-spacing:.04em;opacity:.78}
 .top-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
 .user-status{font-size:.9rem;opacity:.88}
@@ -85,7 +85,7 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
 .footer{border-top:1px solid var(--line);margin-top:48px;padding:24px 0 0;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;color:var(--muted);font-size:.9rem}
 .footer b{color:var(--green);letter-spacing:.08em}
 @media(max-width:820px){.hero{grid-template-columns:1fr;padding-top:38px}.hero-card{min-height:180px}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:560px){.topbar-inner{padding:14px 16px;align-items:flex-start}.container{padding:0 16px 36px}.grid{grid-template-columns:1fr}.user-status{width:100%;text-align:right}.section-head{align-items:flex-start;flex-direction:column}}
+@media(max-width:560px){.brand{font-size:1.15rem;letter-spacing:.06em;white-space:nowrap}.brand small{font-size:.58rem;letter-spacing:.02em;white-space:nowrap}.topbar-inner{padding:14px 16px;align-items:flex-start}.container{padding:0 16px 36px}.grid{grid-template-columns:1fr}.user-status{width:100%;text-align:right}.section-head{align-items:flex-start;flex-direction:column}}
 @media (max-width: 560px) {
   .topbar-inner { flex-wrap: nowrap !important; padding: 12px 14px !important; align-items: center !important; gap: 8px !important; }
   .brand { font-size: 1rem !important; letter-spacing: .04em !important; white-space: nowrap !important; flex-shrink: 0 !important; }
@@ -146,8 +146,9 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
     <div class="field"><label>Три ціни, грн (покупець обирає одну; 0 = безкоштовно) *</label>
       <div class="row3"><input id="p1" type="number" min="0" max="1000000" required placeholder="50"><input id="p2" type="number" min="0" max="1000000" required placeholder="75"><input id="p3" type="number" min="0" max="1000000" required placeholder="120"></div></div>
     <div class="field"><label for="itemImages">Фото (до 4 штук)</label><input id="itemImages" type="file" accept="image/*" multiple><small class="muted" id="photoNote">Фото зменшуються у браузері. На картці вони показуються квадратними. Лише сама річ, без людей і особистих даних.</small></div>
+    <div class="muted small">Розміщення оголошення коштує 1 грн (оплата карткою через monobank). Обмін речами між людьми безкоштовний.</div>
     <div class="err" id="formErr"></div>
-    <div class="form-actions"><button type="button" class="btn btn-soft" id="cancelDialog">Скасувати</button><button class="btn btn-primary" id="saveBtn" type="submit">Опублікувати</button></div>
+    <div class="form-actions"><button type="button" class="btn btn-soft" id="cancelDialog">Скасувати</button><button class="btn btn-primary" id="saveBtn" type="submit">Оплатити й опублікувати (1 грн)</button></div>
   </form>
 </dialog>
 
@@ -163,6 +164,7 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-functions-compat.js"></script>
 <script>
 // ===== ВАШІ КЛЮЧІ FIREBASE (замініть лише apiKey) =====
 const firebaseConfig = {
@@ -176,7 +178,7 @@ const EMAILJS = {service: "", template: "", key: ""};
 // =========================================================
 
 const demoMode = !firebaseConfig.apiKey || firebaseConfig.apiKey.indexOf("ВСТАВТЕ") > -1;
-let auth = null, db = null, currentUser = null, profile = {};
+let auth = null, db = null, fns = null, currentUser = null, profile = {};
 let allItems = [], sales = [], buys = [], unsubs = [];
 let view = "home", tab = "sales", pending = null;
 const $ = id => document.getElementById(id);
@@ -236,7 +238,7 @@ function startApp() {
     showNotice("Попередній перегляд: вставте apiKey Firebase у файл, щоб увімкнути вхід і публікації.", true);
     $("loginBtn").disabled = true; render(); return;
   }
-  try {firebase.initializeApp(firebaseConfig); auth = firebase.auth(); db = firebase.firestore();}
+  try {firebase.initializeApp(firebaseConfig); auth = firebase.auth(); db = firebase.firestore(); fns = firebase.app().functions("europe-west1");}
   catch (e) {showNotice("Помилка Firebase: " + e.message, true); allItems = sample.slice(); render(); return;}
   db.collection("items").orderBy("createdAt", "desc").onSnapshot(s => {
     allItems = s.docs.map(d => ({id: d.id, ...d.data()})); render();
@@ -250,7 +252,20 @@ function startApp() {
       if (EMAILJS.service) db.collection("contacts").doc(u.uid).set({email: u.email || ""}).catch(() => {});
     } else if (view === "cabinet") view = "home";
     render();
+    if (u) handleReturn();
   });
+}
+async function payFor(id) {
+  try {const r = await fns.httpsCallable("createPayment")({itemId: id}); location.href = r.data.pageUrl;}
+  catch (e) {showNotice("Не вдалося створити оплату: " + (e.message || e.code), true);}
+}
+function handleReturn() {
+  const p = new URLSearchParams(location.search).get("paid");
+  if (!p || !currentUser) return;
+  history.replaceState(null, "", location.pathname);
+  showNotice("Перевіряємо оплату…");
+  fns.httpsCallable("confirmPayment")({itemId: p}).then(r => showNotice(r.data.ok ? "Оплату отримано, оголошення опубліковано!" : "Оплата ще не підтверджена. Якщо ви заплатили, зачекайте хвилину й оновіть сторінку.", !r.data.ok))
+    .catch(e => showNotice("Не вдалося перевірити оплату: " + (e.message || e.code), true));
 }
 function login() {
   if (!auth) return Promise.resolve();
@@ -275,7 +290,7 @@ function renderHome() {
   const list = allItems.filter(i => {
     const hay = ((i.title || "") + " " + (i.desc || i.description || "") + " " + (i.category || "")).toLocaleLowerCase("uk");
     const given = i.status === "given";
-    return (!q || hay.includes(q)) && (!cat || (i.category || "Інше") === cat) && (st === "all" || (st === "given" ? given : !given));
+    return i.status !== "pending" && (!q || hay.includes(q)) && (!cat || (i.category || "Інше") === cat) && (st === "all" || (st === "given" ? given : !given));
   });
   $("itemCount").textContent = list.length + " " + (list.length === 1 ? "річ" : "речей");
   const g = $("itemsGrid"); g.innerHTML = ""; $("emptyState").hidden = list.length > 0;
@@ -344,7 +359,7 @@ function openForm(it) {
   if (demoMode) {showNotice("Спершу вставте apiKey Firebase у файл.", true); return;}
   needLogin(() => {
     $("itemForm").reset(); $("formErr").textContent = ""; $("editingId").value = it ? it.id : "";
-    $("dialogTitle").textContent = it ? "Редагувати річ" : "Віддати річ"; $("saveBtn").textContent = it ? "Зберегти" : "Опублікувати";
+    $("dialogTitle").textContent = it ? "Редагувати річ" : "Віддати річ"; $("saveBtn").textContent = it ? "Зберегти" : "Оплатити й опублікувати (1 грн)";
     const locked = !!(it && sales.some(s => s.itemId === it.id));
     ["p1", "p2", "p3"].forEach((id, k) => {$(id).disabled = locked; if (it) $(id).value = (it.prices || [])[k];});
     if (it) {$("itemTitle").value = it.title || ""; $("itemCategory").value = it.category || "Інше"; $("itemDescription").value = it.desc || it.description || "";}
@@ -367,11 +382,13 @@ $("itemForm").addEventListener("submit", async e => {
       if (data.prices.some(isNaN)) throw new Error("Вкажіть три ціни.");
     }
     if (photos.length) {data.photos = photos; data.photo = photos[0];}
-    if (it) await db.collection("items").doc(it.id).update(data);
-    else await db.collection("items").add({...data, ownerId: currentUser.uid, ownerName: pname("Продавець"), status: "open", createdAt: Date.now()});
-    $("itemDialog").close(); showNotice(it ? "Зміни збережено." : "Річ опубліковано. Передай далі!");
+    if (it) {await db.collection("items").doc(it.id).update(data); $("itemDialog").close(); showNotice("Зміни збережено.");}
+    else {
+      const ref = await db.collection("items").add({...data, ownerId: currentUser.uid, ownerName: pname("Продавець"), status: "pending", createdAt: Date.now()});
+      $("itemDialog").close(); showNotice("Переходимо до оплати розміщення…"); await payFor(ref.id);
+    }
   } catch (er) {$("formErr").textContent = er.message || "Не вдалося зберегти.";}
-  b.disabled = false; b.textContent = id ? "Зберегти" : "Опублікувати";
+  b.disabled = false; b.textContent = id ? "Зберегти" : "Оплатити й опублікувати (1 грн)";
 });
 
 /* ---------- кабінет ---------- */
@@ -424,11 +441,11 @@ function renderCabinet() {
     if (!mine.length) none("Ви ще нічого не віддавали.");
     mine.forEach(i => {
       const bx = el("div", "cardbox"), n = sales.filter(s => s.itemId === i.id).length;
-      bx.append(el("b", "", i.title), el("div", "muted small", (i.prices || []).map(money).join(" / ") + " · " + (i.status === "given" ? "передано" : "доступна") + " · запитів: " + n));
+      bx.append(el("b", "", i.title), el("div", "muted small", (i.prices || []).map(money).join(" / ") + " · " + (i.status === "pending" ? "чекає оплати" : i.status === "given" ? "передано" : "доступна") + " · запитів: " + n));
       const r = el("div", "row");
       const ed = el("button", "btn btn-soft btn-sm", "Редагувати"); ed.onclick = () => openForm(i);
-      const g = el("button", "btn btn-soft btn-sm", i.status === "given" ? "Повернути в список" : "Позначити переданою");
-      g.onclick = () => db.collection("items").doc(i.id).update({status: i.status === "given" ? "open" : "given"});
+      const g = i.status === "pending" ? el("button", "btn btn-primary btn-sm", "Сплатити 1 грн") : el("button", "btn btn-soft btn-sm", i.status === "given" ? "Повернути в список" : "Позначити переданою");
+      g.onclick = i.status === "pending" ? () => payFor(i.id) : () => db.collection("items").doc(i.id).update({status: i.status === "given" ? "open" : "given"});
       const d = el("button", "btn btn-danger btn-sm", "Видалити"); d.onclick = () => {if (confirm("Видалити «" + i.title + "»?")) db.collection("items").doc(i.id).delete();};
       r.append(ed, g, d); bx.appendChild(r); v.appendChild(bx);
     });
