@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>GARAGE 2: адмінка</title>
+<style>
+:root{--green:#1B4D3E;--deep:#173B30;--cream:#F6F4ED;--ink:#17251F;--muted:#66756D;--line:#DCE5DE;--accent:#D8E7DC;--danger:#A33A32;--warn:#B7791F}
+*{box-sizing:border-box}
+body{margin:0;background:var(--cream);color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{background:var(--green);color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+header b{letter-spacing:.1em}
+.btn{border:0;border-radius:999px;padding:9px 16px;font-weight:700;cursor:pointer;background:#fff;color:var(--green)}
+.btn.s{background:var(--accent);color:var(--deep)}
+.btn.on{background:var(--green);color:#fff}
+main{max-width:1200px;margin:auto;padding:18px}
+.msg{padding:12px 14px;border-radius:12px;background:#E7F0E8;margin-bottom:14px}.msg.err{background:#F9E8E6;color:var(--danger)}
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.stat b{display:block;font-size:1.6rem;line-height:1.1}.stat span{color:var(--muted);font-size:.82rem}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px}
+input[type=search]{padding:10px 14px;border:1px solid var(--line);border-radius:12px;min-width:240px;background:#fff}
+.wrap{overflow-x:auto;background:#fff;border:1px solid var(--line);border-radius:14px;margin-top:10px}
+table{border-collapse:collapse;width:100%;min-width:720px}
+th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top;font-size:.9rem}
+th{background:#F0F4F1;color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;position:sticky;top:0}
+.pill{display:inline-block;border-radius:999px;padding:2px 9px;font-size:.78rem;font-weight:700;background:var(--accent);color:var(--deep);white-space:nowrap}
+.pill.sold{background:#E3E7F5;color:#2B3A8C}.pill.bad{background:#F9E8E6;color:var(--danger)}.pill.wait{background:#FBF0D9;color:var(--warn)}
+.muted{color:var(--muted)}.small{font-size:.8rem}
+#gate{text-align:center;padding:60px 20px}
+</style>
+</head>
+<body>
+<header><b>GARAGE 2 · АДМІНКА</b><div><span id="who" class="small"></span> <button class="btn" id="loginBtn">Увійти через Google</button> <button class="btn" id="outBtn" hidden>Вийти</button></div></header>
+<main>
+  <div id="gate">Увійдіть акаунтом адміністратора.</div>
+  <div id="app" hidden>
+    <div id="note"></div>
+    <div class="stats" id="stats"></div>
+    <div class="tabs" id="tabs"></div>
+    <input type="search" id="q" placeholder="Пошук…">
+    <button class="btn s" id="refresh">Оновити</button>
+    <div class="wrap"><table><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
+  </div>
+</main>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-functions-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyAiQAmjnqBN82tIskGDpE7HYaf6R7UNlMA",
+  authDomain: "garage-86431.firebaseapp.com",
+  projectId: "garage-86431",
+  appId: "1:510985201682:web:55e8d8e4642c0a397710cb"
+};
+const $ = id => document.getElementById(id);
+const esc = v => String(v == null ? "" : v).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt = v => { if (!v) return "—"; const d = new Date(v); return isNaN(d) ? "—" : d.toLocaleString("uk-UA", {dateStyle: "short", timeStyle: "short"}); };
+const money = a => (a || []).map(n => Number(n) <= 0 ? "0" : n).join(" / ");
+let D = null, tab = "users";
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth(), fns = firebase.app().functions("europe-west1");
+$("loginBtn").onclick = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e => alert("Вхід не вдався: " + (e.code || e.message)));
+$("outBtn").onclick = () => auth.signOut();
+$("refresh").onclick = load;
+$("q").oninput = render;
+auth.onAuthStateChanged(u => {
+  $("loginBtn").hidden = !!u; $("outBtn").hidden = !u; $("who").textContent = u ? (u.email || "") : "";
+  if (u) load(); else {$("app").hidden = true; $("gate").hidden = false; $("gate").textContent = "Увійдіть акаунтом адміністратора.";}
+});
+
+async function load() {
+  $("gate").hidden = false; $("gate").textContent = "Завантаження…"; $("app").hidden = true;
+  try {
+    const r = await fns.httpsCallable("adminData")({});
+    D = r.data; $("gate").hidden = true; $("app").hidden = false; render();
+  } catch (e) {
+    $("gate").textContent = (e.code === "functions/permission-denied" || /permission/i.test(e.message || ""))
+      ? "Немає доступу: цей акаунт не в списку адміністраторів." : "Помилка: " + (e.message || e.code);
+  }
+}
+
+function itemState(i) {
+  if (i.status === "open") return ["Доступна", ""];
+  if (i.status === "given") return ["Продана / передана", "sold"];
+  if (i.payError) return ["Помилка оплати", "bad"];
+  if (i.status === "pending") return [i.hasInvoice ? "Оплату не завершено" : "Чернетка (оплату не починали)", "wait"];
+  return [i.status || "—", ""];
+}
+const pill = (t, c) => '<span class="pill ' + c + '">' + esc(t) + "</span>";
+
+function render() {
+  if (!D) return;
+  const U = {}; D.users.forEach(u => U[u.uid] = u);
+  const sellerOf = i => { const u = U[i.ownerId]; return esc(i.ownerName || (u && u.name) || "—") + (u && u.email ? '<br><span class="muted small">' + esc(u.email) + "</span>" : ""); };
+  const byOwner = {}, byBuyer = {};
+  D.items.forEach(i => (byOwner[i.ownerId] = byOwner[i.ownerId] || []).push(i));
+  D.requests.forEach(r => byBuyer[r.buyerId] = (byBuyer[r.buyerId] || 0) + 1);
+  const open = D.items.filter(i => i.status === "open"), sold = D.items.filter(i => i.status === "given");
+  const pend = D.items.filter(i => i.status === "pending"), errs = pend.filter(i => i.payError);
+  const paid = D.items.filter(i => i.paidAt);
+  const sellers = new Set(D.items.filter(i => i.status !== "pending").map(i => i.ownerId));
+  $("stats").innerHTML = [
+    [D.users.length, "Зареєстровано"], [sellers.size, "Продавців (є опубліковані речі)"], [D.items.length, "Усього записів речей"],
+    [open.length, "Доступні"], [sold.length, "Продані / передані"], [pend.length, "Не оплачені (чернетки)"],
+    [errs.length, "З помилкою оплати"], [paid.length, "Оплачених розміщень"], [D.requests.length, "Запитів покупців"],
+    [D.requests.filter(r => r.status === "accepted").length, "Покупців обрано"],
+  ].map(s => '<div class="stat"><b>' + s[0] + "</b><span>" + s[1] + "</span></div>").join("");
+  const T = [["users", "Користувачі"], ["items", "Усі речі"], ["problems", "Проблемні оплати"], ["requests", "Запити"]];
+  $("tabs").innerHTML = T.map(t => '<button class="btn ' + (tab === t[0] ? "on" : "s") + '" data-t="' + t[0] + '">' + t[1] + "</button>").join("");
+  $("tabs").querySelectorAll("button").forEach(b => b.onclick = () => {tab = b.dataset.t; render();});
+
+  const q = $("q").value.trim().toLowerCase();
+  let head = [], rows = [];
+  if (tab === "users") {
+    head = ["Користувач", "Пошта", "Реєстрація", "Останній вхід", "Речей", "Продано", "Не оплачено", "Запитів як покупець"];
+    rows = D.users.slice().sort((a, b) => new Date(b.created) - new Date(a.created)).map(u => {
+      const L = byOwner[u.uid] || [];
+      return [esc(u.name || "—"), esc(u.email), fmt(u.created), fmt(u.last), L.filter(i => i.status === "open").length,
+        L.filter(i => i.status === "given").length, L.filter(i => i.status === "pending").length, byBuyer[u.uid] || 0];
+    });
+  }
+  if (tab === "items") {
+    head = ["Річ", "Продавець", "Статус", "Ціни", "Категорія", "Створено", "Оплачено", "Фото"];
+    rows = D.items.slice().sort((a, b) => b.createdAt - a.createdAt).map(i => { const s = itemState(i);
+      return [esc(i.title), sellerOf(i), pill(s[0], s[1]), money(i.prices), esc(i.category), fmt(i.createdAt), fmt(i.paidAt), i.photos]; });
+  }
+  if (tab === "problems") {
+    head = ["Річ", "Продавець", "Що сталось", "Створено", "Помилка"];
+    rows = pend.slice().sort((a, b) => b.createdAt - a.createdAt).map(i => { const s = itemState(i);
+      return [esc(i.title), sellerOf(i), pill(s[0], s[1]), fmt(i.createdAt), i.payError ? esc(i.payError) + '<br><span class="muted small">' + fmt(i.payErrorAt) + "</span>" : "—"]; });
+  }
+  if (tab === "requests") {
+    head = ["Річ", "Покупець", "Продавець", "Ціна", "Статус", "Дата"];
+    rows = D.requests.slice().sort((a, b) => b.createdAt - a.createdAt).map(r => { const u = U[r.sellerId];
+      return [esc(r.itemTitle), esc(r.buyerName), esc((u && (u.name || u.email)) || "—"), r.price, pill(r.status === "accepted" ? "Покупця обрано" : "Очікує вибору", r.status === "accepted" ? "sold" : "wait"), fmt(r.createdAt)]; });
+  }
+  const shown = rows.filter(r => !q || r.join(" ").replace(/<[^>]+>/g, " ").toLowerCase().includes(q));
+  $("thead").innerHTML = "<tr>" + head.map(h => "<th>" + h + "</th>").join("") + "</tr>";
+  $("tbody").innerHTML = shown.length ? shown.map(r => "<tr>" + r.map(c => "<td>" + c + "</td>").join("") + "</tr>").join("")
+    : '<tr><td colspan="' + head.length + '" class="muted">Нічого немає.</td></tr>';
+}
+</script>
+</body>
+</html>
