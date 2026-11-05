@@ -141,6 +141,7 @@ async function act(a, id) {
         $("photoBox").innerHTML = r.data.photos.length ? r.data.photos.map(p => '<img src="' + esc(p) + '">').join("") : '<div class="muted">Фото немає.</div>';
       } catch (e) {$("photoTitle").textContent = "Не вдалося"; $("photoDesc").textContent = e.message || e.code;}
     }
+    else if (a === "approve") {if (!confirm("Дозволити цю річ і повернути її в каталог?")) return; await call("adminAction", {action: "approveItem", itemId: id}); await load();}
     else if (a === "close") {await call("adminAction", {action: "closeReport", reportId: id, status: "resolved"}); await load();}
     else if (a === "dismiss") {await call("adminAction", {action: "closeReport", reportId: id, status: "dismissed"}); await load();}
     else if (a === "items") {$("q").value = (D.users.find(x => x.uid === id) || {}).email || ""; tab = "items"; render();}
@@ -194,9 +195,9 @@ function render() {
   if (tab === "reports") {
     head = ["Річ", "Власник", "Причина", "Скаржився", "Дата", "Статус", "Дії"];
     rows = D.reports.slice().sort((a, b) => b.createdAt - a.createdAt).map(r => { const o = U[r.ownerId], rp = U[r.reporterId], isNew = r.status === "new";
-      return [esc(r.itemTitle), esc((o && (o.name || o.email)) || r.ownerId), esc(r.reason) + (r.text ? '<br><span class="muted small">' + esc(r.text) + "</span>" : ""), esc((rp && (rp.name || rp.email)) || "—"), fmt(r.createdAt),
+      return [esc(r.itemTitle), esc((o && (o.name || o.email)) || r.ownerId), esc(r.reason) + (r.text ? '<br><span class="muted small">' + esc(r.text) + "</span>" : ""), esc(r.reporterId === "auto" ? "Автоперевірка" : ((rp && (rp.name || rp.email)) || "—")), fmt(r.createdAt),
         pill(isNew ? "Нова" : (r.status === "dismissed" ? "Відхилена" : "Опрацьована"), isNew ? "wait" : ""),
-        btn("photos", r.itemId, "Фото") + btn("del", r.itemId, "Видалити річ", "d") + btn("block", r.ownerId, "Заблокувати власника", "d") + (isNew ? btn("close", r.id, "Опрацьовано") + btn("dismiss", r.id, "Відхилити") : "")]; });
+        btn("photos", r.itemId, "Фото") + btn("approve", r.itemId, "Дозволити річ") + btn("del", r.itemId, "Видалити річ", "d") + btn("block", r.ownerId, "Заблокувати власника", "d") + (isNew ? btn("close", r.id, "Опрацьовано") + btn("dismiss", r.id, "Відхилити") : "")]; });
   }
   if (tab === "requests") {
     head = ["Річ", "Покупець", "Продавець", "Ціна", "Статус", "Дата", "ТТН"];
