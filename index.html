@@ -132,12 +132,12 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
   .grid.compact .item h3{font-size:1.02rem;margin:4px 0 2px}
   .grid.compact .item-desc{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:.88rem}
   .grid.compact .pricetag,.grid.compact .item-body > .muted,.grid.compact .hint,.grid.compact .item-meta .pill{display:none}
-  .grid.compact .act{flex-direction:row;gap:6px}
-  .grid.compact .act .btn{flex:1;width:auto;padding:8px 6px;font-size:.78rem}
+  .grid.compact .act{flex-direction:column;gap:6px}
+  .grid.compact .act .btn{width:100%;padding:8px 10px;font-size:.84rem;white-space:nowrap}
   .grid.compact .ll{display:none}
   .grid.compact .ls{display:inline}
-  .grid.compact .subrow{gap:6px}
-  .grid.compact .subrow .btn{flex:1;padding:6px 4px;font-size:.72rem}
+  .grid.compact .subrow{gap:6px;margin-top:6px}
+  .grid.compact .subrow .btn{flex:1;padding:5px 4px;font-size:.72rem;font-weight:600;background:transparent;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
   .grid:not(.compact){grid-template-columns:minmax(0,560px) !important;justify-content:center}
 }
 @media (max-width: 560px) {
@@ -699,7 +699,7 @@ function card(it) {
     sh.onclick = () => shareLink(siteBase() + "#item=" + it.id, it.title);
     sub.appendChild(sh);
     if (!own && it.id) {
-      const rp = el("button", "btn btn-soft btn-sm", "⚑ Поскаржитись"); rp.type = "button";
+      const rp = el("button", "btn btn-soft btn-sm"); rp.innerHTML = '<span class="ll">⚑ Поскаржитись</span><span class="ls">⚑ Скарга</span>'; rp.type = "button";
       rp.onclick = () => openReport(it); sub.appendChild(rp);
     }
   }
