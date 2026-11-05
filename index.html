@@ -255,6 +255,17 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
   </form>
 </dialog>
 
+<dialog id="reportDialog">
+  <div class="modal-head"><h2>Поскаржитись</h2><button class="close" type="button" id="closeReport" aria-label="Закрити">×</button></div>
+  <form class="form-body" id="reportForm">
+    <p id="reportTitle" style="margin-top:0;font-weight:800"></p>
+    <div class="field"><label for="reportReason">Причина</label><select id="reportReason"><option>Заборонена річ</option><option>Шахрайство</option><option>Неправдивий опис або фото</option><option>Образливий вміст</option><option>Інше</option></select></div>
+    <div class="field"><label for="reportText">Коментар (необов’язково)</label><textarea id="reportText" maxlength="500" placeholder="Коротко опишіть проблему"></textarea></div>
+    <div class="err" id="reportErr"></div>
+    <div class="form-actions"><button type="button" class="btn btn-soft" id="cancelReport">Скасувати</button><button class="btn btn-primary" id="sendReport" type="submit">Надіслати</button></div>
+  </form>
+</dialog>
+
 <dialog id="ttnDialog">
   <div class="modal-head"><h2>Створити ТТН</h2><button class="close" type="button" id="closeTtn" aria-label="Закрити">×</button></div>
   <form class="form-body" id="ttnForm">
@@ -466,6 +477,10 @@ function startApp() {
       unsubs.push(db.collection("requests").where("sellerId", "==", u.uid).onSnapshot(s => {sales = s.docs.map(d => ({id: d.id, ...d.data()})); render();}, () => {}));
       unsubs.push(db.collection("requests").where("buyerId", "==", u.uid).onSnapshot(s => {buys = s.docs.map(d => ({id: d.id, ...d.data()})); render();}, () => {}));
       unsubs.push(db.collection("profiles").doc(u.uid).onSnapshot(d => {profile = d.exists ? d.data() : {}; render();}, () => {}));
+      unsubs.push(db.collection("blocks").doc(u.uid).onSnapshot(d => {
+        const b = d.exists ? d.data() : null;
+        if (b && (!b.until || b.until > Date.now())) showNotice("Ваш акаунт заблоковано " + (b.until ? "до " + new Date(b.until).toLocaleDateString("uk-UA") : "назавжди") + (b.reason ? ". Причина: " + b.reason : "") + ".", true);
+      }, () => {}));
       if (EMAILJS.service) db.collection("contacts").doc(u.uid).set({email: u.email || ""}).catch(() => {});
     } else if (view === "cabinet") view = "home";
     render();
@@ -504,14 +519,14 @@ function render() {
 
 function renderHome() {
   const q = $("searchInput").value.trim().toLocaleLowerCase("uk"), cat = $("categoryFilter").value, st = $("statusFilter").value;
-  const cityF = $("cityFilter").value, cities = [...new Set(allItems.filter(i => i.status !== "pending" && i.ownerCity).map(i => i.ownerCity))].sort((a, b) => a.localeCompare(b, "uk"));
+  const cityF = $("cityFilter").value, cities = [...new Set(allItems.filter(i => i.status !== "pending" && i.status !== "hidden" && i.ownerCity).map(i => i.ownerCity))].sort((a, b) => a.localeCompare(b, "uk"));
   $("cityFilter").innerHTML = '<option value="">Усі міста</option>' + cities.map(c => '<option>' + esc(c) + "</option>").join(""); $("cityFilter").value = cities.includes(cityF) ? cityF : "";
   const list = allItems.filter(i => {
-    if (focusItem) return i.id === focusItem && i.status !== "pending";
+    if (focusItem) return i.id === focusItem && i.status !== "pending" && i.status !== "hidden";
     if (sellerFilter && i.ownerId !== sellerFilter) return false;
     const hay = ((i.title || "") + " " + (i.desc || i.description || "") + " " + (i.category || "")).toLocaleLowerCase("uk");
     const given = i.status === "given";
-    return i.status !== "pending" && (!cityF || i.ownerCity === cityF) && (!q || hay.includes(q)) && (!cat || (i.category || "Інше") === cat) && (st === "all" || (st === "given" ? given : !given));
+    return i.status !== "pending" && i.status !== "hidden" && (!cityF || i.ownerCity === cityF) && (!q || hay.includes(q)) && (!cat || (i.category || "Інше") === cat) && (st === "all" || (st === "given" ? given : !given));
   });
   const sl = sellerFilter ? allItems.find(i => i.ownerId === sellerFilter) : null;
   $("heroSec").hidden = !!(sellerFilter || focusItem);
@@ -591,12 +606,30 @@ function card(it) {
     const sh = el("button", "btn btn-soft btn-sm", "↗ Поділитись"); sh.type = "button"; sh.style.marginTop = "8px";
     sh.onclick = () => shareLink(siteBase() + "#item=" + it.id, it.title);
     c.querySelector(".item-body").appendChild(sh);
+    if (!own && it.id) {
+      const rp = el("button", "btn btn-soft btn-sm", "⚑ Поскаржитись"); rp.type = "button"; rp.style.cssText = "margin-top:8px;margin-left:8px";
+      rp.onclick = () => openReport(it); c.querySelector(".item-body").appendChild(rp);
+    }
   }
   c.addEventListener("click", e => {
     if (window.innerWidth <= 560 && !focusItem && it.id && !it.demo && !e.target.closest("a, button, input")) location.hash = "#item=" + it.id;
   });
   return c;
 }
+
+/* ---------- скарги ---------- */
+let reportTarget = null;
+function openReport(it) {
+  needLogin(() => {reportTarget = it; $("reportTitle").textContent = "«" + it.title + "»"; $("reportText").value = ""; $("reportErr").textContent = ""; $("reportDialog").showModal();});
+}
+$("reportForm").addEventListener("submit", async e => {
+  e.preventDefault(); const b = $("sendReport"); b.disabled = true; $("reportErr").textContent = "";
+  try {
+    await db.collection("reports").add({itemId: reportTarget.id, itemTitle: reportTarget.title, ownerId: reportTarget.ownerId, reporterId: currentUser.uid, reason: $("reportReason").value, text: $("reportText").value.trim().slice(0, 500), status: "new", createdAt: Date.now()});
+    $("reportDialog").close(); showNotice("Дякуємо! Скаргу надіслано адміністрації.");
+  } catch (er) {$("reportErr").textContent = "Не вдалося надіслати: " + (er.code || er.message);}
+  b.disabled = false;
+});
 
 /* ---------- пропозиція ціни покупцем ---------- */
 let offerPicker = null, pendingTtn = null;
@@ -767,14 +800,14 @@ function renderCabinet() {
     }
     mine.forEach(i => {
       const bx = el("div", "cardbox"), n = sales.filter(s => s.itemId === i.id).length;
-      bx.appendChild(headRow(i, [el("b", "", i.title), el("div", "muted small", priceFrom(i).replace(" · запропонуйте свою ціну", "") + " · " + (i.status === "pending" ? "не опубліковано" : i.status === "given" ? "передано" : "доступна") + " · пропозицій: " + n)]));
+      bx.appendChild(headRow(i, [el("b", "", i.title), el("div", "muted small", priceFrom(i).replace(" · запропонуйте свою ціну", "") + " · " + (i.status === "pending" ? "не опубліковано" : i.status === "given" ? "передано" : i.status === "hidden" ? "приховано адміністрацією" : "доступна") + " · пропозицій: " + n)]));
       const r = el("div", "row");
       const ed = el("button", "btn btn-soft btn-sm", "Редагувати"); ed.onclick = () => openForm(i);
       const g = i.status === "pending" ? el("button", "btn btn-primary btn-sm", "Опублікувати безкоштовно") : el("button", "btn btn-soft btn-sm", i.status === "given" ? "Повернути в список" : "Позначити переданою");
       g.onclick = () => db.collection("items").doc(i.id).update({status: (i.status === "open") ? "given" : "open"});
       const d = el("button", "btn btn-danger btn-sm", "Видалити"); d.onclick = () => {if (confirm("Видалити «" + i.title + "»?")) db.collection("items").doc(i.id).delete();};
       const shr = el("button", "btn btn-soft btn-sm", "↗ Поділитись"); shr.onclick = () => shareLink(siteBase() + "#item=" + i.id, i.title);
-      if (i.status === "open") r.append(ed, g, shr, d); else r.append(ed, g, d); bx.appendChild(r); v.appendChild(bx);
+      if (i.status === "hidden") r.append(d); else if (i.status === "open") r.append(ed, g, shr, d); else r.append(ed, g, d); bx.appendChild(r); v.appendChild(bx);
     });
   }
   if (tab === "buys") {
@@ -828,6 +861,7 @@ $("heroAddBtn").onclick = () => openForm(null);
 ["closeDialog", "cancelDialog"].forEach(id => $(id).onclick = () => $("itemDialog").close());
 ["closeOffer", "cancelOffer"].forEach(id => $(id).onclick = () => $("offerDialog").close());
 ["closeTtn", "cancelTtn"].forEach(id => $(id).onclick = () => $("ttnDialog").close());
+["closeReport", "cancelReport"].forEach(id => $(id).onclick = () => $("reportDialog").close());
 readHash();
 $("rulesLink").onclick = e => {e.preventDefault(); openRules();};
 $("rulesLink2").onclick = e => {e.preventDefault(); openRules();};
