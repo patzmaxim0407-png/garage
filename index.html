@@ -120,11 +120,13 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
 #toTop{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));width:46px;height:46px;border-radius:50%;border:0;background:var(--green);color:#fff;font-size:1.4rem;line-height:1;box-shadow:0 6px 20px rgba(0,0,0,.25);cursor:pointer;z-index:40}
 #searchHint{margin:-10px 0 12px}
 [hidden]{display:none !important}
+.grid:not(.compact) .gal, .grid:not(.compact) .item-visual, .grid:not(.compact) .item h3 { cursor: pointer; }
+.grid:not(.compact) .item h3:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
 <header class="topbar"><div class="topbar-inner">
-  <div class="brand" id="brand">GARAGE 2<small>Маркет ресейлу</small></div>
+  <div class="brand" id="brand">GARAGE 2<small>Простір усвідомленого споживання</small></div>
   <div class="top-actions">
     <span class="user-status" id="userStatus">Ви не увійшли</span>
     <button class="btn btn-light" id="loginBtn">Увійти через Google</button>
@@ -137,17 +139,17 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
   <div id="homeView">
     <section class="hero" id="heroSec">
       <div>
-        <div class="eyebrow">Купуй за комфортною ціною · Добрі руки</div>
-        <h1>Передай далі.</h1>
-        <p>Сучасний простір усвідомленого споживання. Обери комфортну ціну, і річ знайде нових господарів.</p>
+        <div class="eyebrow">Віддай у добрі руки · від 10 грн</div>
+        <h1>Не викидай.<br>Передай далі.</h1>
+        <p>Речі, які ще можуть служити, але вже не потрібні вам, знайдуть нових господарів.</p>
         <button class="btn btn-primary" id="heroAddBtn">Віддати річ ↗</button>
       </div>
       <aside class="hero-card"><div class="symbol">↗</div>
-        <div><strong>Комфортні ціни.<br>Добрі руки.</strong><span>Менше зайвого. Більше повторного використання.</span></div>
+        <div><strong>Віддай у добрі руки<br>від 10 грн</strong><span>У кожного вдома є речі, які ще можуть служити. Передайте їх людям, яким вони справді потрібні, за символічну ціну.</span></div>
       </aside>
     </section>
     <section>
-      <div class="section-head"><div><div class="eyebrow" id="listEyebrow">Дай другий дім</div><h2 id="listTitle">Речі, які передають далі</h2></div><button class="btn btn-soft" id="allBtn" hidden>← Усі речі</button><span class="muted" id="itemCount">Завантаження…</span></div>
+      <div class="section-head"><div><div class="eyebrow" id="listEyebrow">Каталог</div><h2 id="listTitle">Речі, які передають далі</h2></div><button class="btn btn-soft" id="allBtn" hidden>← Усі речі</button><span class="muted" id="itemCount">Завантаження…</span></div>
       <div class="toolbar" id="toolbar">
         <div class="search-wrap"><span class="search-icon">⌕</span><input id="searchInput" type="search" placeholder="Пошук за назвою або описом…" autocomplete="off"></div>
         <select id="categoryFilter"><option value="">Усі категорії</option><option>Одяг</option><option>Дім</option><option>Техніка</option><option>Книги</option><option>Дитяче</option><option>Спорт</option><option>Інше</option></select>
@@ -203,7 +205,7 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
 <dialog id="rulesDialog">
   <div class="modal-head"><h2>Правила розміщення</h2><button class="close" type="button" id="closeRules" aria-label="Закрити">×</button></div>
   <div class="form-body rules">
-    <p style="margin-top:0">GARAGE 2 це місце, де люди передають нормальні речі за комфортною для обох сторін ціною. Розміщуючи оголошення, ви погоджуєтесь із цими правилами.</p>
+    <p style="margin-top:0">GARAGE 2 це місце, де люди передають нормальні речі в добрі руки за символічну ціну від <span class="minp"></span> грн. Розміщуючи оголошення, ви погоджуєтесь із цими правилами.</p>
     <h3 class="ok">✓ Можна</h3>
     <ul>
       <li>Нові та вживані речі, які ви маєте право передавати: одяг, взуття, книги, речі для дому, іграшки, спорттовари, дитячі речі, інструменти.</li>
@@ -597,7 +599,7 @@ function renderHome() {
   const sl = sellerFilter ? allItems.find(i => i.ownerId === sellerFilter) : null;
   $("heroSec").hidden = !!(sellerFilter || focusItem); $("toolbar").hidden = !!focusItem; $("itemCount").hidden = !!focusItem;
   $("allBtn").hidden = !(sellerFilter || focusItem);
-  $("listEyebrow").textContent = sellerFilter ? "Продавець" : "Дай другий дім";
+  $("listEyebrow").textContent = sellerFilter ? "Продавець" : "Каталог";
   $("listTitle").textContent = sellerFilter ? "Речі від " + (sl ? sl.ownerName : "продавця") : (focusItem ? "Річ за посиланням" : "Речі, які передають далі");
   $("itemCount").textContent = list.length + " " + (list.length === 1 ? "річ" : "речей");
   const g = $("itemsGrid"); g.innerHTML = ""; g.className = "grid" + (focusItem ? "" : " compact"); $("emptyState").hidden = list.length > 0;
@@ -664,7 +666,7 @@ function card(it) {
   else if (mine) act.appendChild(el("div", "notice", "Ваш запит на " + money(mine.price) + " надіслано. Продавець обере покупця, і ви побачите ТТН у кабінеті."));
   else {
     const m = minPriceOf(it);
-    const b1 = el("button", "btn btn-primary", m <= 0 ? "Забрати безкоштовно" : "Купити за " + m.toLocaleString("uk-UA") + " грн"); b1.type = "button"; b1.style.width = "100%"; b1.onclick = () => openOffer(it, true);
+    const b1 = el("button", "btn btn-primary", m <= 0 ? "Забрати безкоштовно" : "Забрати за " + m.toLocaleString("uk-UA") + " грн"); b1.type = "button"; b1.style.width = "100%"; b1.onclick = () => openOffer(it, true);
     const b2 = el("button", "btn btn-soft", "Запропонувати свою ціну"); b2.type = "button"; b2.style.cssText = "width:100%;margin-top:8px"; b2.onclick = () => openOffer(it, false);
     act.append(b1, b2);
   }
@@ -678,7 +680,7 @@ function card(it) {
     }
   }
   c.addEventListener("click", e => {
-    if (window.innerWidth <= 560 && !focusItem && it.id && !it.demo && !e.target.closest("a, button, input")) location.hash = "#item=" + it.id;
+    if ((window.innerWidth <= 560 || e.target.closest(".gal, .item-visual, h3")) && !focusItem && it.id && !it.demo && !e.target.closest("a, button, input")) location.hash = "#item=" + it.id;
   });
   return c;
 }
@@ -704,7 +706,7 @@ function openOffer(it, fixed) {
   needLogin(() => {
     pending = {it, fixed: !!fixed}; const min = minPriceOf(it), rv = profile.recv || {};
     $("offerTitle").textContent = "«" + it.title + "»";
-    $("offerHead").textContent = fixed ? (min > 0 ? "Купити за ціною продавця" : "Забрати безкоштовно") : "Запропонувати свою ціну";
+    $("offerHead").textContent = fixed ? (min > 0 ? "Забрати за ціною продавця" : "Забрати безкоштовно") : "Запропонувати свою ціну";
     $("offerMin").textContent = fixed ? (min > 0 ? "Ціна продавця: " + min + " грн. Продавець підтвердить, і сайт створить ТТН." : "Річ віддається безкоштовно. Продавець підтвердить, і сайт створить ТТН.") : (min > 0 ? "Мінімальна ціна: " + min + " грн. Запропонуйте свою суму, продавець обере найкращу пропозицію." : "Річ можна забрати безкоштовно, але ви можете запропонувати свою ціну.");
     $("offerPrice").min = min; $("offerPrice").value = min; $("offerPrice").readOnly = !!fixed;
     $("sendOffer").textContent = fixed ? "Надіслати запит" : "Запропонувати";
