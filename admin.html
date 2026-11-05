@@ -14,21 +14,32 @@ header b{letter-spacing:.1em}
 .btn{border:0;border-radius:999px;padding:9px 16px;font-weight:700;cursor:pointer;background:#fff;color:var(--green)}
 .btn.s{background:var(--accent);color:var(--deep)}
 .btn.on{background:var(--green);color:#fff}
-main{max-width:1200px;margin:auto;padding:18px}
-.msg{padding:12px 14px;border-radius:12px;background:#E7F0E8;margin-bottom:14px}.msg.err{background:#F9E8E6;color:var(--danger)}
+.btn.d{background:#F9E8E6;color:var(--danger)}
+.btn.sm{padding:5px 11px;font-size:.8rem;margin:2px 4px 2px 0}
+main{max-width:1250px;margin:auto;padding:18px}
 .stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:16px}
 .stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px}
 .stat b{display:block;font-size:1.6rem;line-height:1.1}.stat span{color:var(--muted);font-size:.82rem}
 .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px}
-input[type=search]{padding:10px 14px;border:1px solid var(--line);border-radius:12px;min-width:240px;background:#fff}
+input[type=search],input[type=text],select,textarea{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;font:inherit;color:var(--ink)}
+input[type=search]{min-width:240px}
 .wrap{overflow-x:auto;background:#fff;border:1px solid var(--line);border-radius:14px;margin-top:10px}
-table{border-collapse:collapse;width:100%;min-width:720px}
+table{border-collapse:collapse;width:100%;min-width:760px}
 th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top;font-size:.9rem}
 th{background:#F0F4F1;color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;position:sticky;top:0}
 .pill{display:inline-block;border-radius:999px;padding:2px 9px;font-size:.78rem;font-weight:700;background:var(--accent);color:var(--deep);white-space:nowrap}
 .pill.sold{background:#E3E7F5;color:#2B3A8C}.pill.bad{background:#F9E8E6;color:var(--danger)}.pill.wait{background:#FBF0D9;color:var(--warn)}
 .muted{color:var(--muted)}.small{font-size:.8rem}
 #gate{text-align:center;padding:60px 20px}
+dialog{border:0;border-radius:18px;padding:0;width:min(560px,calc(100% - 24px));box-shadow:0 20px 70px rgba(0,0,0,.3)}
+dialog::backdrop{background:rgba(13,29,22,.55)}
+.dh{background:var(--green);color:#fff;padding:14px 18px;font-weight:800;display:flex;justify-content:space-between;align-items:center}
+.dh button{background:none;border:0;color:#fff;font-size:1.5rem;cursor:pointer}
+.db{padding:16px 18px}
+.db label{display:block;font-weight:700;margin:10px 0 4px}
+.db select,.db input,.db textarea{width:100%}
+.photos{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px}
+.photos img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:10px}
 </style>
 </head>
 <body>
@@ -36,14 +47,33 @@ th{background:#F0F4F1;color:var(--muted);font-size:.78rem;text-transform:upperca
 <main>
   <div id="gate">Увійдіть акаунтом адміністратора.</div>
   <div id="app" hidden>
-    <div id="note"></div>
     <div class="stats" id="stats"></div>
     <div class="tabs" id="tabs"></div>
-    <input type="search" id="q" placeholder="Пошук…">
+    <input type="search" id="q" placeholder="Пошук (ім’я, пошта, назва речі)…">
     <button class="btn s" id="refresh">Оновити</button>
     <div class="wrap"><table><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
   </div>
 </main>
+
+<dialog id="blockDlg">
+  <div class="dh"><span>Заблокувати акаунт</span><button type="button" id="blockX">×</button></div>
+  <div class="db">
+    <div id="blockWho" style="font-weight:700"></div>
+    <label for="blockDays">Строк</label>
+    <select id="blockDays"><option value="1">1 день</option><option value="3">3 дні</option><option value="7" selected>7 днів</option><option value="30">30 днів</option><option value="0">Назавжди (вхід буде вимкнено)</option></select>
+    <label for="blockReason">Причина (її побачить користувач)</label>
+    <textarea id="blockReason" rows="3" maxlength="300" placeholder="Наприклад: розміщення забороненої речі"></textarea>
+    <label style="font-weight:400"><input type="checkbox" id="blockHide" checked style="width:auto"> Сховати його опубліковані речі з каталогу</label>
+    <div class="small muted" id="blockErr" style="color:var(--danger);min-height:18px"></div>
+    <button class="btn d" id="blockGo">Заблокувати</button>
+  </div>
+</dialog>
+
+<dialog id="photoDlg">
+  <div class="dh"><span id="photoTitle">Фото</span><button type="button" id="photoX">×</button></div>
+  <div class="db"><div id="photoDesc" class="small muted"></div><div class="photos" id="photoBox"></div></div>
+</dialog>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-functions-compat.js"></script>
@@ -57,15 +87,17 @@ const firebaseConfig = {
 const $ = id => document.getElementById(id);
 const esc = v => String(v == null ? "" : v).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const fmt = v => { if (!v) return "—"; const d = new Date(v); return isNaN(d) ? "—" : d.toLocaleString("uk-UA", {dateStyle: "short", timeStyle: "short"}); };
-const money = a => (a || []).map(n => Number(n) <= 0 ? "0" : n).join(" / ");
-let D = null, tab = "users";
+let D = null, tab = "users", blockUid = null;
 
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth(), fns = firebase.app().functions("europe-west1");
+const call = (name, data) => fns.httpsCallable(name)(data || {});
 $("loginBtn").onclick = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e => alert("Вхід не вдався: " + (e.code || e.message)));
 $("outBtn").onclick = () => auth.signOut();
 $("refresh").onclick = load;
 $("q").oninput = render;
+$("blockX").onclick = () => $("blockDlg").close();
+$("photoX").onclick = () => $("photoDlg").close();
 auth.onAuthStateChanged(u => {
   $("loginBtn").hidden = !!u; $("outBtn").hidden = !u; $("who").textContent = u ? (u.email || "") : "";
   if (u) load(); else {$("app").hidden = true; $("gate").hidden = false; $("gate").textContent = "Увійдіть акаунтом адміністратора.";}
@@ -74,22 +106,54 @@ auth.onAuthStateChanged(u => {
 async function load() {
   $("gate").hidden = false; $("gate").textContent = "Завантаження…"; $("app").hidden = true;
   try {
-    const r = await fns.httpsCallable("adminData")({});
-    D = r.data; $("gate").hidden = true; $("app").hidden = false; render();
+    const r = await call("adminData");
+    D = r.data; D.blocks = D.blocks || {}; D.reports = D.reports || {} ; if (!Array.isArray(D.reports)) D.reports = [];
+    $("gate").hidden = true; $("app").hidden = false; render();
   } catch (e) {
     $("gate").textContent = (e.code === "functions/permission-denied" || /permission/i.test(e.message || ""))
       ? "Немає доступу: цей акаунт не в списку адміністраторів." : "Помилка: " + (e.message || e.code);
   }
 }
 
+const isBlocked = b => b && (!b.until || b.until > Date.now());
 function itemState(i) {
   if (i.status === "open") return ["Доступна", ""];
   if (i.status === "given") return ["Продана / передана", "sold"];
-  if (i.payError) return ["Помилка оплати", "bad"];
-  if (i.status === "pending") return [i.hasInvoice ? "Оплату не завершено" : "Чернетка (оплату не починали)", "wait"];
+  if (i.status === "hidden") return ["Приховано", "bad"];
+  if (i.status === "pending") return ["Не опубліковано", "wait"];
   return [i.status || "—", ""];
 }
-const pill = (t, c) => '<span class="pill ' + c + '">' + esc(t) + "</span>";
+const pill = (t, c) => '<span class="pill ' + (c || "") + '">' + esc(t) + "</span>";
+const btn = (a, id, label, cls) => '<button class="btn sm ' + (cls || "s") + '" data-a="' + a + '" data-id="' + esc(id) + '">' + label + "</button>";
+
+async function act(a, id) {
+  try {
+    if (a === "del") {if (!confirm("Видалити цю річ назавжди?")) return; await call("adminAction", {action: "deleteItem", itemId: id}); await load();}
+    else if (a === "unblock") {if (!confirm("Розблокувати акаунт?")) return; await call("adminAction", {action: "unblockUser", uid: id}); await load();}
+    else if (a === "block") {
+      blockUid = id; const u = D.users.find(x => x.uid === id) || {};
+      $("blockWho").textContent = (u.name || "—") + " · " + (u.email || id); $("blockReason").value = ""; $("blockErr").textContent = ""; $("blockDlg").showModal();
+    }
+    else if (a === "photos") {
+      $("photoTitle").textContent = "Завантаження…"; $("photoBox").innerHTML = ""; $("photoDesc").textContent = ""; $("photoDlg").showModal();
+      try {
+        const r = await call("adminItem", {itemId: id}); $("photoTitle").textContent = r.data.title; $("photoDesc").textContent = r.data.desc || "Без опису";
+        $("photoBox").innerHTML = r.data.photos.length ? r.data.photos.map(p => '<img src="' + esc(p) + '">').join("") : '<div class="muted">Фото немає.</div>';
+      } catch (e) {$("photoTitle").textContent = "Не вдалося"; $("photoDesc").textContent = e.message || e.code;}
+    }
+    else if (a === "close") {await call("adminAction", {action: "closeReport", reportId: id, status: "resolved"}); await load();}
+    else if (a === "dismiss") {await call("adminAction", {action: "closeReport", reportId: id, status: "dismissed"}); await load();}
+    else if (a === "items") {$("q").value = (D.users.find(x => x.uid === id) || {}).email || ""; tab = "items"; render();}
+  } catch (e) {alert("Не вдалося: " + (e.message || e.code));}
+}
+$("blockGo").onclick = async () => {
+  const b = $("blockGo"); b.disabled = true; $("blockErr").textContent = "";
+  try {
+    await call("adminAction", {action: "blockUser", uid: blockUid, days: Number($("blockDays").value), reason: $("blockReason").value.trim(), hide: $("blockHide").checked});
+    $("blockDlg").close(); await load();
+  } catch (e) {$("blockErr").textContent = e.message || e.code;}
+  b.disabled = false;
+};
 
 function render() {
   if (!D) return;
@@ -99,38 +163,40 @@ function render() {
   D.items.forEach(i => (byOwner[i.ownerId] = byOwner[i.ownerId] || []).push(i));
   D.requests.forEach(r => byBuyer[r.buyerId] = (byBuyer[r.buyerId] || 0) + 1);
   const open = D.items.filter(i => i.status === "open"), sold = D.items.filter(i => i.status === "given");
-  const pend = D.items.filter(i => i.status === "pending"), errs = pend.filter(i => i.payError);
-  const paid = D.items.filter(i => i.paidAt);
-  const sellers = new Set(D.items.filter(i => i.status !== "pending").map(i => i.ownerId));
+  const blockedN = D.users.filter(u => isBlocked(D.blocks[u.uid])).length;
+  const newRep = D.reports.filter(r => r.status === "new");
   $("stats").innerHTML = [
-    [D.users.length, "Зареєстровано"], [sellers.size, "Продавців (є опубліковані речі)"], [D.items.length, "Усього записів речей"],
-    [open.length, "Доступні"], [sold.length, "Продані / передані"], [pend.length, "Не оплачені (чернетки)"],
-    [errs.length, "З помилкою оплати"], [paid.length, "Оплачених розміщень"], [D.requests.length, "Запитів покупців"],
-    [D.requests.filter(r => r.status === "accepted").length, "Покупців обрано"],
+    [D.users.length, "Зареєстровано"], [new Set(D.items.filter(i => i.status !== "pending").map(i => i.ownerId)).size, "Продавців"],
+    [open.length, "Доступні речі"], [sold.length, "Продані / передані"], [D.requests.length, "Запитів покупців"],
+    [D.requests.filter(r => r.ttn).length, "Створено ТТН"], [blockedN, "Заблоковано акаунтів"], [newRep.length, "Нових скарг"],
   ].map(s => '<div class="stat"><b>' + s[0] + "</b><span>" + s[1] + "</span></div>").join("");
-  const T = [["users", "Користувачі"], ["items", "Усі речі"], ["problems", "Проблемні оплати"], ["requests", "Запити"]];
+  const T = [["users", "Користувачі"], ["items", "Усі речі"], ["reports", "Скарги" + (newRep.length ? " (" + newRep.length + ")" : "")], ["requests", "Запити"]];
   $("tabs").innerHTML = T.map(t => '<button class="btn ' + (tab === t[0] ? "on" : "s") + '" data-t="' + t[0] + '">' + t[1] + "</button>").join("");
   $("tabs").querySelectorAll("button").forEach(b => b.onclick = () => {tab = b.dataset.t; render();});
 
   const q = $("q").value.trim().toLowerCase();
   let head = [], rows = [];
   if (tab === "users") {
-    head = ["Користувач", "Пошта", "Реєстрація", "Останній вхід", "Речей", "Продано", "Не оплачено", "Запитів як покупець"];
+    head = ["Користувач", "Пошта", "Реєстрація", "Останній вхід", "Речей", "Продано", "Запитів", "Статус", "Дії"];
     rows = D.users.slice().sort((a, b) => new Date(b.created) - new Date(a.created)).map(u => {
-      const L = byOwner[u.uid] || [];
-      return [esc(u.name || "—"), esc(u.email), fmt(u.created), fmt(u.last), L.filter(i => i.status === "open").length,
-        L.filter(i => i.status === "given").length, L.filter(i => i.status === "pending").length, byBuyer[u.uid] || 0];
+      const L = byOwner[u.uid] || [], bl = D.blocks[u.uid], on = isBlocked(bl);
+      const st = on ? pill(bl.until ? "Заблоковано до " + fmt(bl.until) : "Заблоковано назавжди", "bad") + (bl.reason ? '<br><span class="muted small">' + esc(bl.reason) + "</span>" : "") : pill("Активний", "");
+      return [esc(u.name || "—"), esc(u.email), fmt(u.created), fmt(u.last), L.filter(i => i.status === "open").length, L.filter(i => i.status === "given").length, byBuyer[u.uid] || 0, st,
+        btn("items", u.uid, "Речі") + (on ? btn("unblock", u.uid, "Розблокувати") : btn("block", u.uid, "Заблокувати", "d"))];
     });
   }
   if (tab === "items") {
-    head = ["Річ", "Продавець", "Статус", "Ціни", "Категорія", "Створено", "Оплачено", "Фото"];
-    rows = D.items.slice().sort((a, b) => b.createdAt - a.createdAt).map(i => { const s = itemState(i);
-      return [esc(i.title), sellerOf(i), pill(s[0], s[1]), money(i.prices), esc(i.category), fmt(i.createdAt), fmt(i.paidAt), i.photos]; });
+    head = ["Річ", "Продавець", "Статус", "Ціна від", "Категорія", "Створено", "Фото", "Дії"];
+    rows = D.items.slice().sort((a, b) => b.createdAt - a.createdAt).map(i => { const s = itemState(i), min = i.minPrice != null ? i.minPrice : (i.prices || [])[0];
+      return [esc(i.title), sellerOf(i), pill(s[0], s[1]), min == null ? "—" : esc(min), esc(i.category), fmt(i.createdAt), i.photos,
+        btn("photos", i.id, "Фото") + btn("del", i.id, "Видалити", "d") + (i.ownerId ? btn("block", i.ownerId, "Заблокувати власника", "d") : "")]; });
   }
-  if (tab === "problems") {
-    head = ["Річ", "Продавець", "Що сталось", "Створено", "Помилка"];
-    rows = pend.slice().sort((a, b) => b.createdAt - a.createdAt).map(i => { const s = itemState(i);
-      return [esc(i.title), sellerOf(i), pill(s[0], s[1]), fmt(i.createdAt), i.payError ? esc(i.payError) + '<br><span class="muted small">' + fmt(i.payErrorAt) + "</span>" : "—"]; });
+  if (tab === "reports") {
+    head = ["Річ", "Власник", "Причина", "Скаржився", "Дата", "Статус", "Дії"];
+    rows = D.reports.slice().sort((a, b) => b.createdAt - a.createdAt).map(r => { const o = U[r.ownerId], rp = U[r.reporterId], isNew = r.status === "new";
+      return [esc(r.itemTitle), esc((o && (o.name || o.email)) || r.ownerId), esc(r.reason) + (r.text ? '<br><span class="muted small">' + esc(r.text) + "</span>" : ""), esc((rp && (rp.name || rp.email)) || "—"), fmt(r.createdAt),
+        pill(isNew ? "Нова" : (r.status === "dismissed" ? "Відхилена" : "Опрацьована"), isNew ? "wait" : ""),
+        btn("photos", r.itemId, "Фото") + btn("del", r.itemId, "Видалити річ", "d") + btn("block", r.ownerId, "Заблокувати власника", "d") + (isNew ? btn("close", r.id, "Опрацьовано") + btn("dismiss", r.id, "Відхилити") : "")]; });
   }
   if (tab === "requests") {
     head = ["Річ", "Покупець", "Продавець", "Ціна", "Статус", "Дата", "ТТН"];
@@ -141,6 +207,7 @@ function render() {
   $("thead").innerHTML = "<tr>" + head.map(h => "<th>" + h + "</th>").join("") + "</tr>";
   $("tbody").innerHTML = shown.length ? shown.map(r => "<tr>" + r.map(c => "<td>" + c + "</td>").join("") + "</tr>").join("")
     : '<tr><td colspan="' + head.length + '" class="muted">Нічого немає.</td></tr>';
+  $("tbody").querySelectorAll("button[data-a]").forEach(b => b.onclick = () => act(b.dataset.a, b.dataset.id));
 }
 </script>
 </body>
