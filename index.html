@@ -108,6 +108,15 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
 .plist button:hover{background:var(--accent)}
 .pricetag{font-weight:800;color:var(--green);font-size:1.05rem;margin:6px 0 0}
 .ttnbox{background:var(--accent);border-radius:12px;padding:10px 12px;margin-top:10px;font-weight:700;overflow-wrap:anywhere}
+@media (max-width: 560px) {
+  .grid.compact { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
+  .grid.compact .item { cursor: pointer; }
+  .grid.compact .item-body { padding: 10px 10px 12px; }
+  .grid.compact .item-desc, .grid.compact .act, .grid.compact .hint, .grid.compact .item-meta, .grid.compact .item-body > .btn, .grid.compact .item-body > .muted, .grid.compact .pl { display: none !important; }
+  .grid.compact .item h3 { font-size: .98rem; margin: 2px 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .grid.compact .pricetag { font-size: 1rem; margin: 2px 0 0; }
+}
+.citydate{color:var(--muted);font-size:.82rem;margin-top:2px}
 </style>
 </head>
 <body>
@@ -139,6 +148,7 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
       <div class="toolbar">
         <div class="search-wrap"><span class="search-icon">⌕</span><input id="searchInput" type="search" placeholder="Пошук за назвою або описом…" autocomplete="off"></div>
         <select id="categoryFilter"><option value="">Усі категорії</option><option>Одяг</option><option>Дім</option><option>Техніка</option><option>Книги</option><option>Дитяче</option><option>Спорт</option><option>Інше</option></select>
+        <select id="cityFilter"><option value="">Усі міста</option></select>
         <select id="statusFilter"><option value="available">Доступні</option><option value="all">Усі речі</option><option value="given">Вже передані</option></select>
       </div>
       <div id="itemsGrid" class="grid"></div>
@@ -347,7 +357,7 @@ const DOCS = {
     <p class="small muted">Редакція від 4 листопада 2026 р.</p>
     <h3>Які дані ми збираємо</h3>
     <ul><li>З вашого Google-акаунта: ім'я та адреса електронної пошти (пароль ми не отримуємо).</li>
-    <li>Профіль: ім'я; для продавців ще й дані відправника (ПІБ, телефон, місто та відділення Нової пошти).</li>
+    <li>Профіль: ім'я, місто; для продавців ще й дані відправника (ПІБ, телефон, місто та відділення Нової пошти).</li>
     <li>Оголошення: назва, опис, ціни, фото.</li>
     <li>Пропозиції покупців: запропонована ціна та дані доставки (ПІБ отримувача, телефон, місто й відділення Нової пошти).</li>
     <li>Технічні дані, потрібні для входу й роботи Сайту.</li></ul>
@@ -494,12 +504,14 @@ function render() {
 
 function renderHome() {
   const q = $("searchInput").value.trim().toLocaleLowerCase("uk"), cat = $("categoryFilter").value, st = $("statusFilter").value;
+  const cityF = $("cityFilter").value, cities = [...new Set(allItems.filter(i => i.status !== "pending" && i.ownerCity).map(i => i.ownerCity))].sort((a, b) => a.localeCompare(b, "uk"));
+  $("cityFilter").innerHTML = '<option value="">Усі міста</option>' + cities.map(c => '<option>' + esc(c) + "</option>").join(""); $("cityFilter").value = cities.includes(cityF) ? cityF : "";
   const list = allItems.filter(i => {
     if (focusItem) return i.id === focusItem && i.status !== "pending";
     if (sellerFilter && i.ownerId !== sellerFilter) return false;
     const hay = ((i.title || "") + " " + (i.desc || i.description || "") + " " + (i.category || "")).toLocaleLowerCase("uk");
     const given = i.status === "given";
-    return i.status !== "pending" && (!q || hay.includes(q)) && (!cat || (i.category || "Інше") === cat) && (st === "all" || (st === "given" ? given : !given));
+    return i.status !== "pending" && (!cityF || i.ownerCity === cityF) && (!q || hay.includes(q)) && (!cat || (i.category || "Інше") === cat) && (st === "all" || (st === "given" ? given : !given));
   });
   const sl = sellerFilter ? allItems.find(i => i.ownerId === sellerFilter) : null;
   $("heroSec").hidden = !!(sellerFilter || focusItem);
@@ -507,14 +519,29 @@ function renderHome() {
   $("listEyebrow").textContent = sellerFilter ? "Продавець" : "Дай другий дім";
   $("listTitle").textContent = sellerFilter ? "Речі від " + (sl ? sl.ownerName : "продавця") : (focusItem ? "Річ за посиланням" : "Речі, які передають далі");
   $("itemCount").textContent = list.length + " " + (list.length === 1 ? "річ" : "речей");
-  const g = $("itemsGrid"); g.innerHTML = ""; $("emptyState").hidden = list.length > 0;
+  const g = $("itemsGrid"); g.innerHTML = ""; g.className = "grid" + (focusItem ? "" : " compact"); $("emptyState").hidden = list.length > 0;
   list.forEach(i => g.appendChild(card(i)));
 }
 
 const minPriceOf = it => it.minPrice != null ? Number(it.minPrice) : ((it.prices && it.prices.length) ? Math.min.apply(null, it.prices.map(Number)) : (Number(it.price) || 0));
+const priceShort = it => {const m = minPriceOf(it); return m <= 0 ? "Безкоштовно" : m.toLocaleString("uk-UA") + " грн";};
+const cityDate = it => [it.ownerCity, it.createdAt ? new Date(it.createdAt).toLocaleDateString("uk-UA", {day: "numeric", month: "short"}) : ""].filter(Boolean).join(" · ");
 const priceFrom = it => {const m = minPriceOf(it); return m <= 0 ? "Безкоштовно" : "Ціна продавця: " + m.toLocaleString("uk-UA") + " грн";};
 const normPhone = p => {let d = String(p || "").replace(/\D/g, ""); if (d.length === 10 && d[0] === "0") d = "38" + d; if (d.length === 9) d = "380" + d; return d;};
 const validPhone = p => /^380\d{9}$/.test(normPhone(p));
+function cityPicker(root, init) {
+  root.innerHTML = '<input class="pc1" placeholder="Почніть вводити назву міста" autocomplete="off"><div class="plist pcl1"></div>';
+  const ci = root.querySelector(".pc1"), cl = root.querySelector(".pcl1"); let name = init || "", t;
+  ci.value = name;
+  ci.oninput = () => {
+    name = ""; clearTimeout(t); const q = ci.value.trim(); if (q.length < 2) {cl.innerHTML = ""; return;}
+    t = setTimeout(async () => {
+      try {const r = await fns.httpsCallable("npCities")({q: q}); cl.innerHTML = ""; r.data.forEach(c => {const b = el("button", "", c.name + (c.area ? " (" + c.area + " обл.)" : "")); b.type = "button"; b.onclick = () => {name = c.name; ci.value = c.name; cl.innerHTML = "";}; cl.appendChild(b);});}
+      catch (e) {cl.textContent = "Не вдалося завантажити міста.";}
+    }, 350);
+  };
+  return {get: () => name, text: () => ci.value.trim()};
+}
 function shipPicker(root, init) {
   init = init || {};
   const st = {cityRef: init.cityRef || "", cityName: init.cityName || "", whRef: init.whRef || "", whName: init.whName || ""};
@@ -549,7 +576,7 @@ function card(it) {
     (ph.length > 1 ? '<div class="hint">← гортайте фото (' + ph.length + ") →</div>" : "") +
     '<div class="item-body"><div class="item-meta"><span>' + esc(it.category || "Інше") + '</span><span class="pill ' + (given ? "given" : "") + '">' + (given ? "Передано далі" : "Доступна") + "</span></div>" +
     "<h3>" + esc(it.title || "Без назви") + '</h3><div class="item-desc">' + esc(it.desc || it.description || "Без опису") + "</div>" +
-    '<div class="muted small">Від: ' + (it.ownerId ? '<a href="#seller=' + esc(it.ownerId) + '" style="color:inherit;text-decoration:underline">' + esc(it.ownerName || "Користувач") + '</a>' : esc(it.ownerName || "Користувач")) + '</div><div class="pricetag">' + esc(priceFrom(it)) + '</div><div class="act"></div></div>';
+    '<div class="muted small">Від: ' + (it.ownerId ? '<a href="#seller=' + esc(it.ownerId) + '" style="color:inherit;text-decoration:underline">' + esc(it.ownerName || "Користувач") + '</a>' : esc(it.ownerName || "Користувач")) + '</div><div class="pricetag">' + (minPriceOf(it) > 0 ? '<span class="pl">Ціна продавця: </span>' : '') + esc(priceShort(it)) + '</div><div class="citydate">' + esc(cityDate(it)) + '</div><div class="act"></div></div>';
   const act = c.querySelector(".act");
   if (given) act.appendChild(el("div", "muted small", "✓ Річ уже передано"));
   else if (own) act.appendChild(el("div", "muted small", "Це ваша річ"));
@@ -565,6 +592,9 @@ function card(it) {
     sh.onclick = () => shareLink(siteBase() + "#item=" + it.id, it.title);
     c.querySelector(".item-body").appendChild(sh);
   }
+  c.addEventListener("click", e => {
+    if (window.innerWidth <= 560 && !focusItem && it.id && !it.demo && !e.target.closest("a, button, input")) location.hash = "#item=" + it.id;
+  });
   return c;
 }
 
@@ -643,7 +673,7 @@ $("itemForm").addEventListener("submit", async e => {
     if (photos.length) {data.photos = photos; data.photo = photos[0];}
     if (it) {await db.collection("items").doc(it.id).update(data); $("itemDialog").close(); showNotice("Зміни збережено.");}
     else {
-      await db.collection("items").add({...data, ownerId: currentUser.uid, ownerName: pname("Продавець"), status: "open", createdAt: Date.now(), rulesAcceptedAt: Date.now()});
+      await db.collection("items").add({...data, ownerId: currentUser.uid, ownerName: pname("Продавець"), ownerCity: profile.city || "", status: "open", createdAt: Date.now(), rulesAcceptedAt: Date.now()});
       $("itemDialog").close(); showNotice("Річ опубліковано. Передай далі!");
     }
   } catch (er) {$("formErr").textContent = er.message || "Не вдалося зберегти.";}
@@ -762,19 +792,20 @@ function renderCabinet() {
   }
   if (tab === "profile") {
     const f = el("form", "cardbox"), sh = profile.ship || {};
-    f.innerHTML = '<div class="field"><label>Пошта, з якою ви увійшли (Google)</label><input id="pe0" disabled></div><div class="field"><label>Ім’я, яке бачать інші</label><input id="pn" maxlength="40"></div><h3 style="margin:14px 0 6px">Дані відправника (для ТТН)</h3><div class="field"><label>Відправник (Прізвище Ім’я По батькові)</label><input id="sn" maxlength="80" placeholder="Петренко Іван Іванович"></div><div class="field"><label>Телефон відправника</label><input id="sp" type="tel" placeholder="0991234567"></div><div id="shipBox"></div><div class="muted small">Ці дані потрібні, коли ви обираєте покупця: Нова пошта створить ТТН, а ви віднесете посилку у вказане відділення.</div><div class="err" id="pe"></div><button class="btn btn-primary" id="ps">Зберегти</button>';
+    f.innerHTML = '<div class="field"><label>Пошта, з якою ви увійшли (Google)</label><input id="pe0" disabled></div><div class="field"><label>Ім’я, яке бачать інші</label><input id="pn" maxlength="40"></div><div class="field"><label>Місто, де ви живете або продаєте</label><div id="cityBox"></div></div><h3 style="margin:14px 0 6px">Дані відправника (для ТТН)</h3><div class="field"><label>Відправник (Прізвище Ім’я По батькові)</label><input id="sn" maxlength="80" placeholder="Петренко Іван Іванович"></div><div class="field"><label>Телефон відправника</label><input id="sp" type="tel" placeholder="0991234567"></div><div id="shipBox"></div><div class="muted small">Ці дані потрібні, коли ви обираєте покупця: Нова пошта створить ТТН, а ви віднесете посилку у вказане відділення.</div><div class="err" id="pe"></div><button class="btn btn-primary" id="ps">Зберегти</button>';
     f.querySelector("#pe0").value = currentUser.email || "—";
     f.querySelector("#pn").value = profile.name || currentUser.displayName || "";
     f.querySelector("#sn").value = sh.name || ""; f.querySelector("#sp").value = sh.phone || "";
-    const pk = shipPicker(f.querySelector("#shipBox"), sh);
+    const pk = shipPicker(f.querySelector("#shipBox"), sh), cp = cityPicker(f.querySelector("#cityBox"), profile.city || "");
     f.onsubmit = async e => {
       e.preventDefault();
       const n = f.querySelector("#pn").value.trim(), sn = f.querySelector("#sn").value.trim().replace(/\s+/g, " "), sp = f.querySelector("#sp").value.trim(), er = f.querySelector("#pe"), g = pk.get();
-      const any = sn || sp || g.cityRef || g.whRef;
+      const cityVal = cp.get(), any = sn || sp || g.cityRef || g.whRef;
+      if (cp.text() && !cityVal) {er.style.color = "var(--danger)"; er.textContent = "Оберіть місто зі списку підказок."; return;}
       if (any && (sn.split(" ").length < 2 || !validPhone(sp) || !pk.ok())) {er.style.color = "var(--danger)"; er.textContent = "Для ТТН вкажіть прізвище та ім’я, телефон, місто й відділення (зі списку), або залиште ці поля порожніми."; return;}
       try {
-        await db.collection("profiles").doc(currentUser.uid).set({name: n, ship: any ? {name: sn, phone: normPhone(sp), ...g} : firebase.firestore.FieldValue.delete()}, {merge: true});
-        await Promise.all(allItems.filter(i => i.ownerId === currentUser.uid).map(i => db.collection("items").doc(i.id).update({ownerName: n || currentUser.displayName || "Продавець"})));
+        await db.collection("profiles").doc(currentUser.uid).set({name: n, city: cityVal, ship: any ? {name: sn, phone: normPhone(sp), ...g} : firebase.firestore.FieldValue.delete()}, {merge: true});
+        await Promise.all(allItems.filter(i => i.ownerId === currentUser.uid).map(i => db.collection("items").doc(i.id).update({ownerName: n || currentUser.displayName || "Продавець", ownerCity: cityVal})));
         er.style.color = "var(--green)"; er.textContent = "Збережено ✓";
       } catch (x) {er.style.color = "var(--danger)"; er.textContent = "Не вдалося: " + (x.code || x.message);}
     };
@@ -793,7 +824,7 @@ $("brand").onclick = () => {if (location.hash) location.hash = ""; setView("home
 $("allBtn").onclick = () => {location.hash = "";};
 window.addEventListener("hashchange", () => {readHash(); view = "home"; render(); window.scrollTo(0, 0);});
 $("heroAddBtn").onclick = () => openForm(null);
-["searchInput", "categoryFilter", "statusFilter"].forEach(id => $(id).addEventListener(id === "searchInput" ? "input" : "change", renderHome));
+["searchInput", "categoryFilter", "cityFilter", "statusFilter"].forEach(id => $(id).addEventListener(id === "searchInput" ? "input" : "change", renderHome));
 ["closeDialog", "cancelDialog"].forEach(id => $(id).onclick = () => $("itemDialog").close());
 ["closeOffer", "cancelOffer"].forEach(id => $(id).onclick = () => $("offerDialog").close());
 ["closeTtn", "cancelTtn"].forEach(id => $(id).onclick = () => $("ttnDialog").close());
