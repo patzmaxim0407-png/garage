@@ -119,6 +119,7 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
 .citydate{color:var(--muted);font-size:.82rem;margin-top:2px}
 #toTop{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));width:46px;height:46px;border-radius:50%;border:0;background:var(--green);color:#fff;font-size:1.4rem;line-height:1;box-shadow:0 6px 20px rgba(0,0,0,.25);cursor:pointer;z-index:40}
 #searchHint{margin:-10px 0 12px}
+[hidden]{display:none !important}
 </style>
 </head>
 <body>
@@ -147,7 +148,7 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
     </section>
     <section>
       <div class="section-head"><div><div class="eyebrow" id="listEyebrow">Дай другий дім</div><h2 id="listTitle">Речі, які передають далі</h2></div><button class="btn btn-soft" id="allBtn" hidden>← Усі речі</button><span class="muted" id="itemCount">Завантаження…</span></div>
-      <div class="toolbar">
+      <div class="toolbar" id="toolbar">
         <div class="search-wrap"><span class="search-icon">⌕</span><input id="searchInput" type="search" placeholder="Пошук за назвою або описом…" autocomplete="off"></div>
         <select id="categoryFilter"><option value="">Усі категорії</option><option>Одяг</option><option>Дім</option><option>Техніка</option><option>Книги</option><option>Дитяче</option><option>Спорт</option><option>Інше</option></select>
         <select id="cityFilter"><option value="">Усі міста</option></select>
@@ -588,7 +589,7 @@ function renderHome() {
   const sh = $("searchHint"); sh.innerHTML = ""; if (hint) sh.appendChild(el("span", "", hint + " "));
   if (sugg) {const sb = el("button", "btn btn-soft btn-sm", "Можливо, ви шукали: «" + sugg + "»"); sb.type = "button"; sb.onclick = () => {$("searchInput").value = words.slice(0, -1).concat(sugg).join(" "); renderHome();}; sh.appendChild(sb);}
   const sl = sellerFilter ? allItems.find(i => i.ownerId === sellerFilter) : null;
-  $("heroSec").hidden = !!(sellerFilter || focusItem);
+  $("heroSec").hidden = !!(sellerFilter || focusItem); $("toolbar").hidden = !!focusItem; $("itemCount").hidden = !!focusItem;
   $("allBtn").hidden = !(sellerFilter || focusItem);
   $("listEyebrow").textContent = sellerFilter ? "Продавець" : "Дай другий дім";
   $("listTitle").textContent = sellerFilter ? "Речі від " + (sl ? sl.ownerName : "продавця") : (focusItem ? "Річ за посиланням" : "Речі, які передають далі");
