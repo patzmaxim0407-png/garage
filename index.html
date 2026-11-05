@@ -112,7 +112,7 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
   .grid.compact { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
   .grid.compact .item { cursor: pointer; }
   .grid.compact .item-body { padding: 10px 10px 12px; }
-  .grid.compact .item-desc, .grid.compact .act, .grid.compact .hint, .grid.compact .item-meta, .grid.compact .item-body > .btn, .grid.compact .item-body > .muted, .grid.compact .pl { display: none !important; }
+  .grid.compact .item-desc, .grid.compact .act, .grid.compact .hint, .grid.compact .item-meta, .grid.compact .item-body > .btn, .grid.compact .subrow, .grid.compact .item-body > .muted, .grid.compact .pl { display: none !important; }
   .grid.compact .item h3 { font-size: .98rem; margin: 2px 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .grid.compact .pricetag { font-size: 1rem; margin: 2px 0 0; }
 }
@@ -122,11 +122,34 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
 [hidden]{display:none !important}
 .grid:not(.compact) .gal, .grid:not(.compact) .item-visual, .grid:not(.compact) .item h3 { cursor: pointer; }
 .grid:not(.compact) .item h3:hover { text-decoration: underline; }
+.act{display:flex;flex-direction:column;gap:8px}
+.act .btn{width:100%}
+.subrow{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.ls{display:none}
+@media (min-width: 561px) {
+  .grid.compact{grid-template-columns:repeat(auto-fill,minmax(205px,1fr)) !important;gap:14px !important}
+  .grid.compact .item-body{padding:12px;gap:2px}
+  .grid.compact .item h3{font-size:1.02rem;margin:4px 0 2px}
+  .grid.compact .item-desc{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:.88rem}
+  .grid.compact .pricetag,.grid.compact .item-body > .muted,.grid.compact .hint,.grid.compact .item-meta .pill{display:none}
+  .grid.compact .act{flex-direction:row;gap:6px}
+  .grid.compact .act .btn{flex:1;width:auto;padding:8px 6px;font-size:.78rem}
+  .grid.compact .ll{display:none}
+  .grid.compact .ls{display:inline}
+  .grid.compact .subrow{gap:6px}
+  .grid.compact .subrow .btn{flex:1;padding:6px 4px;font-size:.72rem}
+  .grid:not(.compact){grid-template-columns:minmax(0,560px) !important;justify-content:center}
+}
+@media (max-width: 560px) {
+  .toolbar { gap: 8px !important; }
+  .toolbar .search-wrap { flex: 1 1 100% !important; }
+  .toolbar select { flex: 1 1 0 !important; min-width: 0 !important; width: 0; padding: 11px 8px !important; font-size: .85rem !important; text-overflow: ellipsis; }
+}
 </style>
 </head>
 <body>
 <header class="topbar"><div class="topbar-inner">
-  <div class="brand" id="brand">GARAGE 2<small>Простір усвідомленого споживання</small></div>
+  <div class="brand" id="brand">GARAGE 2<small>Маркет ресейлу</small></div>
   <div class="top-actions">
     <span class="user-status" id="userStatus">Ви не увійшли</span>
     <button class="btn btn-light" id="loginBtn">Увійти через Google</button>
@@ -140,20 +163,20 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
     <section class="hero" id="heroSec">
       <div>
         <div class="eyebrow">Віддай у добрі руки · від 10 грн</div>
-        <h1>Не викидай.<br>Передай далі.</h1>
-        <p>Речі, які ще можуть служити, але вже не потрібні вам, знайдуть нових господарів.</p>
+        <h1>Передай далі.</h1>
+        <p>Простір усвідомленого споживання.</p>
         <button class="btn btn-primary" id="heroAddBtn">Віддати річ ↗</button>
       </div>
-      <aside class="hero-card"><div class="symbol">↗</div>
-        <div><strong>Віддай у добрі руки<br>від 10 грн</strong><span>У кожного вдома є речі, які ще можуть служити. Передайте їх людям, яким вони справді потрібні, за символічну ціну.</span></div>
+      <aside class="hero-card" id="heroCard" role="button" tabindex="0" aria-label="Правила розміщення" style="cursor:pointer"><div class="symbol">↗</div>
+        <div><strong>Віддай у добрі руки<br>від 10 грн</strong><span>У кожного вдома є речі, які ще можуть служити. Передайте їх людям, яким вони справді потрібні, за символічну ціну.</span><span style="margin-top:12px;color:#fff;font-weight:700">Правила розміщення →</span></div>
       </aside>
     </section>
     <section>
       <div class="section-head"><div><div class="eyebrow" id="listEyebrow">Каталог</div><h2 id="listTitle">Речі, які передають далі</h2></div><button class="btn btn-soft" id="allBtn" hidden>← Усі речі</button><span class="muted" id="itemCount">Завантаження…</span></div>
       <div class="toolbar" id="toolbar">
         <div class="search-wrap"><span class="search-icon">⌕</span><input id="searchInput" type="search" placeholder="Пошук за назвою або описом…" autocomplete="off"></div>
-        <select id="categoryFilter"><option value="">Усі категорії</option><option>Одяг</option><option>Дім</option><option>Техніка</option><option>Книги</option><option>Дитяче</option><option>Спорт</option><option>Інше</option></select>
-        <select id="cityFilter"><option value="">Усі міста</option></select>
+        <select id="categoryFilter"><option value="">Категорії</option><option>Одяг</option><option>Дім</option><option>Техніка</option><option>Книги</option><option>Дитяче</option><option>Спорт</option><option>Інше</option></select>
+        <select id="cityFilter"><option value="">Міста</option></select>
         <select id="statusFilter"><option value="available">Доступні</option><option value="all">Усі речі</option><option value="given">Вже передані</option></select>
       </div>
       <div id="searchHint" class="muted small"></div>
@@ -570,7 +593,7 @@ const itemToks = i => i._tk || (i._tk = toks([i.title, i.desc || i.description, 
 function renderHome() {
   const q = $("searchInput").value.trim().toLocaleLowerCase("uk"), cat = $("categoryFilter").value, st = $("statusFilter").value;
   const cityF = $("cityFilter").value, cities = [...new Set(allItems.filter(i => i.status !== "pending" && i.status !== "hidden" && i.ownerCity).map(i => i.ownerCity))].sort((a, b) => a.localeCompare(b, "uk"));
-  $("cityFilter").innerHTML = '<option value="">Усі міста</option>' + cities.map(c => '<option>' + esc(c) + "</option>").join(""); $("cityFilter").value = cities.includes(cityF) ? cityF : "";
+  $("cityFilter").innerHTML = '<option value="">Міста</option>' + cities.map(c => '<option>' + esc(c) + "</option>").join(""); $("cityFilter").value = cities.includes(cityF) ? cityF : "";
   const base = allItems.filter(i => {
     if (focusItem) return i.id === focusItem && i.status !== "pending" && i.status !== "hidden";
     if (sellerFilter && i.ownerId !== sellerFilter) return false;
@@ -666,17 +689,18 @@ function card(it) {
   else if (mine) act.appendChild(el("div", "notice", "Ваш запит на " + money(mine.price) + " надіслано. Продавець обере покупця, і ви побачите ТТН у кабінеті."));
   else {
     const m = minPriceOf(it);
-    const b1 = el("button", "btn btn-primary", m <= 0 ? "Забрати безкоштовно" : "Забрати за " + m.toLocaleString("uk-UA") + " грн"); b1.type = "button"; b1.style.width = "100%"; b1.onclick = () => openOffer(it, true);
-    const b2 = el("button", "btn btn-soft", "Запропонувати свою ціну"); b2.type = "button"; b2.style.cssText = "width:100%;margin-top:8px"; b2.onclick = () => openOffer(it, false);
+    const b1 = el("button", "btn btn-primary", m <= 0 ? "Забрати безкоштовно" : "Забрати за " + m.toLocaleString("uk-UA") + " грн"); b1.type = "button"; b1.onclick = () => openOffer(it, true);
+    const b2 = el("button", "btn btn-soft"); b2.innerHTML = '<span class="ll">Запропонувати свою ціну</span><span class="ls">Своя ціна</span>'; b2.type = "button"; b2.onclick = () => openOffer(it, false);
     act.append(b1, b2);
   }
   if (!it.demo && !given) {
-    const sh = el("button", "btn btn-soft btn-sm", "↗ Поділитись"); sh.type = "button"; sh.style.marginTop = "8px";
+    const sub = el("div", "subrow"); c.querySelector(".item-body").appendChild(sub);
+    const sh = el("button", "btn btn-soft btn-sm", "↗ Поділитись"); sh.type = "button";
     sh.onclick = () => shareLink(siteBase() + "#item=" + it.id, it.title);
-    c.querySelector(".item-body").appendChild(sh);
+    sub.appendChild(sh);
     if (!own && it.id) {
-      const rp = el("button", "btn btn-soft btn-sm", "⚑ Поскаржитись"); rp.type = "button"; rp.style.cssText = "margin-top:8px;margin-left:8px";
-      rp.onclick = () => openReport(it); c.querySelector(".item-body").appendChild(rp);
+      const rp = el("button", "btn btn-soft btn-sm", "⚑ Поскаржитись"); rp.type = "button";
+      rp.onclick = () => openReport(it); sub.appendChild(rp);
     }
   }
   c.addEventListener("click", e => {
@@ -947,6 +971,8 @@ window.addEventListener("scroll", () => {$("toTop").hidden = window.scrollY < 60
 document.querySelectorAll(".fee").forEach(e => e.textContent = COMMISSION);
 document.querySelectorAll(".minp").forEach(e => e.textContent = MIN_PRICE);
 $("minPrice").min = MIN_PRICE; $("minPrice").placeholder = String(Math.max(50, MIN_PRICE)); $("minPrice").addEventListener("input", updateMinNote);
+$("heroCard").onclick = openRules;
+$("heroCard").onkeydown = e => {if (e.key === "Enter" || e.key === " ") {e.preventDefault(); openRules();}};
 $("toTop").onclick = () => window.scrollTo({top: 0, behavior: "smooth"});
 $("closeDoc").onclick = () => $("docDialog").close();
 $("docOk").onclick = () => $("docDialog").close();
