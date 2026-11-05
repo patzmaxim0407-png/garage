@@ -117,6 +117,8 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
   .grid.compact .pricetag { font-size: 1rem; margin: 2px 0 0; }
 }
 .citydate{color:var(--muted);font-size:.82rem;margin-top:2px}
+#toTop{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));width:46px;height:46px;border-radius:50%;border:0;background:var(--green);color:#fff;font-size:1.4rem;line-height:1;box-shadow:0 6px 20px rgba(0,0,0,.25);cursor:pointer;z-index:40}
+#searchHint{margin:-10px 0 12px}
 </style>
 </head>
 <body>
@@ -151,6 +153,7 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
         <select id="cityFilter"><option value="">Усі міста</option></select>
         <select id="statusFilter"><option value="available">Доступні</option><option value="all">Усі речі</option><option value="given">Вже передані</option></select>
       </div>
+      <div id="searchHint" class="muted small"></div>
       <div id="itemsGrid" class="grid"></div>
       <div id="emptyState" class="empty" hidden><strong>Поки що нічого не знайшли</strong>Спробуйте змінити запит або додайте першу річ.</div>
     </section>
@@ -186,6 +189,8 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
     <div class="form-actions"><button type="button" class="btn btn-soft" id="cancelDialog">Скасувати</button><button class="btn btn-primary" id="saveBtn" type="submit">Опублікувати</button></div>
   </form>
 </dialog>
+
+<button id="toTop" type="button" aria-label="Нагору" hidden>↑</button>
 
 <dialog id="docDialog">
   <div class="modal-head"><h2 id="docTitle"></h2><button class="close" type="button" id="closeDoc" aria-label="Закрити">×</button></div>
@@ -233,6 +238,7 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
     <h3>Відповідальність</h3>
     <ul>
       <li>Продавець відповідає за законність речі та правдивість опису.</li>
+      <li>Оголошення проходять автоматичну перевірку. Річ із ознаками забороненого може бути прихована до перегляду адміністратором.</li>
       <li>Адміністрація може без попередження видалити оголошення й заблокувати акаунт за порушення правил.</li>
     </ul>
     <p class="small muted" id="rulesContact" hidden></p>
@@ -290,6 +296,26 @@ const firebaseConfig = {
 };
 // ===== EMAILJS: листи продавцю (необов'язково, можна лишити порожнім) =====
 const ADMIN_CONTACT = ""; // наприклад "@ваш_нік" для скарг; можна лишити порожнім
+const MOD_LOOK = {a: "а", e: "е", o: "о", p: "р", c: "с", x: "х", y: "у", i: "і", k: "к", m: "м", t: "т", h: "н", b: "в"};
+const MOD_RULES = [
+  ["block", "Зброя й боєприпаси", "боєприпас|боеприпас|вибухівк|взрывчатк|тротил|детонатор|гранатомет|калашніков|калашников|ручн\\S* гранат|граната(?![\\p{L}])|гранату(?![\\p{L}])|ргд-?5|вог-?\\d+|міномет|вогнепальн|зброя(?![\\p{L}])|зброю(?![\\p{L}])"],
+  ["block", "Наркотики", "наркотик|амфетамін|метадон|марихуан|канабіс|кокаїн|героїн|мефедрон|лсд(?![\\p{L}])|гашиш|спайс"],
+  ["block", "Алкоголь, тютюн, вейпи", "алкогол|горілк|водка|віскі|коньяк|самогон|вейп|vape|сигарет|тютюн|цигарк"],
+  ["review", "Холодна й травматична зброя", "кинджал|кастет|травмат|електрошокер|нунчак|катана|бойов\\S* ніж|мисливськ\\S* ніж|тактичн\\S* ніж"],
+  ["review", "Ліки та добавки", "таблетк|ліки|ліків|препарат|антибіотик|рецептурн"],
+  ["review", "Документи та підробки", "паспорт|диплом|печатк|підроблен|фальшив|контрафакт"],
+  ["review", "Живі тварини", "щеня|кошеня|цуцен"],
+  ["review", "Передоплата та сторонні посилання", "передоплат|https?:|www\\.|t\\.me/"],
+];
+function modCheck(text) {
+  const t = String(text || "").toLowerCase(), n = t.replace(/[a-z]/g, c => MOD_LOOK[c] || c);
+  for (const [lvl, cat, src] of MOD_RULES) {
+    const re = new RegExp("(?:^|[^\\p{L}\\p{N}])(?:" + src + ")", "iu");
+    const m = re.exec(t) || re.exec(n);
+    if (m) return {lvl: lvl, cat: cat, word: m[0].replace(/^[^\p{L}\p{N}]+/u, "")};
+  }
+  return null;
+}
 const EMAILJS = {service: "", template: "", key: ""};
 // =========================================================
 
@@ -517,17 +543,50 @@ function render() {
   if (cab) renderCabinet(); else renderHome();
 }
 
+const normW = s => String(s || "").toLowerCase().replace(/[ёэ]/g, "е").replace(/ы/g, "и").replace(/ъ/g, "").replace(/ґ/g, "г").replace(/ї/g, "і").replace(/є/g, "е").replace(/['’ʼ`]/g, "");
+const toks = s => normW(s).split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+function lev(a, b) {
+  if (a === b) return 0; if (!a.length) return b.length; if (!b.length) return a.length;
+  let p = Array.from({length: b.length + 1}, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {const c = [i]; for (let j = 1; j <= b.length; j++) c[j] = Math.min(c[j - 1] + 1, p[j] + 1, p[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); p = c;}
+  return p[b.length];
+}
+function tokMatch(w, t) {
+  if (t.includes(w)) return true; const k = w.length; if (k < 4) return false; const d = k >= 7 ? 2 : 1;
+  return lev(w, t) <= d || lev(w, t.slice(0, k)) <= d || lev(w, t.slice(0, k + 1)) <= d;
+}
+const L2U = {q: "й", w: "ц", e: "у", r: "к", t: "е", y: "н", u: "г", i: "ш", o: "щ", p: "з", "[": "х", "]": "ї", a: "ф", s: "і", d: "в", f: "а", g: "п", h: "р", j: "о", k: "л", l: "д", ";": "ж", "'": "є", z: "я", x: "ч", c: "с", v: "м", b: "и", n: "т", m: "ь", ",": "б", ".": "ю"};
+const fixLayout = s => String(s).toLowerCase().replace(/[a-z\[\];',.]/g, c => L2U[c] || c);
+const itemToks = i => i._tk || (i._tk = toks([i.title, i.desc || i.description, i.category, i.ownerCity].join(" ")));
 function renderHome() {
   const q = $("searchInput").value.trim().toLocaleLowerCase("uk"), cat = $("categoryFilter").value, st = $("statusFilter").value;
   const cityF = $("cityFilter").value, cities = [...new Set(allItems.filter(i => i.status !== "pending" && i.status !== "hidden" && i.ownerCity).map(i => i.ownerCity))].sort((a, b) => a.localeCompare(b, "uk"));
   $("cityFilter").innerHTML = '<option value="">Усі міста</option>' + cities.map(c => '<option>' + esc(c) + "</option>").join(""); $("cityFilter").value = cities.includes(cityF) ? cityF : "";
-  const list = allItems.filter(i => {
+  const base = allItems.filter(i => {
     if (focusItem) return i.id === focusItem && i.status !== "pending" && i.status !== "hidden";
     if (sellerFilter && i.ownerId !== sellerFilter) return false;
-    const hay = ((i.title || "") + " " + (i.desc || i.description || "") + " " + (i.category || "")).toLocaleLowerCase("uk");
     const given = i.status === "given";
-    return i.status !== "pending" && i.status !== "hidden" && (!cityF || i.ownerCity === cityF) && (!q || hay.includes(q)) && (!cat || (i.category || "Інше") === cat) && (st === "all" || (st === "given" ? given : !given));
+    return i.status !== "pending" && i.status !== "hidden" && (!cityF || i.ownerCity === cityF) && (!cat || (i.category || "Інше") === cat) && (st === "all" || (st === "given" ? given : !given));
   });
+  let list = base, hint = "", sugg = ""; const words = toks(q);
+  if (words.length && !focusItem) {
+    const run = (ws, fz) => base.filter(i => {const t = itemToks(i); return ws.every(w => t.some(tk => fz ? tokMatch(w, tk) : tk.includes(w)));});
+    list = run(words, false);
+    if (!list.length) {
+      const latin = /[a-z]/i.test(q) && !/[а-яіїєґ]/i.test(q), byLayout = latin ? run(toks(fixLayout(q)), false) : [];
+      if (byLayout.length) {list = byLayout; hint = "Показуємо результати для «" + fixLayout(q) + "» (змінено розкладку клавіатури).";}
+      else {
+        const f = run(words, true);
+        if (f.length) {list = f; hint = "Точних збігів немає, показуємо схожі результати.";}
+        const vocab = new Set(); base.forEach(i => itemToks(i).forEach(t => {if (t.length >= 4) vocab.add(t);}));
+        const lw = words[words.length - 1]; let best = "", bd = 99;
+        vocab.forEach(t => {const d = Math.min(lev(lw, t), lev(lw, t.slice(0, lw.length))); if (d < bd) {bd = d; best = t;}});
+        if (best && bd > 0 && bd <= 2 && lw.length >= 3) sugg = best;
+      }
+    }
+  }
+  const sh = $("searchHint"); sh.innerHTML = ""; if (hint) sh.appendChild(el("span", "", hint + " "));
+  if (sugg) {const sb = el("button", "btn btn-soft btn-sm", "Можливо, ви шукали: «" + sugg + "»"); sb.type = "button"; sb.onclick = () => {$("searchInput").value = words.slice(0, -1).concat(sugg).join(" "); renderHome();}; sh.appendChild(sb);}
   const sl = sellerFilter ? allItems.find(i => i.ownerId === sellerFilter) : null;
   $("heroSec").hidden = !!(sellerFilter || focusItem);
   $("allBtn").hidden = !(sellerFilter || focusItem);
@@ -697,6 +756,8 @@ $("itemForm").addEventListener("submit", async e => {
     if (photos.join("").length > 900000) throw new Error("Фото завеликі, оберіть менше або простіші знімки.");
     const data = {title: $("itemTitle").value.trim(), category: $("itemCategory").value, desc: $("itemDescription").value.trim()};
     if (!data.title) throw new Error("Вкажіть назву.");
+    const mod = modCheck(data.title + " " + data.desc);
+    if (mod && mod.lvl === "block") throw new Error("Схоже, ця річ заборонена правилами розміщення («" + mod.cat + "»: «" + mod.word + "»). Якщо це помилка, змініть опис або зверніться до адміністрації.");
     const locked = !!(it && sales.some(s => s.itemId === it.id));
     if (!locked) {
       const mp = Math.round(Number($("minPrice").value));
@@ -800,7 +861,7 @@ function renderCabinet() {
     }
     mine.forEach(i => {
       const bx = el("div", "cardbox"), n = sales.filter(s => s.itemId === i.id).length;
-      bx.appendChild(headRow(i, [el("b", "", i.title), el("div", "muted small", priceFrom(i).replace(" · запропонуйте свою ціну", "") + " · " + (i.status === "pending" ? "не опубліковано" : i.status === "given" ? "передано" : i.status === "hidden" ? "приховано адміністрацією" : "доступна") + " · пропозицій: " + n)]));
+      bx.appendChild(headRow(i, [el("b", "", i.title), el("div", "muted small", priceFrom(i).replace(" · запропонуйте свою ціну", "") + " · " + (i.status === "pending" ? "не опубліковано" : i.status === "given" ? "передано" : i.status === "hidden" ? "приховано: перевіряється адміністрацією" : "доступна") + " · пропозицій: " + n)]));
       const r = el("div", "row");
       const ed = el("button", "btn btn-soft btn-sm", "Редагувати"); ed.onclick = () => openForm(i);
       const g = i.status === "pending" ? el("button", "btn btn-primary btn-sm", "Опублікувати безкоштовно") : el("button", "btn btn-soft btn-sm", i.status === "given" ? "Повернути в список" : "Позначити переданою");
@@ -868,6 +929,8 @@ $("rulesLink2").onclick = e => {e.preventDefault(); openRules();};
 $("closeRules").onclick = () => $("rulesDialog").close();
 $("rulesOk").onclick = () => $("rulesDialog").close();
 document.querySelectorAll(".doc-link").forEach(a => a.onclick = e => {e.preventDefault(); openDoc(a.dataset.doc);});
+window.addEventListener("scroll", () => {$("toTop").hidden = window.scrollY < 600;});
+$("toTop").onclick = () => window.scrollTo({top: 0, behavior: "smooth"});
 $("closeDoc").onclick = () => $("docDialog").close();
 $("docOk").onclick = () => $("docDialog").close();
 $("ownerLine").textContent = [OWNER.name, OWNER.email].filter(Boolean).join(" · ");
