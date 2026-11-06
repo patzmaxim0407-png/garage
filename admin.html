@@ -40,6 +40,11 @@ dialog::backdrop{background:rgba(13,29,22,.55)}
 .db select,.db input,.db textarea{width:100%}
 .photos{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px}
 .photos img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:10px}
+.thumbs{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.thumb{position:relative}
+.thumb img{display:block;height:54px;border-radius:8px;border:1px solid var(--line)}
+.thumb button{position:absolute;top:-7px;right:-7px;width:22px;height:22px;border-radius:50%;border:0;background:var(--danger);color:#fff;cursor:pointer;font-size:14px;line-height:1;padding:0}
+.hint{font-size:.78rem;color:var(--muted);margin-top:4px}
 </style>
 </head>
 <body>
@@ -72,16 +77,28 @@ dialog::backdrop{background:rgba(13,29,22,.55)}
 <dialog id="adDlg">
   <div class="dh"><span id="adHead">Реклама</span><button type="button" id="adX">×</button></div>
   <div class="db">
-    <label for="adFile">Зображення (бажано 1600×500, головне в центрі)</label>
-    <input type="file" id="adFile" accept="image/*">
-    <img id="adPrev" alt="" style="width:100%;max-height:170px;object-fit:cover;border-radius:10px;margin-top:8px" hidden>
-    <label for="adTitle">Заголовок (коротко)</label><input type="text" id="adTitle" maxlength="80" placeholder="Назва рекламодавця або акції">
-    <label for="adText">Опис</label><textarea id="adText" rows="2" maxlength="200" placeholder="Одне-два речення"></textarea>
-    <label for="adUrl">Посилання на сайт рекламодавця</label><input type="text" id="adUrl" placeholder="https://...">
-    <label for="adPlace">Де показувати</label>
-    <select id="adPlace"><option value="both">Скрізь</option><option value="home">Головна (над фільтрами)</option><option value="item">Сторінка товару</option></select>
-    <label for="adOrder">Порядок (менше = раніше)</label><input type="text" id="adOrder" value="0">
-    <label style="font-weight:400"><input type="checkbox" id="adActive" checked style="width:auto"> Показувати на сайті</label>
+    <div class="small muted" id="adOwnNote" hidden>Це наш закріплений банер GARAGE 22. Його не можна видалити чи вимкнути: тільки змінити картинки й час показу. Якщо картинок немає, показується стандартний малюнок.</div>
+    <label for="adFilePc">Картинки для комп’ютера: 1600 × 200 пікселів (px), до 3 штук</label>
+    <input type="file" id="adFilePc" accept="image/*" multiple>
+    <div class="thumbs" id="adThumbsPc"></div>
+    <label for="adFileMob">Картинки для телефону: 960 × 300 px, до 3 штук (необов’язково)</label>
+    <input type="file" id="adFileMob" accept="image/*" multiple>
+    <div class="thumbs" id="adThumbsMob"></div>
+    <div class="hint">Формат JPG, PNG або WebP. Розмір підганяється автоматично. Головне (логотип, текст) тримайте по центру. Якщо картинок для телефону немає, береться комп’ютерна й обрізається по краях.</div>
+    <div id="adFields">
+      <label for="adTitle">Заголовок (коротко)</label><input type="text" id="adTitle" maxlength="80" placeholder="Назва рекламодавця або акції">
+      <label for="adText">Опис</label><textarea id="adText" rows="2" maxlength="200" placeholder="Одне-два речення"></textarea>
+    </div>
+    <label for="adUrl">Посилання на сайт (куди веде клік)</label><input type="text" id="adUrl" placeholder="https://...">
+    <label for="adSec">Скільки секунд показується (усі картинки разом)</label>
+    <select id="adSec"><option value="10">10 секунд</option><option value="15">15 секунд</option><option value="20">20 секунд</option><option value="30" selected>30 секунд</option><option value="45">45 секунд</option><option value="60">1 хвилина</option><option value="90">1,5 хвилини</option><option value="120">2 хвилини</option><option value="180">3 хвилини</option><option value="300">5 хвилин</option></select>
+    <div class="hint">Якщо картинок кілька, час ділиться між ними порівну. Після реклами показується наш банер, потім наступна реклама, і так по колу.</div>
+    <div id="adFields2">
+      <label for="adPlace">Де показувати</label>
+      <select id="adPlace"><option value="both">Скрізь</option><option value="home">Головна (над фільтрами)</option><option value="item">Сторінка товару</option></select>
+      <label for="adOrder">Порядок у колі (менше = раніше)</label><input type="text" id="adOrder" value="0">
+      <label style="font-weight:400"><input type="checkbox" id="adActive" checked style="width:auto"> Показувати на сайті</label>
+    </div>
     <div class="small" id="adErr" style="color:var(--danger);min-height:18px"></div>
     <button class="btn on" id="adSave">Зберегти</button>
   </div>
@@ -168,18 +185,19 @@ async function act(a, id) {
     else if (a === "items") {$("q").value = (D.users.find(x => x.uid === id) || {}).email || ""; tab = "items"; render();}
   } catch (e) {alert("Не вдалося: " + (e.message || e.code));}
 }
-let adEditId = null, adImage = "";
-function compressImg(file) {
+let adEditId = null, advPc = [], advMob = [];
+const adImgsA = x => (x.images && x.images.length) ? x.images : (x.image ? [x.image] : []);
+function compressImg(file, maxW) {
   return new Promise((res, rej) => {
     const fr = new FileReader();
     fr.onload = () => {
       const im = new Image();
       im.onload = () => {
-        const w = Math.min(1600, im.width), h = Math.round(im.height * w / im.width), c = document.createElement("canvas");
+        const w = Math.min(maxW, im.width), h = Math.round(im.height * w / im.width), c = document.createElement("canvas");
         c.width = w; c.height = h; c.getContext("2d").drawImage(im, 0, 0, w, h);
-        let q = .85, d = c.toDataURL("image/jpeg", q);
-        while (d.length > 600000 && q > .4) {q -= .1; d = c.toDataURL("image/jpeg", q);}
-        d.length > 880000 ? rej(new Error("Зображення завелике, оберіть менше.")) : res(d);
+        let q = .86, d = c.toDataURL("image/jpeg", q);
+        while (d.length > 260000 && q > .4) {q -= .08; d = c.toDataURL("image/jpeg", q);}
+        d.length > 300000 ? rej(new Error("Картинка завелика, оберіть меншу.")) : res(d);
       };
       im.onerror = () => rej(new Error("Не вдалося прочитати зображення."));
       im.src = fr.result;
@@ -188,26 +206,48 @@ function compressImg(file) {
     fr.readAsDataURL(file);
   });
 }
-function openAd(id) {
-  const ad = id ? D.ads.find(x => x.id === id) : null; adEditId = id || null; adImage = "";
-  $("adHead").textContent = ad ? "Змінити рекламу" : "Нова реклама"; $("adFile").value = ""; $("adErr").textContent = "";
-  $("adTitle").value = ad ? ad.title || "" : ""; $("adText").value = ad ? ad.text || "" : ""; $("adUrl").value = ad ? ad.url || "" : "";
-  $("adPlace").value = ad ? ad.placement || "both" : "both"; $("adOrder").value = ad ? ad.order || 0 : 0; $("adActive").checked = ad ? !!ad.active : true;
-  $("adPrev").hidden = !(ad && ad.image); if (ad && ad.image) $("adPrev").src = ad.image;
-  $("adDlg").showModal();
+function drawThumbs() {
+  [["adThumbsPc", advPc], ["adThumbsMob", advMob]].forEach(([id, arr]) => {
+    const box = $(id); box.innerHTML = "";
+    arr.forEach((src, k) => {
+      const w = document.createElement("div"); w.className = "thumb";
+      const im = document.createElement("img"); im.src = src; w.appendChild(im);
+      const x = document.createElement("button"); x.type = "button"; x.textContent = "×"; x.onclick = () => {arr.splice(k, 1); drawThumbs();}; w.appendChild(x);
+      box.appendChild(w);
+    });
+  });
 }
+function openAd(id) {
+  const own = id === "own", ad = D.ads.find(x => x.id === id) || (own ? {id: "own", seconds: 15} : null);
+  adEditId = id || null; advPc = ad ? adImgsA(ad).slice() : []; advMob = ad && ad.mobImages ? ad.mobImages.slice() : [];
+  $("adHead").textContent = own ? "Наш банер GARAGE 22" : (ad ? "Змінити рекламу" : "Нова реклама"); $("adErr").textContent = "";
+  $("adFilePc").value = ""; $("adFileMob").value = "";
+  $("adOwnNote").hidden = !own; $("adFields").hidden = own; $("adFields2").hidden = own;
+  $("adTitle").value = ad ? ad.title || "" : ""; $("adText").value = ad ? ad.text || "" : ""; $("adUrl").value = ad ? ad.url || "" : "";
+  $("adSec").value = String(ad && ad.seconds ? ad.seconds : (own ? 15 : 30)); if (!$("adSec").value) $("adSec").value = "30";
+  $("adPlace").value = ad ? ad.placement || "both" : "both"; $("adOrder").value = ad ? ad.order || 0 : 0; $("adActive").checked = ad ? ad.active !== false : true;
+  drawThumbs(); $("adDlg").showModal();
+}
+async function addFiles(inputId, arr) {
+  const files = [...$(inputId).files]; $("adErr").textContent = "";
+  try {
+    for (const f of files) {
+      if (arr.length >= 3) {$("adErr").textContent = "Максимум 3 картинки в кожному наборі."; break;}
+      arr.push(await compressImg(f, inputId === "adFilePc" ? 1600 : 1100));
+    }
+  } catch (e) {$("adErr").textContent = e.message;}
+  $(inputId).value = ""; drawThumbs();
+}
+$("adFilePc").onchange = () => addFiles("adFilePc", advPc);
+$("adFileMob").onchange = () => addFiles("adFileMob", advMob);
 $("adNew").onclick = () => openAd(null);
 $("adX").onclick = () => $("adDlg").close();
-$("adFile").onchange = async () => {
-  const f = $("adFile").files[0]; if (!f) return;
-  try {adImage = await compressImg(f); $("adPrev").src = adImage; $("adPrev").hidden = false; $("adErr").textContent = "";}
-  catch (e) {adImage = ""; $("adErr").textContent = e.message;}
-};
 $("adSave").onclick = async () => {
-  const b = $("adSave"); b.disabled = true; $("adErr").textContent = "";
+  const b = $("adSave"), own = adEditId === "own"; b.disabled = true; $("adErr").textContent = "";
   try {
-    const p = {action: "saveAd", adId: adEditId || undefined, title: $("adTitle").value.trim(), text: $("adText").value.trim(), url: $("adUrl").value.trim(), placement: $("adPlace").value, order: Number($("adOrder").value) || 0, active: $("adActive").checked};
-    if (adImage) p.image = adImage;
+    if (!own && !advPc.length) throw new Error("Додайте хоча б одну картинку для комп’ютера.");
+    const p = {action: "saveAd", adId: adEditId || undefined, url: $("adUrl").value.trim(), seconds: Number($("adSec").value) || 30, images: advPc, mobImages: advMob};
+    if (!own) Object.assign(p, {title: $("adTitle").value.trim(), text: $("adText").value.trim(), placement: $("adPlace").value, order: Number($("adOrder").value) || 0, active: $("adActive").checked});
     await call("adminAction", p); $("adDlg").close(); await load();
   } catch (e) {$("adErr").textContent = e.message || e.code;}
   b.disabled = false;
@@ -259,12 +299,18 @@ function render() {
         btn("photos", i.id, "Фото") + btn("del", i.id, "Видалити", "d") + (i.ownerId ? btn("block", i.ownerId, "Заблокувати власника", "d") : "")]; });
   }
   if (tab === "ads") {
-    head = ["Реклама", "Де показується", "Порядок", "Статус", "Посилання", "Дії"];
-    rows = (D.ads || []).slice().sort((x, y) => (x.order || 0) - (y.order || 0)).map(ad => [
-      '<img src="' + esc(ad.image) + '" style="width:130px;height:42px;object-fit:cover;border-radius:6px;display:block;margin-bottom:4px">' + esc(ad.title || "—") + (ad.text ? '<br><span class="muted small">' + esc(ad.text) + "</span>" : ""),
-      esc({both: "Скрізь", home: "Головна", item: "Сторінка товару"}[ad.placement] || ad.placement), ad.order || 0,
+    head = ["Реклама", "Де показується", "Показ", "Статус", "Посилання", "Дії"];
+    const own = D.ads.find(x => x.id === "own") || {id: "own", title: "GARAGE 22 (наш банер)", images: [], seconds: 15};
+    const thumbs = x => adImgsA(x).map(s => '<img src="' + esc(s) + '" style="height:38px;border-radius:6px;margin:0 4px 4px 0">').join("") + (x.mobImages || []).map(s => '<img src="' + esc(s) + '" style="height:38px;border-radius:6px;margin:0 4px 4px 0;outline:2px solid var(--accent)">').join("");
+    const secTxt = x => (x.seconds || 30) >= 60 ? ((x.seconds || 30) / 60) + " хв" : (x.seconds || 30) + " с";
+    rows = [[
+      "<b>★ GARAGE 22 (наш банер)</b><br>" + (adImgsA(own).length ? thumbs(own) : '<span class="muted small">Стандартний малюнок</span>'), "Головна, між рекламою", secTxt(own), pill("Закріплений", "sold"), esc(own.url || "—"),
+      btn("adedit", "own", "Змінити картинки")]];
+    D.ads.filter(x => x.id !== "own").sort((x, y) => (x.order || 0) - (y.order || 0)).forEach(ad => rows.push([
+      thumbs(ad) + "<br>" + esc(ad.title || "—") + (ad.text ? '<br><span class="muted small">' + esc(ad.text) + "</span>" : ""),
+      esc({both: "Скрізь", home: "Головна", item: "Сторінка товару"}[ad.placement] || ad.placement) + '<br><span class="muted small">порядок ' + (ad.order || 0) + "</span>", secTxt(ad),
       pill(ad.active ? "Показується" : "Вимкнено", ad.active ? "" : "wait"), esc(ad.url || "—"),
-      btn("adedit", ad.id, "Змінити") + btn("adtoggle", ad.id, ad.active ? "Вимкнути" : "Увімкнути") + btn("addel", ad.id, "Видалити", "d")]);
+      btn("adedit", ad.id, "Змінити") + btn("adtoggle", ad.id, ad.active ? "Вимкнути" : "Увімкнути") + btn("addel", ad.id, "Видалити", "d")]));
   }
   if (tab === "reports") {
     head = ["Річ", "Власник", "Причина", "Скаржився", "Дата", "Статус", "Дії"];
