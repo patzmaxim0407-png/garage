@@ -96,7 +96,7 @@ dialog::backdrop{background:rgba(13,29,22,.55)}
     <div class="hint">Якщо картинок кілька, час ділиться між ними порівну. Після реклами показується наш банер, потім наступна реклама, і так по колу.</div>
     <div id="adFields2">
       <label for="adPlace">Де показувати</label>
-      <select id="adPlace"><option value="both">Скрізь</option><option value="home">Головна (над фільтрами)</option><option value="item">Сторінка товару</option></select>
+      <select id="adPlace"><option value="both">Головна й товар</option><option value="home">Головна (над фільтрами)</option><option value="item">Сторінка товару</option><option value="cabinet">Кабінет користувача</option><option value="all">Усюди (3 місця)</option></select>
       <label for="adOrder">Порядок у колі (менше = раніше)</label><input type="text" id="adOrder" value="0">
       <label style="font-weight:400"><input type="checkbox" id="adActive" checked style="width:auto"> Показувати на сайті</label>
     </div>
@@ -325,7 +325,7 @@ function render() {
       btn("adedit", "own", "Змінити картинки")]];
     D.ads.filter(x => x.id !== "own").sort((x, y) => (x.order || 0) - (y.order || 0)).forEach(ad => rows.push([
       thumbs(ad) + "<br>" + esc(ad.title || "—") + (ad.text ? '<br><span class="muted small">' + esc(ad.text) + "</span>" : ""),
-      esc({both: "Скрізь", home: "Головна", item: "Сторінка товару"}[ad.placement] || ad.placement) + '<br><span class="muted small">порядок ' + (ad.order || 0) + "</span>", secTxt(ad),
+      esc({both: "Головна й товар", all: "Усюди", cabinet: "Кабінет", home: "Головна", item: "Сторінка товару"}[ad.placement] || ad.placement) + '<br><span class="muted small">порядок ' + (ad.order || 0) + "</span>", secTxt(ad),
       pill(ad.active ? "Показується" : "Вимкнено", ad.active ? "" : "wait"), esc(ad.url || "—"),
       btn("adedit", ad.id, "Змінити") + btn("adtoggle", ad.id, ad.active ? "Вимкнути" : "Увімкнути") + btn("addel", ad.id, "Видалити", "d")]));
   }
@@ -336,8 +336,8 @@ function render() {
     rows = D.adOrders.slice().sort((x, y) => y.createdAt - x.createdAt).map(o => {
       const st = stOf(o);
       return [fmt(o.createdAt), esc(o.name || "—") + '<br><span class="muted small">' + esc(o.email || "") + "</span>",
-        "<b>" + esc(o.title) + "</b>" + (o.text ? '<br><span class="muted small">' + esc(o.text) + "</span>" : "") + '<br><span class="muted small">' + esc(o.url) + "</span>",
-        esc({home: "Головна", item: "Картка товару", both: "Обидва місця"}[o.place] || o.place) + " · " + o.days + " дн. · " + o.seconds + ' с<br><span class="muted small">старт ' + fmt(o.startDate) + "; банерів: " + (o.nImgs || 0) + " + " + (o.nMob || 0) + " моб.</span>",
+        "<b>" + (o.renewOf ? "↻ " : "") + esc(o.title) + "</b>" + (o.renewOf ? '<br><span class="muted small">Продовження: схвалюється автоматично після оплати</span>' : "") + (o.text ? '<br><span class="muted small">' + esc(o.text) + "</span>" : "") + '<br><span class="muted small">' + esc(o.url) + "</span>",
+        esc({home: "Головна", item: "Картка товару", both: "Обидва місця", cabinet: "Кабінет"}[o.place] || o.place) + " · " + o.days + " дн. · " + o.seconds + ' с<br><span class="muted small">старт ' + fmt(o.startDate) + "; банерів: " + (o.nImgs || 0) + " + " + (o.nMob || 0) + " моб.</span>",
         Math.round((o.amount || 0) / 100) + " грн",
         pill(st[0], st[1]) + (o.reason ? '<br><span class="muted small">' + esc(o.reason) + "</span>" : "") + (o.refund === "manual" ? '<br><span class="small" style="color:var(--danger)">Поверніть кошти вручну в кабінеті monobank</span>' : ""),
         btn("aoview", o.id, "Банери") + (o.status === "paid" ? btn("aoapprove", o.id, "Схвалити") : "") + ((o.status === "paid" || o.status === "new") ? btn("aoreject", o.id, "Відхилити", "d") : "") + ((o.status === "rejected" || o.status === "new") ? btn("aodel", o.id, "Видалити", "d") : "")];
@@ -359,8 +359,17 @@ function render() {
       const per = {}; st.slice(0, 30).forEach(d => {Object.entries(d.adViews || {}).forEach(([k, n]) => {(per[k] = per[k] || {v: 0, c: 0}).v += n;}); Object.entries(d.adClicks || {}).forEach(([k, n]) => {(per[k] = per[k] || {v: 0, c: 0}).c += n;});});
       const nameOf = id => {const ad = D.ads.find(x => x.id === id); return ad ? (ad.title || id) : id;};
       const perRows = Object.keys(per).sort((x, y) => per[y].v - per[x].v).map(k => "<tr><td>" + esc(nameOf(k)) + "</td><td>" + per[k].v + "</td><td>" + per[k].c + "</td><td>" + ctr(per[k].c, per[k].v) + "</td></tr>").join("");
+      const sumMap = (arr, key) => {const m = {}; arr.forEach(d => Object.entries(d[key] || {}).forEach(([k, n]) => {m[k] = (m[k] || 0) + n;})); return m;};
+      const topN = (m, n) => Object.entries(m).sort((x, y) => y[1] - x[1]).slice(0, n);
+      const miniTable = (title, rowsArr, head2) => '<h3 style="margin:14px 0 6px">' + title + '</h3><div class="wrap"><table style="min-width:360px"><thead><tr><th>' + head2 + '</th><th>Кількість</th></tr></thead><tbody>' + (rowsArr.map(r => "<tr><td>" + r[0] + "</td><td>" + r[1] + "</td></tr>").join("") || '<tr><td colspan="2" class="muted">Поки немає даних.</td></tr>') + "</tbody></table></div>";
+      const itTitle = id => {const it = D.items.find(x => x.id === id); return it ? esc(it.title) : esc(id);};
+      const rankBlock = '<div style="margin-top:14px"><button class="btn on" id="rankBtn">Оновити рейтинг речей зараз</button> <span class="muted small">Рейтинг й так оновлюється сам приблизно раз на годину.</span></div>'
+        + miniTable("Найпопулярніші речі (перегляди за 7 днів)", topN(sumMap(st.slice(0, 7), "itemV"), 10).map(([k, n]) => [itTitle(k), n]), "Річ")
+        + miniTable("Що шукають (7 днів)", topN(sumMap(st.slice(0, 7), "queries"), 15).map(([k, n]) => [esc(k), n]), "Запит")
+        + miniTable("Шукали, але нічого не знайшли (7 днів)", topN(sumMap(st.slice(0, 7), "noResult"), 15).map(([k, n]) => [esc(k), n]), "Запит");
       $("statsBox").innerHTML = block("За 7 днів", tot(st.slice(0, 7))) + block("За 30 днів", tot(st.slice(0, 30))) + bars +
-        '<h3 style="margin:14px 0 6px">Реклама за 30 днів</h3><div class="wrap"><table style="min-width:420px"><thead><tr><th>Реклама</th><th>Покази</th><th>Кліки</th><th>CTR</th></tr></thead><tbody>' + (perRows || '<tr><td colspan="4" class="muted">Поки немає даних.</td></tr>') + "</tbody></table></div><h3 style='margin:14px 0 0'>По днях</h3>";
+        '<h3 style="margin:14px 0 6px">Реклама за 30 днів</h3><div class="wrap"><table style="min-width:420px"><thead><tr><th>Реклама</th><th>Покази</th><th>Кліки</th><th>CTR</th></tr></thead><tbody>' + (perRows || '<tr><td colspan="4" class="muted">Поки немає даних.</td></tr>') + "</tbody></table></div>" + rankBlock + "<h3 style='margin:18px 0 0'>По днях</h3>";
+      const rb = $("rankBtn"); if (rb) rb.onclick = async () => {rb.disabled = true; try {const r = await call("adminRank"); alert("Рейтинг оновлено: речей " + r.data.items + ", популярних " + r.data.hot + ", запитів " + r.data.queries);} catch (e) {alert("Не вдалося: " + (e.message || e.code));} rb.disabled = false;};
       rows = st.map(d => [esc(d.day), d.uniques || 0, d.visits || 0, d.itemViews || 0, sumO(d.adViews), sumO(d.adClicks), ctr(sumO(d.adClicks), sumO(d.adViews))]);
     }
   }
