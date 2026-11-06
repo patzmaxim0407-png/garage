@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#1B4D3E">
-<title>GARAGE 2: передай далі</title>
+<title>GARAGE 22: передай далі</title>
 <style>
 :root{--green:#1B4D3E;--green-deep:#173B30;--cream:#F6F4ED;--paper:#fff;--ink:#17251F;--muted:#66756D;--line:#DCE5DE;--accent:#D8E7DC;--danger:#A33A32;--radius:20px;--shadow:0 12px 35px rgba(23,59,48,.08)}
 *{box-sizing:border-box}
@@ -149,7 +149,7 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
 </head>
 <body>
 <header class="topbar"><div class="topbar-inner">
-  <div class="brand" id="brand">GARAGE 2<small>Маркет ресейлу</small></div>
+  <div class="brand" id="brand">GARAGE 22<small>Маркет ресейлу</small></div>
   <div class="top-actions">
     <span class="user-status" id="userStatus">Ви не увійшли</span>
     <button class="btn btn-light" id="loginBtn">Увійти через Google</button>
@@ -162,13 +162,13 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
   <div id="homeView">
     <section class="hero" id="heroSec">
       <div>
-        <div class="eyebrow">Віддай у добрі руки · від 10 грн</div>
+        <div class="eyebrow">Віддай у добрі руки · від <span class="minp"></span> грн</div>
         <h1>Передай далі.</h1>
         <p>Простір усвідомленого споживання.</p>
         <button class="btn btn-primary" id="heroAddBtn">Віддати річ ↗</button>
       </div>
       <aside class="hero-card" id="heroCard" role="button" tabindex="0" aria-label="Правила розміщення" style="cursor:pointer"><div class="symbol">↗</div>
-        <div><strong>Віддай у добрі руки<br>від 10 грн</strong><span>У кожного вдома є речі, які ще можуть служити. Передайте їх людям, яким вони справді потрібні, за символічну ціну.</span><span style="margin-top:12px;color:#fff;font-weight:700">Правила розміщення →</span></div>
+        <div><strong>Віддай у добрі руки<br>від <span class="minp"></span> грн</strong><span>У кожного вдома є речі, які ще можуть служити. Передайте їх людям, яким вони справді потрібні, за символічну ціну.</span><span style="margin-top:12px;color:#fff;font-weight:700">Правила розміщення →</span></div>
       </aside>
     </section>
     <section>
@@ -186,7 +186,7 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
   </div>
   <div id="cabinetView" hidden></div>
   <footer class="footer">
-    <div><b>GARAGE 2</b><br>Не викидай. Передай далі.<br><span class="small">Київ, Україна · засновано 2026</span><br><span class="small" id="ownerLine"></span></div>
+    <div><b>GARAGE 22</b><br>Не викидай. Передай далі.<br><span class="small">Київ, Україна · засновано 2026</span><br><span class="small" id="ownerLine"></span></div>
     <div class="flinks">
       <a href="#" class="linkbtn" id="rulesLink">Правила розміщення</a>
       <a href="#" class="linkbtn doc-link" data-doc="offer">Публічна оферта</a>
@@ -194,7 +194,7 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
       <a href="#" class="linkbtn doc-link" data-doc="pay">Доставка й розрахунки</a>
       <a href="#" class="linkbtn doc-link" data-doc="contacts">Контакти</a>
     </div>
-    <div class="fbottom small">© 2026 GARAGE 2 · Київ, Україна · Доставка: Нова пошта</div>
+    <div class="fbottom small">© 2026 GARAGE 22 · Київ, Україна · Доставка: Нова пошта</div>
   </footer>
 </main>
 
@@ -228,7 +228,7 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
 <dialog id="rulesDialog">
   <div class="modal-head"><h2>Правила розміщення</h2><button class="close" type="button" id="closeRules" aria-label="Закрити">×</button></div>
   <div class="form-body rules">
-    <p style="margin-top:0">GARAGE 2 це місце, де люди передають нормальні речі в добрі руки за символічну ціну від <span class="minp"></span> грн. Розміщуючи оголошення, ви погоджуєтесь із цими правилами.</p>
+    <p style="margin-top:0">GARAGE 22 це місце, де люди передають нормальні речі в добрі руки за символічну ціну від <span class="minp"></span> грн. Розміщуючи оголошення, ви погоджуєтесь із цими правилами.</p>
     <h3 class="ok">✓ Можна</h3>
     <ul>
       <li>Нові та вживані речі, які ви маєте право передавати: одяг, взуття, книги, речі для дому, іграшки, спорттовари, дитячі речі, інструменти.</li>
@@ -259,7 +259,7 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
     <h3>Ціна та доставка</h3>
     <ul>
       <li>Мінімальна ціна речі становить <span class="minp"></span> грн. Безкоштовно віддати річ на сайті не можна.</li>
-      <li>За кожну успішну угоду (посилку отримано покупцем) сервіс утримує комісію <span class="fee"></span> грн із ціни речі.</li>
+      <li>За кожну успішну угоду (посилку отримано покупцем) сервіс утримує комісію: <span class="feetxt"></span>.</li>
       <li>Продавець задає мінімальну ціну, покупці пропонують свою, не нижчу за мінімальну. Продавець сам обирає покупця й не зобов'язаний обирати найвищу пропозицію.</li>
       <li>Покупець вказує отримувача, телефон і відділення Нової пошти. Коли продавець обирає покупця, сайт створює ТТН, а продавець відносить посилку у відділення.</li>
       <li>Доставку оплачує отримувач у відділенні. Не відмовляйтесь від посилки без причини: витрати на повернення можуть бути стягнуті з покупця.</li>
@@ -324,7 +324,9 @@ const firebaseConfig = {
   appId: "1:510985201682:web:55e8d8e4642c0a397710cb"
 };
 // ===== EMAILJS: листи продавцю (необов'язково, можна лишити порожнім) =====
-const MIN_PRICE = 10, COMMISSION = 3; // мінімальна ціна речі та комісія сервісу, грн
+const MIN_PRICE = 20, COMM_FIXED = 10, COMM_PCT = 3, COMM_PCT_FROM = 1000; // мінімальна ціна, комісія: фіксована до 1000 грн, відсоток від 1000 грн
+const commissionFor = p => p >= COMM_PCT_FROM ? Math.round(p * COMM_PCT / 100) : COMM_FIXED;
+const FEE_TEXT = COMM_FIXED + " грн для речей до " + COMM_PCT_FROM + " грн і " + COMM_PCT + "% від ціни для речей від " + COMM_PCT_FROM + " грн";
 const ADMIN_CONTACT = ""; // наприклад "@ваш_нік" для скарг; можна лишити порожнім
 const MOD_LOOK = {a: "а", e: "е", o: "о", p: "р", c: "с", x: "х", y: "у", i: "і", k: "к", m: "м", t: "т", h: "н", b: "в"};
 const MOD_RULES = [
@@ -360,7 +362,7 @@ function readHash() {
   focusItem = m && m[1] === "item" ? m[2] : null;
 }
 async function shareLink(url, title) {
-  try {if (navigator.share) {await navigator.share({title: title || "GARAGE 2", url: url}); return;}}
+  try {if (navigator.share) {await navigator.share({title: title || "GARAGE 22", url: url}); return;}}
   catch (e) {if (e && e.name === "AbortError") return;}
   try {await navigator.clipboard.writeText(url); showNotice("Посилання скопійовано: " + url);}
   catch (e) {prompt("Скопіюйте посилання:", url);}
@@ -372,7 +374,7 @@ const money = n => Number(n) <= 0 ? "Безкоштовно" : Number(n).toLocal
 const icons = {"Одяг":"♧","Дім":"⌂","Техніка":"⌁","Книги":"▤","Дитяче":"☆","Спорт":"↗","Інше":"◇"};
 let noticeTimer = null;
 
-const OWNER = {name: "ФОП Пац Максим Сергійович", address: "Київ, Україна", email: "biznes.ua24@gmail.com", phone: "", telegram: ""}; // заповніть дані власника сайту
+const OWNER = {name: "ФОП Пац Максим Сергійович", code: "3562901597", address: "Київ, Україна", email: "biznes.ua24@gmail.com", phone: "", telegram: ""}; // заповніть дані власника сайту
 function ownerList() {
   const L = [];
   if (OWNER.name) L.push("Адміністрація: " + OWNER.name);
@@ -387,12 +389,12 @@ const DOCS = {
   offer: {title: "Публічна оферта та умови користування", html: () => `
     <p class="small muted">Редакція від 4 листопада 2026 р.</p>
     <h3>1. Загальні положення</h3>
-    <ul><li>Ця публічна оферта (далі: Оферта) є пропозицією Адміністрації укласти договір про надання послуги розміщення оголошень на сайті GARAGE 2 (далі: Сайт) на умовах, викладених нижче.</li>
+    <ul><li>Ця публічна оферта (далі: Оферта) є пропозицією Адміністрації укласти договір про надання послуги розміщення оголошень на сайті GARAGE 22 (далі: Сайт) на умовах, викладених нижче.</li>
     <li>Акцептом Оферти є реєстрація на Сайті, створення оголошення або сплата за розміщення. Користуючись Сайтом, ви погоджуєтесь з Офертою, Правилами розміщення та Політикою конфіденційності.</li></ul>
     <h3>2. Послуга та вартість</h3>
     <ul><li>Адміністрація надає Користувачеві технічну можливість розмістити на Сайті оголошення про передачу речі, отримувати пропозиції ціни від покупців і оформити відправлення Новою поштою.</li>
     <li>Розміщення оголошення безкоштовне.</li>
-    <li>За кожну успішну угоду (посилку отримано покупцем) Адміністрація утримує комісію ${COMMISSION} грн із ціни речі: продавець отримує ціну мінус комісія.</li>
+    <li>За кожну успішну угоду (посилку отримано покупцем) Адміністрація утримує комісію: ${FEE_TEXT}. Продавець отримує ціну мінус комісія.</li>
     <li>Мінімальна ціна речі становить ${MIN_PRICE} грн. Передати річ безкоштовно на Сайті неможливо.</li>
     <li>Комісія утримується із коштів, що виплачуються продавцю, з моменту запуску онлайн-розрахунків. Дату запуску буде оголошено на Сайті. Адміністрація може змінити розмір комісії, нові умови діють для нових угод.</li></ul>
     <h3>3. Ціна та вибір покупця</h3>
@@ -452,7 +454,7 @@ const DOCS = {
   pay: {title: "Доставка й розрахунки", html: () => `
     <p class="small muted">Редакція від 4 листопада 2026 р.</p>
     <h3>Вартість</h3>
-    <p>Розміщення оголошень безкоштовне. За кожну успішну угоду (посилку отримано покупцем) утримується комісія ${COMMISSION} грн із ціни речі. Мінімальна ціна речі: ${MIN_PRICE} грн. Комісія утримується із виплати продавцю з моменту запуску онлайн-розрахунків.</p>
+    <p>Розміщення оголошень безкоштовне. За кожну успішну угоду (посилку отримано покупцем) утримується комісія: ${FEE_TEXT}. Мінімальна ціна речі: ${MIN_PRICE} грн. Комісія утримується із виплати продавцю з моменту запуску онлайн-розрахунків.</p>
     <h3>Як відбувається доставка</h3>
     <ul><li>Покупець пропонує ціну й вказує отримувача, телефон та відділення Нової пошти.</li>
     <li>Продавець обирає покупця. Сайт створює ТТН і показує його обом сторонам.</li>
@@ -464,7 +466,7 @@ const DOCS = {
     <p>Якщо отримувач відмовився від посилки або не забрав її, витрати на повернення відшкодовує покупець. Адміністрація може вимагати їх відшкодування.</p>
     <h3>Контакти для звернень</h3>` + ownerList()},
   contacts: {title: "Контакти", html: () => `
-    <p><b>GARAGE 2</b>: платформа для передачі речей за символічну ціну.</p>
+    <p><b>GARAGE 22</b>: платформа для передачі речей за символічну ціну.</p>
     <ul><li>Місто та країна: Київ, Україна.</li><li>Засновано: 2026 р.</li></ul>
     <h3>Зв'язок з адміністрацією</h3>` + ownerList() + `
     <p class="small muted">З питань оплати, повернення коштів, скарг на оголошення та видалення даних звертайтесь за контактами вище.</p>`}
@@ -514,9 +516,9 @@ function sendMail(p) {
 
 /* ---------- старт ---------- */
 const sample = [
-  {id:"d1", title:"Керамічна ваза", category:"Дім", desc:"Лаконічна ваза у хорошому стані.", prices:[0,50,100], status:"open", ownerName:"GARAGE 2", demo:true},
-  {id:"d2", title:"Книги для нового читача", category:"Книги", desc:"Кілька книжок, які хочеться передати далі.", prices:[0,20,50], status:"open", ownerName:"GARAGE 2", demo:true},
-  {id:"d3", title:"Светр базового кольору", category:"Одяг", desc:"Приклад картки речі.", prices:[30,60,100], status:"open", ownerName:"GARAGE 2", demo:true}
+  {id:"d1", title:"Керамічна ваза", category:"Дім", desc:"Лаконічна ваза у хорошому стані.", prices:[0,50,100], status:"open", ownerName:"GARAGE 22", demo:true},
+  {id:"d2", title:"Книги для нового читача", category:"Книги", desc:"Кілька книжок, які хочеться передати далі.", prices:[0,20,50], status:"open", ownerName:"GARAGE 22", demo:true},
+  {id:"d3", title:"Светр базового кольору", category:"Одяг", desc:"Приклад картки речі.", prices:[30,60,100], status:"open", ownerName:"GARAGE 22", demo:true}
 ];
 function startApp() {
   if (demoMode) {
@@ -769,7 +771,7 @@ function shrink(file) {
 }
 function updateMinNote() {
   const v = Math.round(Number($("minPrice").value));
-  $("minNote").innerHTML = "За кожну успішну угоду (посилку отримано покупцем) сервіс утримує комісію <b>" + COMMISSION + " грн</b> із ціни речі. Мінімальна ціна: <b>" + MIN_PRICE + " грн</b>, безкоштовно віддати річ не можна." + (v >= MIN_PRICE ? " Якщо покупець візьме за " + v + " грн, ви отримаєте <b>" + (v - COMMISSION) + " грн</b>." : "");
+  $("minNote").innerHTML = "За кожну успішну угоду (посилку отримано покупцем) сервіс утримує комісію: <b>" + FEE_TEXT + "</b>. Мінімальна ціна: <b>" + MIN_PRICE + " грн</b>, безкоштовно віддати річ не можна." + (v >= MIN_PRICE ? " Якщо покупець візьме за " + v + " грн, комісія " + commissionFor(v) + " грн, ви отримаєте <b>" + (v - commissionFor(v)) + " грн</b>." : "");
 }
 function openForm(it) {
   if (demoMode) {showNotice("Спершу вставте apiKey Firebase у файл.", true); return;}
@@ -798,7 +800,7 @@ $("itemForm").addEventListener("submit", async e => {
     const locked = !!(it && sales.some(s => s.itemId === it.id));
     if (!locked) {
       const mp = Math.round(Number($("minPrice").value));
-      if (isNaN(mp) || (mp < MIN_PRICE && (!it || mp !== minPriceOf(it)))) throw new Error("Мінімальна ціна не може бути меншою за " + MIN_PRICE + " грн (з неї утримується комісія " + COMMISSION + " грн).");
+      if (isNaN(mp) || (mp < MIN_PRICE && (!it || mp !== minPriceOf(it)))) throw new Error("Мінімальна ціна не може бути меншою за " + MIN_PRICE + " грн.");
       data.minPrice = mp; data.prices = [mp];
     }
     if (photos.length) {data.photos = photos; data.photo = photos[0];}
@@ -882,8 +884,19 @@ function renderCabinet() {
     sales.slice().sort((a, b) => (latest[b.itemId] - latest[a.itemId]) || (a.itemId < b.itemId ? -1 : a.itemId > b.itemId ? 1 : 0) || (b.price - a.price)).forEach(s => {
       const it = allItems.find(i => i.id === s.itemId), bx = el("div", "cardbox");
       bx.appendChild(headRow(it, [el("b", "", s.itemTitle + ": " + money(s.price)), el("div", "muted small", "Отримувач: " + s.buyerName + (s.buyerPhone ? ", тел. " + s.buyerPhone : "")), el("div", "muted small", "Доставка: " + (s.cityName || "—") + (s.whName ? ", " + s.whName : ""))]));
-      bx.appendChild(el("div", "muted small", "Комісія сервісу " + COMMISSION + " грн. Ви отримаєте: " + money(Math.max(0, s.price - COMMISSION))));
-      if (s.status === "accepted") {bx.appendChild(el("div", "muted small", "✓ Ви обрали цього покупця. Віднесіть посилку у відділення й назвіть номер ТТН:")); if (s.ttn) ttnBlock(s, bx);}
+      bx.appendChild(el("div", "muted small", "Комісія сервісу " + commissionFor(s.price) + " грн. Ви отримаєте: " + money(Math.max(0, s.price - commissionFor(s.price)))));
+      if (s.status === "accepted") {bx.appendChild(el("div", "muted small", "✓ Ви обрали цього покупця. Віднесіть посилку у відділення й назвіть номер ТТН:"));
+        if (s.ttn) {
+          ttnBlock(s, bx);
+          const cb = el("button", "btn btn-danger btn-sm", "Скасувати ТТН"); cb.style.marginTop = "8px";
+          cb.onclick = async () => {
+            if (!confirm("Скасувати ТТН " + s.ttn + "? Посилку не відправляйте, а покупця можна буде обрати знову.")) return;
+            cb.disabled = true;
+            try {await fns.httpsCallable("cancelTTN")({requestId: s.id}); showNotice("ТТН скасовано. Запит знову очікує вашого вибору.");}
+            catch (e) {cb.disabled = false; alert("Не вдалося скасувати: " + (e.message || e.code));}
+          };
+          bx.appendChild(cb);
+        }}
       else if (it && it.status === "given") bx.appendChild(el("div", "muted small", "Річ уже віддано іншому"));
       else {const b = el("button", "btn btn-primary btn-sm", "Обрати й створити ТТН"); b.style.marginTop = "10px"; b.onclick = () => openTtn(s); bx.appendChild(b);}
       v.appendChild(bx);
@@ -894,7 +907,7 @@ function renderCabinet() {
     if (!mine.length) none("Ви ще нічого не віддавали.");
     if (mine.some(i => i.status === "open")) {
       const sb = el("button", "btn btn-primary", "↗ Поділитись усіма моїми речами"); sb.style.marginBottom = "12px";
-      sb.onclick = () => shareLink(siteBase() + "#seller=" + currentUser.uid, "Мої речі на GARAGE 2");
+      sb.onclick = () => shareLink(siteBase() + "#seller=" + currentUser.uid, "Мої речі на GARAGE 22");
       v.appendChild(sb);
     }
     mine.forEach(i => {
@@ -968,7 +981,7 @@ $("closeRules").onclick = () => $("rulesDialog").close();
 $("rulesOk").onclick = () => $("rulesDialog").close();
 document.querySelectorAll(".doc-link").forEach(a => a.onclick = e => {e.preventDefault(); openDoc(a.dataset.doc);});
 window.addEventListener("scroll", () => {$("toTop").hidden = window.scrollY < 600;});
-document.querySelectorAll(".fee").forEach(e => e.textContent = COMMISSION);
+document.querySelectorAll(".feetxt").forEach(e => e.textContent = FEE_TEXT);
 document.querySelectorAll(".minp").forEach(e => e.textContent = MIN_PRICE);
 $("minPrice").min = MIN_PRICE; $("minPrice").placeholder = String(Math.max(50, MIN_PRICE)); $("minPrice").addEventListener("input", updateMinNote);
 $("heroCard").onclick = openRules;
