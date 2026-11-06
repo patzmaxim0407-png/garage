@@ -5,6 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#1B4D3E">
 <title>GARAGE 22: передай далі</title>
+<meta name="description" content="GARAGE 22: простір усвідомленого споживання. Не викидай, передай далі: речі в добрі руки від 20 грн.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="GARAGE 22">
+<meta property="og:title" content="GARAGE 22: Не викидай. Передай далі.">
+<meta property="og:description" content="Простір усвідомленого споживання: передай річ у добрі руки або знайди собі нову за символічну ціну.">
+<meta property="og:image" content="https://patzmaxim0407-png.github.io/garage/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <style>
 :root{--green:#1B4D3E;--green-deep:#173B30;--cream:#F6F4ED;--paper:#fff;--ink:#17251F;--muted:#66756D;--line:#DCE5DE;--accent:#D8E7DC;--danger:#A33A32;--radius:20px;--shadow:0 12px 35px rgba(23,59,48,.08)}
 *{box-sizing:border-box}
@@ -336,6 +345,33 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
   </form>
 </dialog>
 
+<dialog id="invDialog">
+  <div class="modal-head"><h2>Запросити друга</h2><button class="close" type="button" id="invClose" aria-label="Закрити">×</button></div>
+  <div class="form-body">
+    <p style="margin-top:0">Надішліть другу запрошення: він побачить гарну сторінку привітання й зможе одразу розмістити свою першу річ. Нижче готове повідомлення, його можна надіслати в один дотик.</p>
+    <div class="notice" id="invText" style="white-space:pre-wrap;margin:0 0 10px"></div>
+    <div class="plans" id="invBtns" style="margin-top:0"></div>
+    <div class="field" style="margin-top:12px"><label for="invLink">Ваше особисте посилання</label><input id="invLink" readonly></div>
+    <div class="muted small" id="invStat"></div>
+  </div>
+</dialog>
+
+<dialog id="welcomeDialog">
+  <div class="modal-head"><h2>Запрошення</h2><button class="close" type="button" id="wlClose" aria-label="Закрити">×</button></div>
+  <div class="form-body">
+    <div class="eyebrow" id="wlEyebrow">GARAGE 22</div>
+    <h2 id="wlTitle" style="margin:4px 0 8px"></h2>
+    <p style="margin:0 0 10px">Простір усвідомленого споживання. Тут речі, які ще можуть служити, знаходять нових господарів: від <span class="minp"></span> грн, з доставкою Новою поштою.</p>
+    <ul style="margin:0 0 12px;padding-left:18px">
+      <li style="margin:5px 0">Увійди через Google в один дотик.</li>
+      <li style="margin:5px 0">Додай річ: фото, ціна, готово.</li>
+      <li style="margin:5px 0">Обери покупця, а ТТН створимо ми.</li>
+    </ul>
+    <p style="font-weight:800;color:var(--green);margin:0 0 12px">Не викидай. Передай далі.</p>
+    <div class="form-actions"><button type="button" class="btn btn-soft" id="wlSkip">Подивитись каталог</button><button type="button" class="btn btn-primary" id="wlAdd">Віддати першу річ</button></div>
+  </div>
+</dialog>
+
 <dialog id="aoDialog">
   <div class="modal-head"><h2>Замовити рекламу</h2><button class="close" type="button" id="aoClose" aria-label="Закрити">×</button></div>
   <form class="form-body" id="aoForm">
@@ -412,7 +448,7 @@ const EMAILJS = {service: "", template: "", key: ""};
 
 const demoMode = !firebaseConfig.apiKey || firebaseConfig.apiKey.indexOf("ВСТАВТЕ") > -1;
 let auth = null, db = null, fns = null, currentUser = null, profile = {};
-let allItems = [], sales = [], buys = [], unsubs = [], myAdOrders = [];
+let allItems = [], sales = [], buys = [], unsubs = [], myAdOrders = [], myRefs = [];
 let view = "home", tab = "sales", pending = null, sellerFilter = null, focusItem = null, catMode = "all";
 const siteBase = () => location.origin + location.pathname;
 function readHash() {
@@ -495,6 +531,7 @@ const DOCS = {
     <p class="small muted">Редакція від 4 листопада 2026 р.</p>
     <h3>Які дані ми збираємо</h3>
     <ul><li>З вашого Google-акаунта: ім'я та адреса електронної пошти (пароль ми не отримуємо).</li>
+    <li>Запрошення друзів: якщо ви перейшли за запрошенням, зберігається ідентифікатор того, хто вас запросив.</li>
     <li>Сторінка бренду (за вашим бажанням): назва, опис і логотип, які бачать усі відвідувачі.</li>
     <li>Профіль: ім'я, місто; для продавців ще й дані відправника (ПІБ, телефон, місто та відділення Нової пошти).</li>
     <li>Оголошення: назва, опис, ціни, фото.</li>
@@ -611,7 +648,7 @@ function startApp() {
   }
   try {firebase.initializeApp(firebaseConfig); auth = firebase.auth(); db = firebase.firestore(); fns = firebase.app().functions("europe-west1");}
   catch (e) {showNotice("Помилка Firebase: " + e.message, true); allItems = sample.slice(); render(); return;}
-  trackStart();
+  trackStart(); checkInvite();
   db.collection("items").orderBy("createdAt", "desc").onSnapshot(s => {
     allItems = s.docs.map(d => ({id: d.id, ...d.data()})); render();
   }, () => showNotice("Не вдалося завантажити речі. Перевірте правила Firestore.", true));
@@ -624,6 +661,8 @@ function startApp() {
       unsubs.push(db.collection("requests").where("sellerId", "==", u.uid).onSnapshot(s => {sales = s.docs.map(d => ({id: d.id, ...d.data()})); render();}, () => {}));
       unsubs.push(db.collection("requests").where("buyerId", "==", u.uid).onSnapshot(s => {buys = s.docs.map(d => ({id: d.id, ...d.data()})); render();}, () => {}));
       unsubs.push(db.collection("profiles").doc(u.uid).onSnapshot(d => {profile = d.exists ? d.data() : {}; render();}, () => {}));
+      unsubs.push(db.collection("referrals").where("inviter", "==", u.uid).onSnapshot(s => {myRefs = s.docs.map(d => ({id: d.id, ...d.data()})); invStatUpd();}, () => {}));
+      claimInvite(u);
       unsubs.push(db.collection("adOrders").where("uid", "==", u.uid).onSnapshot(s => {myAdOrders = s.docs.map(d => ({id: d.id, ...d.data()})).sort((a, b) => b.createdAt - a.createdAt); render();}, () => {}));
       unsubs.push(db.collection("blocks").doc(u.uid).onSnapshot(d => {
         const b = d.exists ? d.data() : null;
@@ -897,6 +936,60 @@ function card(it) {
     if ((window.innerWidth <= 560 || e.target.closest(".gal, .item-visual, h3")) && !focusItem && it.id && !it.demo && !e.target.closest("a, button, input")) location.hash = "#item=" + it.id;
   });
   return c;
+}
+
+/* ---------- запрошення друзів ---------- */
+const inviteLink = () => siteBase() + "?ref=" + currentUser.uid;
+function inviteMsg(withLink) {
+  const nm = pname("");
+  return "Привіт! Тебе запрошує " + (nm || "твій друг") + " в GARAGE 22 🌿\n\nЦе простір усвідомленого споживання: люди передають речі, які ще можуть служити, у добрі руки. Від " + MIN_PRICE + " грн, з доставкою Новою поштою.\n\nНе викидай, передай далі: у кожного вдома є річ, яка зробить комусь день." + (withLink ? "\n\nПриєднуйся: " + inviteLink() : "");
+}
+function invStatUpd() {
+  const box = $("invStat"); if (!box) return;
+  const placed = myRefs.filter(r => allItems.some(i => i.ownerId === r.id)).length;
+  box.textContent = "Ви запросили: " + myRefs.length + " · вже розмістили речі: " + placed;
+}
+function openInvite() {
+  const link = inviteLink(), full = inviteMsg(true), enc = encodeURIComponent;
+  $("invText").textContent = full; $("invLink").value = link; invStatUpd();
+  const box = $("invBtns"); box.innerHTML = "";
+  const add = (label, fn) => {const b = el("button", "btn btn-soft btn-sm", label); b.type = "button"; b.onclick = fn; box.appendChild(b);};
+  if (navigator.share) add("↗ Поділитись", () => navigator.share({title: "GARAGE 22", text: inviteMsg(false), url: link}).catch(() => {}));
+  add("Telegram", () => window.open("https://t.me/share/url?url=" + enc(link) + "&text=" + enc(inviteMsg(false)), "_blank"));
+  add("WhatsApp", () => window.open("https://wa.me/?text=" + enc(full), "_blank"));
+  add("Viber", () => {location.href = "viber://forward?text=" + enc(full);});
+  add("SMS", () => {location.href = "sms:?&body=" + enc(full);});
+  add("E-mail", () => {location.href = "mailto:?subject=" + enc("Тебе запросили в GARAGE 22 🌿") + "&body=" + enc(full);});
+  add("Скопіювати текст", async () => {try {await navigator.clipboard.writeText(full); showNotice("Запрошення скопійовано. Вставте його другу в будь-який месенджер.");} catch (e) {prompt("Скопіюйте запрошення:", full);}});
+  $("invDialog").showModal();
+}
+$("invClose").onclick = () => $("invDialog").close();
+$("invLink").onclick = () => $("invLink").select();
+function checkInvite() {
+  const ref = new URLSearchParams(location.search).get("ref");
+  if (!ref || !/^[\w-]{6,40}$/.test(ref)) return;
+  try {localStorage.setItem("g22_ref", ref);} catch (e) {}
+  history.replaceState(null, "", location.pathname + location.hash);
+  setTimeout(() => showWelcome(ref), 1400);
+}
+function showWelcome(ref) {
+  if (currentUser && currentUser.uid === ref) return;
+  try {if (localStorage.getItem("g22_wl_" + ref)) return; localStorage.setItem("g22_wl_" + ref, "1");} catch (e) {}
+  const it = allItems.find(i => i.ownerId === ref), nm = (brandMap[ref] && brandMap[ref].name) || (it && it.ownerName) || "";
+  $("wlTitle").textContent = nm ? nm + " запрошує тебе в GARAGE 22" : "Тебе запросили в GARAGE 22";
+  document.querySelectorAll(".minp").forEach(e => {e.textContent = MIN_PRICE;});
+  $("welcomeDialog").showModal();
+}
+["wlClose", "wlSkip"].forEach(id => $(id).onclick = () => $("welcomeDialog").close());
+$("wlAdd").onclick = () => {$("welcomeDialog").close(); needLogin(() => openForm(null));};
+async function claimInvite(u) {
+  let ref = ""; try {ref = localStorage.getItem("g22_ref") || "";} catch (e) {}
+  if (!ref || ref === u.uid) return;
+  const isNew = u.metadata && u.metadata.creationTime && (Date.now() - new Date(u.metadata.creationTime).getTime() < 7 * 86400000);
+  if (isNew) {
+    try {const r = db.collection("referrals").doc(u.uid), d = await r.get(); if (!d.exists) await r.set({inviter: ref, createdAt: Date.now()});} catch (e) {}
+  }
+  try {localStorage.removeItem("g22_ref");} catch (e) {}
 }
 
 /* ---------- замовлення реклами ---------- */
@@ -1209,6 +1302,7 @@ function renderCabinet() {
   if (tab === "mine") {
     const mine = allItems.filter(i => i.ownerId === currentUser.uid);
     if (!mine.length) none("Ви ще нічого не віддавали.");
+    const ib = el("button", "btn btn-primary", "🌿 Запросити друга"); ib.style.cssText = "margin:0 8px 12px 0"; ib.onclick = openInvite; v.appendChild(ib);
     if (mine.some(i => i.status === "open")) {
       const sb = el("button", "btn btn-primary", "↗ Поділитись усіма моїми речами"); sb.style.marginBottom = "12px";
       sb.onclick = () => shareLink(siteBase() + "#seller=" + currentUser.uid, "Мої речі на GARAGE 22");
