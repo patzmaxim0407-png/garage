@@ -56,6 +56,7 @@ dialog::backdrop{background:rgba(13,29,22,.55)}
     <div class="tabs" id="tabs"></div>
     <input type="search" id="q" placeholder="Пошук (ім’я, пошта, назва речі)…">
     <button class="btn s" id="refresh">Оновити</button> <button class="btn on" id="adNew" hidden>＋ Додати рекламу</button>
+    <div id="statsBox" hidden></div>
     <div class="wrap"><table><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
   </div>
 </main>
@@ -142,7 +143,7 @@ async function load() {
   $("gate").hidden = false; $("gate").textContent = "Завантаження…"; $("app").hidden = true;
   try {
     const r = await call("adminData");
-    D = r.data; D.blocks = D.blocks || {}; D.ads = D.ads || []; D.reports = D.reports || {} ; if (!Array.isArray(D.reports)) D.reports = [];
+    D = r.data; D.blocks = D.blocks || {}; D.ads = D.ads || []; D.adOrders = D.adOrders || []; D.reports = D.reports || {} ; if (!Array.isArray(D.reports)) D.reports = [];
     $("gate").hidden = true; $("app").hidden = false; render();
   } catch (e) {
     $("gate").textContent = (e.code === "functions/permission-denied" || /permission/i.test(e.message || ""))
@@ -177,6 +178,22 @@ async function act(a, id) {
       } catch (e) {$("photoTitle").textContent = "Не вдалося"; $("photoDesc").textContent = e.message || e.code;}
     }
     else if (a === "approve") {if (!confirm("Дозволити цю річ і повернути її в каталог?")) return; await call("adminAction", {action: "approveItem", itemId: id}); await load();}
+    else if (a === "aoview") {
+      $("photoTitle").textContent = "Завантаження…"; $("photoBox").innerHTML = ""; $("photoDesc").textContent = ""; $("photoDlg").showModal();
+      try {
+        const r = await call("adminAdOrder", {orderId: id}), o = r.data.order;
+        $("photoTitle").textContent = o.title; $("photoDesc").textContent = (o.text || "") + " · " + (o.url || "");
+        $("photoBox").innerHTML = (r.data.images.map(p => '<img src="' + esc(p) + '" style="grid-column:1/-1;aspect-ratio:8/1;object-fit:cover">').join("") + r.data.mobImages.map(p => '<img src="' + esc(p) + '" style="aspect-ratio:3.2/1;object-fit:cover">').join("")) || '<div class="muted">Немає банерів.</div>';
+      } catch (e) {$("photoTitle").textContent = "Не вдалося"; $("photoDesc").textContent = e.message || e.code;}
+    }
+    else if (a === "aoapprove") {if (!confirm("Схвалити рекламу? Вона одразу потрапить у коло показу (або почнеться в обрану дату).")) return; await call("adminAction", {action: "approveAdOrder", orderId: id}); await load();}
+    else if (a === "aoreject") {
+      const reason = prompt("Причина відхилення (її побачить рекламодавець):"); if (reason === null) return;
+      const r = await call("adminAction", {action: "rejectAdOrder", orderId: id, reason: reason.trim()});
+      alert(r.data.refund === "ok" ? "Відхилено, кошти повернено." : (r.data.refund === "manual" ? "Відхилено. Автоповернення не вдалося (" + r.data.refundError + "). Поверніть кошти вручну в кабінеті monobank." : "Відхилено."));
+      await load();
+    }
+    else if (a === "aodel") {if (!confirm("Видалити замовлення?")) return; await call("adminAction", {action: "deleteAdOrder", orderId: id}); await load();}
     else if (a === "adedit") {openAd(id);}
     else if (a === "adtoggle") {const ad = D.ads.find(x => x.id === id); await call("adminAction", {action: "saveAd", adId: id, active: !ad.active}); await load();}
     else if (a === "addel") {if (!confirm("Видалити цю рекламу?")) return; await call("adminAction", {action: "deleteAd", adId: id}); await load();}
@@ -276,11 +293,11 @@ function render() {
     [open.length, "Доступні речі"], [sold.length, "Продані / передані"], [D.requests.length, "Запитів покупців"],
     [D.requests.filter(r => r.ttn).length, "Створено ТТН"], [blockedN, "Заблоковано акаунтів"], [newRep.length, "Нових скарг"],
   ].map(s => '<div class="stat"><b>' + s[0] + "</b><span>" + s[1] + "</span></div>").join("");
-  const T = [["users", "Користувачі"], ["items", "Усі речі"], ["ads", "Реклама"], ["reports", "Скарги" + (newRep.length ? " (" + newRep.length + ")" : "")], ["requests", "Запити"]];
+  const T = [["users", "Користувачі"], ["items", "Усі речі"], ["ads", "Реклама"], ["stats", "Статистика"], ["adorders", "Замовлення реклами" + (D.adOrders.filter(o => o.status === "paid").length ? " (" + D.adOrders.filter(o => o.status === "paid").length + ")" : "")], ["reports", "Скарги" + (newRep.length ? " (" + newRep.length + ")" : "")], ["requests", "Запити"]];
   $("tabs").innerHTML = T.map(t => '<button class="btn ' + (tab === t[0] ? "on" : "s") + '" data-t="' + t[0] + '">' + t[1] + "</button>").join("");
   $("tabs").querySelectorAll("button").forEach(b => b.onclick = () => {tab = b.dataset.t; render();});
 
-  $("adNew").hidden = tab !== "ads";
+  $("adNew").hidden = tab !== "ads"; $("statsBox").hidden = tab !== "stats";
   const q = $("q").value.trim().toLowerCase();
   let head = [], rows = [];
   if (tab === "users") {
@@ -311,6 +328,41 @@ function render() {
       esc({both: "Скрізь", home: "Головна", item: "Сторінка товару"}[ad.placement] || ad.placement) + '<br><span class="muted small">порядок ' + (ad.order || 0) + "</span>", secTxt(ad),
       pill(ad.active ? "Показується" : "Вимкнено", ad.active ? "" : "wait"), esc(ad.url || "—"),
       btn("adedit", ad.id, "Змінити") + btn("adtoggle", ad.id, ad.active ? "Вимкнути" : "Увімкнути") + btn("addel", ad.id, "Видалити", "d")]));
+  }
+  if (tab === "adorders") {
+    head = ["Дата", "Хто", "Реклама", "Умови", "Сума", "Статус", "Дії"];
+    const stOf = o => o.status === "new" ? ["Очікує оплати", "wait"] : o.status === "paid" ? ["Оплачено, чекає перевірки", "wait"] : o.status === "rejected" ? ["Відхилено", "bad"]
+      : o.status === "approved" ? [o.until < Date.now() ? "Завершена" : (o.startAt > Date.now() ? "Заплановано з " + fmt(o.startAt) : "Показується до " + fmt(o.until)), o.until < Date.now() ? "" : "sold"] : [o.status, ""];
+    rows = D.adOrders.slice().sort((x, y) => y.createdAt - x.createdAt).map(o => {
+      const st = stOf(o);
+      return [fmt(o.createdAt), esc(o.name || "—") + '<br><span class="muted small">' + esc(o.email || "") + "</span>",
+        "<b>" + esc(o.title) + "</b>" + (o.text ? '<br><span class="muted small">' + esc(o.text) + "</span>" : "") + '<br><span class="muted small">' + esc(o.url) + "</span>",
+        esc({home: "Головна", item: "Картка товару", both: "Обидва місця"}[o.place] || o.place) + " · " + o.days + " дн. · " + o.seconds + ' с<br><span class="muted small">старт ' + fmt(o.startDate) + "; банерів: " + (o.nImgs || 0) + " + " + (o.nMob || 0) + " моб.</span>",
+        Math.round((o.amount || 0) / 100) + " грн",
+        pill(st[0], st[1]) + (o.reason ? '<br><span class="muted small">' + esc(o.reason) + "</span>" : "") + (o.refund === "manual" ? '<br><span class="small" style="color:var(--danger)">Поверніть кошти вручну в кабінеті monobank</span>' : ""),
+        btn("aoview", o.id, "Банери") + (o.status === "paid" ? btn("aoapprove", o.id, "Схвалити") : "") + ((o.status === "paid" || o.status === "new") ? btn("aoreject", o.id, "Відхилити", "d") : "") + ((o.status === "rejected" || o.status === "new") ? btn("aodel", o.id, "Видалити", "d") : "")];
+    });
+  }
+  if (tab === "stats") {
+    head = ["Дата", "Відвідувачі", "Візити", "Перегляди речей", "Покази реклами", "Кліки", "CTR"];
+    if (!D.stats) {
+      D.stats = "loading"; $("statsBox").innerHTML = '<div class="muted">Завантаження…</div>';
+      call("adminStats", {days: 60}).then(r => {D.stats = r.data; render();}).catch(e => {D.stats = []; $("statsBox").innerHTML = '<div class="muted">Не вдалося: ' + esc(e.message || e.code) + "</div>";});
+    } else if (Array.isArray(D.stats)) {
+      const st = D.stats, sumO = o => Object.values(o || {}).reduce((n, x) => n + (Number(x) || 0), 0);
+      const tot = (arr) => ({u: arr.reduce((n, d) => n + (d.uniques || 0), 0), v: arr.reduce((n, d) => n + (d.visits || 0), 0), i: arr.reduce((n, d) => n + (d.itemViews || 0), 0), av: arr.reduce((n, d) => n + sumO(d.adViews), 0), ac: arr.reduce((n, d) => n + sumO(d.adClicks), 0)});
+      const ctr = (c, v) => v ? (c * 100 / v).toFixed(1) + "%" : "—";
+      const card = (n, t) => '<div class="stat"><b>' + n + "</b><span>" + t + "</span></div>";
+      const block = (title, t) => "<h3 style='margin:14px 0 6px'>" + title + '</h3><div class="stats">' + card(t.u, "Відвідувачів") + card(t.v, "Візитів") + card(t.i, "Переглядів речей") + card(t.av, "Показів реклами") + card(t.ac, "Кліків по рекламі") + card(ctr(t.ac, t.av), "CTR") + "</div>";
+      const last30 = st.slice(0, 30).reverse(), mx = Math.max(1, ...last30.map(d => d.uniques || 0));
+      const bars = '<h3 style="margin:14px 0 6px">Відвідувачі по днях (30 днів)</h3><div style="display:flex;align-items:flex-end;gap:3px;height:70px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px">' + last30.map(d => '<div title="' + esc(d.day) + ": " + (d.uniques || 0) + '" style="flex:1;background:var(--green);border-radius:3px 3px 0 0;height:' + Math.max(3, Math.round((d.uniques || 0) * 54 / mx)) + 'px"></div>').join("") + "</div>";
+      const per = {}; st.slice(0, 30).forEach(d => {Object.entries(d.adViews || {}).forEach(([k, n]) => {(per[k] = per[k] || {v: 0, c: 0}).v += n;}); Object.entries(d.adClicks || {}).forEach(([k, n]) => {(per[k] = per[k] || {v: 0, c: 0}).c += n;});});
+      const nameOf = id => {const ad = D.ads.find(x => x.id === id); return ad ? (ad.title || id) : id;};
+      const perRows = Object.keys(per).sort((x, y) => per[y].v - per[x].v).map(k => "<tr><td>" + esc(nameOf(k)) + "</td><td>" + per[k].v + "</td><td>" + per[k].c + "</td><td>" + ctr(per[k].c, per[k].v) + "</td></tr>").join("");
+      $("statsBox").innerHTML = block("За 7 днів", tot(st.slice(0, 7))) + block("За 30 днів", tot(st.slice(0, 30))) + bars +
+        '<h3 style="margin:14px 0 6px">Реклама за 30 днів</h3><div class="wrap"><table style="min-width:420px"><thead><tr><th>Реклама</th><th>Покази</th><th>Кліки</th><th>CTR</th></tr></thead><tbody>' + (perRows || '<tr><td colspan="4" class="muted">Поки немає даних.</td></tr>') + "</tbody></table></div><h3 style='margin:14px 0 0'>По днях</h3>";
+      rows = st.map(d => [esc(d.day), d.uniques || 0, d.visits || 0, d.itemViews || 0, sumO(d.adViews), sumO(d.adClicks), ctr(sumO(d.adClicks), sumO(d.adViews))]);
+    }
   }
   if (tab === "reports") {
     head = ["Річ", "Власник", "Причина", "Скаржився", "Дата", "Статус", "Дії"];
