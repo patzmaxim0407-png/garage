@@ -12,7 +12,8 @@
 <meta property="og:site_name" content="GARAGE 22">
 <meta property="og:title" content="GARAGE 22: Не викидай. Передай далі.">
 <meta property="og:description" content="Простір усвідомленого споживання: передай річ у добрі руки або знайди собі нову за символічну ціну.">
-<meta property="og:image" content="https://patzmaxim0407-png.github.io/garage/og.jpg">
+<meta property="og:image" content="https://patzmaxim0407-png.github.io/garage/og.jpg?v=3">
+<meta property="og:url" content="https://patzmaxim0407-png.github.io/garage/">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
@@ -258,6 +259,28 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
   .hero.hasvideo{grid-template-columns:1fr}
   .hero.hasvideo .hero-card{padding:16px 18px}
 }
+.hero{grid-template-columns:minmax(0,1.05fr) minmax(0,.8fr) minmax(0,1fr);gap:22px;align-items:center}
+.hero-card{min-height:0 !important;padding:22px 24px}
+.hero-card .symbol{font-size:2.4rem}
+.hero-card strong{margin-top:14px}
+.herovideo{align-self:center}
+.vfb{position:absolute;inset:0;display:grid;grid-template-columns:48% 52%;background:#fff;cursor:pointer}
+.vfb img{width:100%;height:100%;object-fit:cover;display:block}
+.vfbi{padding:14px 16px;display:flex;flex-direction:column;gap:5px;justify-content:center;min-width:0}
+.vfbi b{font-size:1.02rem;line-height:1.2;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.vtag{font-size:.7rem;font-weight:800;color:#7a5a12;background:#F6E7C1;border-radius:999px;padding:2px 10px;align-self:flex-start}
+.vcta{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:8px;padding:20px 24px;background:linear-gradient(135deg,#F6ECD2,#E3EEE2)}
+.vcta b{font-size:1.15rem;line-height:1.2}
+.section-head.focus{margin:12px 0 22px !important;align-items:flex-start !important}
+@media (max-width: 1100px) {
+  .hero{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .hero > div:first-child{grid-column:1/-1}
+}
+@media (max-width: 700px) {
+  .hero{grid-template-columns:1fr}
+  .vfbi b{font-size:.95rem}
+  .vfbi{padding:10px 12px;gap:3px}
+}
 </style>
 </head>
 <body>
@@ -274,7 +297,7 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
   <div id="notice" role="status" aria-live="polite"></div>
   <div id="homeView">
     <section class="hero" id="heroSec">
-      <div class="hero-main"><div>
+      <div>
         <div class="eyebrow">Віддай у добрі руки · від <span class="minp"></span> грн</div>
         <h1>Передай далі.</h1>
         <p>Простір усвідомленого споживання.</p>
@@ -282,7 +305,7 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
       </div>
       <aside class="hero-card" id="heroCard" role="button" tabindex="0" aria-label="Правила розміщення" style="cursor:pointer"><div class="symbol">↗</div>
         <div><strong>Віддай у добрі руки<br>від <b class="minp"></b> грн</strong><span>У кожного вдома є речі, які ще можуть служити. Передайте їх людям, яким вони справді потрібні, за символічну ціну.</span><span style="margin-top:12px;color:#fff;font-weight:700">Правила розміщення →</span></div>
-      </aside></div>
+      </aside>
       <div class="herovideo" id="heroVideo" hidden></div>
     </section>
     <section>
@@ -472,7 +495,7 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
     <div class="field"><label for="aoDays">Строк</label><select id="aoDays"><option value="7">7 днів</option><option value="30">30 днів</option></select></div>
     <div class="field"><label for="aoSec">Скільки секунд показується в колі</label><select id="aoSec"><option value="15">15 секунд (дешевше)</option><option value="30" selected>30 секунд</option><option value="60">1 хвилина (дорожче)</option></select></div>
     <div class="field"><label for="aoStart">Дата старту</label><input id="aoStart" type="date"></div>
-    <div class="field" id="aoVideoField" hidden><label for="aoVideo">Посилання на відео (YouTube, Vimeo або файл .mp4)</label><input id="aoVideo" placeholder="https://www.youtube.com/watch?v=..."><small class="muted">Відео крутиться без звуку. Як постер завантажте нижче картинку 16:9 (1280 × 720).</small></div>
+    <div class="field" id="aoVideoField" hidden><label for="aoVideo">Посилання на відео (YouTube, Vimeo або файл .mp4)</label><input id="aoVideo" placeholder="https://www.youtube.com/watch?v=..."><small class="muted">Формат: 16:9 (1280 × 720), до 30 секунд, без звуку. Посилання YouTube або Vimeo (з дозволеним вбудовуванням) або файл .mp4 / .webm до 15 МБ. Як постер завантажте нижче картинку 16:9 (1280 × 720).</small></div>
     <div class="field"><label for="aoTitle">Заголовок (коротко)</label><input id="aoTitle" maxlength="80" placeholder="Назва бренду або акції"></div>
     <div class="field"><label for="aoText">Опис</label><textarea id="aoText" maxlength="200" placeholder="Одне-два речення"></textarea></div>
     <div class="field"><label for="aoUrl">Посилання на ваш сайт</label><input id="aoUrl" placeholder="https://..."></div>
@@ -605,7 +628,7 @@ const DOCS = {
     <ul><li>Підсвітка оголошення рамкою: ${PROMO.highlight.price} грн на ${PROMO.highlight.days} днів. Розміщення в розділі «Гараж»: ${PROMO.garage.price} грн на ${PROMO.garage.days} днів. Підняття в «ТОП-20»: ${PROMO.top.price} грн на ${PROMO.top.days} днів (якщо охочих понад 20, речі в блоці змінюються по черзі).</li>
     <li>Бренд (магазин, шоурум, вінтаж) може вести окрему сторінку. Пакети розміщення на ${PLAN_DAYS} днів: ${PLANS.map(p => p[0] + " оголошень за " + p[1] + " грн").join(", ")}. Речі бренду продаються без комісії Адміністрації.</li>
     <li>Пакет задає кількість місць для активних оголошень; місце переданої речі можна зайняти новим оголошенням. Після завершення строку пакет потрібно оновити, інакше речі бренду не показуються на Сайті.</li>
-    <li>Реклама на Сайті замовляється на сторінці «Замовити рекламу» й оплачується одразу. Ціни за 7 / 30 днів (30 секунд у колі): головна ${AD_BASE.home[0]} / ${AD_BASE.home[1]} грн, картка товару ${AD_BASE.item[0]} / ${AD_BASE.item[1]} грн, обидва місця ${AD_BASE.both[0]} / ${AD_BASE.both[1]} грн, кабінет користувача ${AD_BASE.cabinet[0]} / ${AD_BASE.cabinet[1]} грн, відеоблок на головній ${AD_BASE.video[0]} / ${AD_BASE.video[1]} грн. Показ 15 секунд дешевший на 30%, 60 секунд дорожчий на 60%.</li>
+    <li>Реклама на Сайті замовляється на сторінці «Замовити рекламу» й оплачується одразу. Ціни за 7 / 30 днів (30 секунд у колі): головна ${AD_BASE.home[0]} / ${AD_BASE.home[1]} грн, картка товару ${AD_BASE.item[0]} / ${AD_BASE.item[1]} грн, обидва місця ${AD_BASE.both[0]} / ${AD_BASE.both[1]} грн, кабінет користувача ${AD_BASE.cabinet[0]} / ${AD_BASE.cabinet[1]} грн, відеоблок на головній ${AD_BASE.video[0]} / ${AD_BASE.video[1]} грн (формат відео: 16:9, 1280 × 720, до 30 секунд, без звуку; YouTube, Vimeo або .mp4 / .webm до 15 МБ). Показ 15 секунд дешевший на 30%, 60 секунд дорожчий на 60%.</li>
     <li>Банери реклами проходять перевірку. Якщо реклама не відповідає правилам (заборонені товари й послуги, обман, 18+, образливий вміст, сумнівні вакансії: «легкі гроші», передоплата від кандидатів, дискримінаційні вимоги), її відхиляють, а сплачена сума повертається. Адміністрація не гарантує кількість переглядів чи кліків.</li>
     <li>Оплата карткою через monobank. Повернення коштів за послуги розглядається за зверненням на пошту Адміністрації, якщо послугу не було надано.</li></ul>
     <h3>6. Роль Сайту</h3>
@@ -910,13 +933,38 @@ function videoNode(a) {
   n._stop = () => {holder.innerHTML = "";};
   return n;
 }
+function heroFallback() {
+  const cands = allItems.filter(i => i.status === "open" && brandOk(i) && photosOf(i).length);
+  const prom = cands.filter(i => isPromo(i, "topUntil") || isPromo(i, "garageUntil"));
+  const pool = prom.length ? prom : cands.slice().sort((x, y) => scoreOf(y) - scoreOf(x)).slice(0, 5);
+  if (!pool.length) {
+    const c = el("div", "vcta");
+    c.appendChild(el("b", "", "Тут може бути ваша реклама"));
+    c.appendChild(el("span", "muted", "Відеоблок на головній: від " + AD_BASE.video[0] + " грн / 7 днів. Покази, кліки й статистика в кабінеті."));
+    const bt = el("button", "btn btn-primary btn-sm", "Замовити відеорекламу"); bt.type = "button"; bt.onclick = () => openAdOrder("video"); c.appendChild(bt);
+    return {key: "cta", node: c};
+  }
+  const it = pool[Math.floor(Date.now() / 600000) % pool.length];
+  const n = el("div", "vfb"); n.onclick = () => {location.hash = "#item=" + it.id;};
+  const im = el("img"); im.src = photosOf(it)[0]; im.alt = it.title || ""; n.appendChild(im);
+  const info = el("div", "vfbi");
+  info.appendChild(el("span", "vtag", "★ Річ дня")); info.appendChild(el("b", "", it.title || "Без назви"));
+  info.appendChild(el("div", "pricetag", priceFrom(it))); info.appendChild(el("div", "muted small", cityDate(it)));
+  const bt = el("span", "btn btn-primary btn-sm", "Подивитись"); bt.style.alignSelf = "flex-start"; info.appendChild(bt);
+  n.appendChild(info);
+  return {key: it.id, node: n};
+}
 function videoSlot() {
-  const box = $("heroVideo"), hero = $("heroSec");
-  const hide = () => {clearTimeout(adTimers.video); box.hidden = true; hero.classList.remove("hasvideo"); box.dataset.sig = "";};
+  const box = $("heroVideo");
+  if (catMode !== "all" || sellerFilter || focusItem) {clearTimeout(adTimers.video); box.dataset.sig = ""; return;}
+  box.hidden = false;
   const list = ads.filter(a => a.placement === "video" && a.video && a.video.src && (!a.startAt || a.startAt <= Date.now()) && (!a.until || a.until > Date.now())).sort((x, y) => (x.order || 0) - (y.order || 0));
-  if (!list.length || catMode !== "all" || sellerFilter || focusItem) {hide(); return;}
-  box.hidden = false; hero.classList.add("hasvideo");
-  const sig = list.map(a => a.id + ":" + (a.updatedAt || 0)).join(",");
+  if (!list.length) {
+    const fb = heroFallback(), sig = "fb:" + fb.key;
+    if (box.dataset.sig === sig) return;
+    clearTimeout(adTimers.video); box.dataset.sig = sig; box.innerHTML = ""; box.appendChild(fb.node); return;
+  }
+  const sig = "v:" + list.map(a => a.id + ":" + (a.updatedAt || 0)).join(",");
   if (box.dataset.sig === sig) return;
   box.dataset.sig = sig; clearTimeout(adTimers.video); box.innerHTML = "";
   const slides = list.map(a => ({node: videoNode(a), ms: Math.max(8000, (Number(a.seconds) || 30) * 1000), id: a.id}));
@@ -1216,11 +1264,13 @@ async function aoAdd(inputId, arr, maxW) {
   catch (e) {$("aoErr").textContent = e.message;}
   $(inputId).value = ""; aoDraw();
 }
-function openAdOrder() {
+function openAdOrder(pre) {
   needLogin(() => {
     aoPc = []; aoMob = []; aoDraw(); ["aoTitle", "aoText", "aoUrl", "aoVideo"].forEach(i => {$(i).value = "";}); $("aoVideoField").hidden = $("aoPlace").value !== "video"; $("aoOk").checked = false; $("aoErr").textContent = "";
     const t = new Date(), iso = t.getFullYear() + "-" + String(t.getMonth() + 1).padStart(2, "0") + "-" + String(t.getDate()).padStart(2, "0");
-    $("aoStart").min = iso; $("aoStart").value = iso; aoPriceUpd(); $("aoDialog").showModal();
+    $("aoStart").min = iso; $("aoStart").value = iso;
+    if (typeof pre === "string") $("aoPlace").value = pre;
+    $("aoVideoField").hidden = $("aoPlace").value !== "video"; aoPriceUpd(); $("aoDialog").showModal();
   });
 }
 ["aoPlace", "aoDays", "aoSec"].forEach(id => $(id).addEventListener("change", aoPriceUpd));
@@ -1455,7 +1505,7 @@ function ttnBlock(s, bx) {
 }
 function renderCabinet() {
   const v = $("cabinetView"); v.innerHTML = "";
-  const h = el("div", "section-head cabhead"); h.innerHTML = '<div><div class="eyebrow">Особистий кабінет</div><h2>Ваш кабінет</h2></div>';
+  const h = el("div", "section-head cabhead"); h.style.cssText = "justify-content:flex-start;margin:14px 0 12px";
   const back = el("button", "btn btn-soft btn-sm", "← Каталог"); back.onclick = () => setView("home"); h.appendChild(back); v.appendChild(h);
   const t = el("div", "tabs");
   [["sales", "Запити"], ["mine", "Мої речі"], ["buys", "Покупки"], ["adorders", "Реклама"], ["profile", "Профіль"]].forEach(([k, l]) => {
