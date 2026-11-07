@@ -308,7 +308,7 @@ select{-webkit-appearance:none !important;appearance:none !important;background-
 </head>
 <body>
 <header class="topbar"><div class="topbar-inner">
-  <div class="brandwrap" id="brandWrap"><div class="brand" id="brand">GARAGE 22<small>Ресейл-простір</small></div></div>
+  <div class="brandwrap" id="brandWrap"><div class="brand" id="brand">GARAGE 22<small>Маркет ресейлу</small></div></div>
   <div class="top-actions">
     <span class="user-status" id="userStatus">Ви не увійшли</span>
     <button class="btn btn-light" id="loginBtn">Увійти через Google</button>
@@ -321,6 +321,7 @@ select{-webkit-appearance:none !important;appearance:none !important;background-
   <div id="homeView">
     <section class="hero" id="heroSec">
       <div>
+        <div class="eyebrow">Віддай у добрі руки · від <span class="minp"></span> грн</div>
         <h1>Передай далі.</h1>
         <p>Простір усвідомленого споживання.</p>
         <button class="btn btn-primary" id="heroAddBtn">Віддати річ ↗</button>
@@ -555,9 +556,46 @@ const firebaseConfig = {
 };
 // ===== EMAILJS: листи продавцю (необов'язково, можна лишити порожнім) =====
 const MIN_PRICE = 20, COMM_FIXED = 10, COMM_PCT = 3, COMM_PCT_FROM = 1000; // мінімальна ціна, комісія: фіксована до 1000 грн, відсоток від 1000 грн
-const PROMO = {highlight: {price: 10, days: 7}, garage: {price: 15, days: 7}, top: {price: 39, days: 7}, day: {price: 59, days: 7}}, PLAN_DAYS = 30, PLANS = [[10, 99], [20, 199], [50, 349]];
-const AD_BASE = {home: [99, 299], item: [49, 149], both: [129, 399], cabinet: [29, 89], video: [149, 449]}, AD_SEC = {15: .7, 30: 1, 60: 1.6};
-const adPrice = (place, days, sec) => Math.round(AD_BASE[place][Number(days) === 30 ? 1 : 0] * AD_SEC[sec]);
+const DEFAULT_PRICING = {
+  promos: [
+    {kind: "highlight", name: "Підсвітка рамкою", active: true, tariffs: [{days: 7, price: 10}]},
+    {kind: "garage", name: "Розділ «Гараж»", active: true, tariffs: [{days: 7, price: 15}]},
+    {kind: "top", name: "ТОП-20", active: true, tariffs: [{days: 7, price: 39}]},
+    {kind: "day", name: "Річ дня", active: true, tariffs: [{days: 7, price: 59}]}
+  ],
+  banners: {
+    places: [
+      {key: "home", name: "Головна (над фільтрами)", active: true, prices: {"7": 99, "30": 299}},
+      {key: "item", name: "Картка товару", active: true, prices: {"7": 49, "30": 149}},
+      {key: "both", name: "Головна й картка товару", active: true, prices: {"7": 129, "30": 399}},
+      {key: "cabinet", name: "Кабінет користувача", active: true, prices: {"7": 29, "30": 89}}
+    ],
+    durations: [7, 30],
+    seconds: [{sec: 15, factor: 0.7}, {sec: 30, factor: 1}, {sec: 60, factor: 1.6}]
+  },
+  packages: [{slots: 10, price: 99, days: 30}, {slots: 20, price: 199, days: 30}, {slots: 50, price: 349, days: 30}]
+};
+let PRICING = DEFAULT_PRICING, PROMO = {}, PLANS = [], PLAN_DAYS = 30;
+function applyPricing(c) {
+  PRICING = (c && c.promos && c.banners && c.packages) ? c : DEFAULT_PRICING;
+  PROMO = {};
+  PRICING.promos.forEach(p => {const t = (p.tariffs || [])[0] || {price: 0, days: 7}; PROMO[p.kind] = {name: p.name, active: p.active !== false, tariffs: p.tariffs || [], price: t.price, days: t.days};});
+  PLANS = PRICING.packages.map(p => [p.slots, p.price]); PLAN_DAYS = (PRICING.packages[0] || {}).days || 30;
+}
+applyPricing(DEFAULT_PRICING);
+function adPrice(place, days, sec) {
+  const pl = PRICING.banners.places.find(p => p.key === place), sc = PRICING.banners.seconds.find(x => Number(x.sec) === Number(sec));
+  return pl && sc ? Math.round((Number(pl.prices[String(days)]) || 0) * Number(sc.factor)) : 0;
+}
+const placeName = k => (PRICING.banners.places.find(p => p.key === k) || {}).name || k;
+const secLabel = x => (x.sec >= 60 ? (x.sec / 60) + " хв" : x.sec + " с") + (x.factor < 1 ? " (дешевше)" : x.factor > 1 ? " (дорожче)" : "");
+const promoLine = () => PRICING.promos.filter(p => p.active !== false).map(p => p.name + ": " + p.tariffs.map(t => t.price + " грн на " + t.days + " дн.").join(", ")).join("; ");
+const planLine = () => PRICING.packages.map(p => p.slots + " оголошень за " + p.price + " грн на " + p.days + " днів").join(", ");
+const adLine = () => PRICING.banners.places.filter(p => p.active !== false).map(p => p.name + ": " + PRICING.banners.durations.map(d => d + " дн. " + (p.prices[String(d)] || "—")).join(", ")).join("; ") + " (грн, показ 30 секунд у колі; коротший показ дешевший, довший дорожчий)";
+function renderPromoRules() {
+  const e = document.getElementById("promoRules"); if (!e) return;
+  e.innerHTML = "<h3>Просування та бренди</h3><ul><li>" + promoLine() + ". Якщо охочих у «ТОП-20» понад 20, а в «Речі дня» понад 10, речі в блоках змінюються по черзі.</li><li>Бренд (магазин, шоурум, вінтаж) може вести окрему сторінку. Речі бренду продаються без комісії за пакетом розміщення: " + planLine() + ".</li><li>Пакет задає кількість місць для активних речей. Коли річ передана, її місце можна зайняти новою. Після завершення строку пакет потрібно оновити, інакше речі бренду не показуються в каталозі.</li></ul>";
+}
 const commissionFor = p => p >= COMM_PCT_FROM ? Math.round(p * COMM_PCT / 100) : COMM_FIXED;
 const FEE_TEXT = COMM_FIXED + " грн для речей до " + COMM_PCT_FROM + " грн і " + COMM_PCT + "% від ціни для речей від " + COMM_PCT_FROM + " грн";
 const ADMIN_CONTACT = ""; // наприклад "@ваш_нік" для скарг; можна лишити порожнім
@@ -647,10 +685,10 @@ const DOCS = {
     <li>Розрахунок за річ відбувається між продавцем і покупцем. Адміністрація не приймає та не гарантує такі розрахунки. Онлайн-оплата на Сайті може бути додана пізніше.</li>
     <li>Витрати на повернення посилки, що виникли через відмову або неотримання її покупцем, відшкодовує покупець.</li></ul>
     <h3>5. Платні послуги та пакети брендів</h3>
-    <ul><li>Підсвітка оголошення рамкою: ${PROMO.highlight.price} грн на ${PROMO.highlight.days} днів. Розміщення в розділі «Гараж»: ${PROMO.garage.price} грн на ${PROMO.garage.days} днів. Підняття в «ТОП-20»: ${PROMO.top.price} грн на ${PROMO.top.days} днів (якщо охочих понад 20, речі в блоці змінюються по черзі). «Річ дня»: ${PROMO.day.price} грн на ${PROMO.day.days} днів, річ показується в окремому блоці на головній; якщо охочих понад 10, речі в блоці змінюються по черзі.</li>
-    <li>Бренд (магазин, шоурум, вінтаж) може вести окрему сторінку. Пакети розміщення на ${PLAN_DAYS} днів: ${PLANS.map(p => p[0] + " оголошень за " + p[1] + " грн").join(", ")}. Речі бренду продаються без комісії Адміністрації.</li>
+    <ul><li>Просування речей: ${promoLine()}. Якщо охочих у «ТОП-20» понад 20, а в «Речі дня» понад 10, речі в блоках змінюються по черзі.</li>
+    <li>Бренд (магазин, шоурум, вінтаж) може вести окрему сторінку. Пакети розміщення: ${planLine()}. Речі бренду продаються без комісії Адміністрації.</li>
     <li>Пакет задає кількість місць для активних оголошень; місце переданої речі можна зайняти новим оголошенням. Після завершення строку пакет потрібно оновити, інакше речі бренду не показуються на Сайті.</li>
-    <li>Реклама на Сайті замовляється на сторінці «Замовити рекламу» й оплачується одразу. Ціни за 7 / 30 днів (30 секунд у колі): головна ${AD_BASE.home[0]} / ${AD_BASE.home[1]} грн, картка товару ${AD_BASE.item[0]} / ${AD_BASE.item[1]} грн, обидва місця ${AD_BASE.both[0]} / ${AD_BASE.both[1]} грн, кабінет користувача ${AD_BASE.cabinet[0]} / ${AD_BASE.cabinet[1]} грн. Показ 15 секунд дешевший на 30%, 60 секунд дорожчий на 60%.</li>
+    <li>Реклама на Сайті замовляється на сторінці «Замовити рекламу» й оплачується одразу. Ціни: ${adLine()}.</li>
     <li>Банери реклами проходять перевірку. Якщо реклама не відповідає правилам (заборонені товари й послуги, обман, 18+, образливий вміст, сумнівні вакансії: «легкі гроші», передоплата від кандидатів, дискримінаційні вимоги), її відхиляють, а сплачена сума повертається. Адміністрація не гарантує кількість переглядів чи кліків.</li>
     <li>Оплата карткою через monobank. Повернення коштів за послуги розглядається за зверненням на пошту Адміністрації, якщо послугу не було надано.</li></ul>
     <h3>6. Роль Сайту</h3>
@@ -805,6 +843,7 @@ function startApp() {
     allItems = s.docs.map(d => ({id: d.id, ...d.data()})); render();
   }, () => showNotice("Не вдалося завантажити речі. Перевірте правила Firestore.", true));
   db.collection("ads").where("active", "==", true).onSnapshot(s => {ads = s.docs.map(d => ({id: d.id, ...d.data()})); render();}, () => {});
+  db.collection("config").doc("pricing").onSnapshot(d => {applyPricing(d.exists ? d.data() : null); renderPromoRules(); render();}, () => {});
   db.collection("brands").onSnapshot(s => {brandMap = {}; s.docs.forEach(d => {brandMap[d.id] = {id: d.id, ...d.data()};}); render();}, () => {});
   db.collection("rank").doc("current").onSnapshot(d => {const x = d.exists ? d.data() : {}; rankScores = x.scores || {}; rankHot = new Set(x.hot || []); rankQueries = x.queries || []; render();}, () => {});
   db.collection("brandPlans").onSnapshot(s => {planMap = {}; s.docs.forEach(d => {planMap[d.id] = d.data();}); render();}, () => {});
@@ -1252,6 +1291,7 @@ function rnPriceUpd() {const p = adPrice(renewTarget.place, $("rnDays").value, r
 function openRenew(o) {
   renewTarget = o; $("rnErr").textContent = "";
   $("rnInfo").textContent = "«" + o.title + "». Продовження почнеться " + fmtD(Math.max(Date.now(), o.until || 0)) + ".";
+  const cd = $("rnDays").value; $("rnDays").innerHTML = PRICING.banners.durations.map(d => '<option value="' + d + '">' + d + " днів</option>").join(""); if (cd) $("rnDays").value = cd;
   rnPriceUpd(); $("rnDialog").showModal();
 }
 $("rnDays").addEventListener("change", () => {if (renewTarget) rnPriceUpd();});
@@ -1287,6 +1327,15 @@ function aoDraw() {
     });
   });
 }
+function aoFill() {
+  const cp = $("aoPlace").value, cd = $("aoDays").value, cs = $("aoSec").value;
+  $("aoPlace").innerHTML = PRICING.banners.places.filter(p => p.active !== false).map(p => '<option value="' + esc(p.key) + '">' + esc(p.name) + "</option>").join("");
+  $("aoDays").innerHTML = PRICING.banners.durations.map(d => '<option value="' + d + '">' + d + " днів</option>").join("");
+  $("aoSec").innerHTML = PRICING.banners.seconds.map(x => '<option value="' + x.sec + '">' + secLabel(x) + "</option>").join("");
+  if (cp && [...$("aoPlace").options].some(o => o.value === cp)) $("aoPlace").value = cp;
+  if (cd && [...$("aoDays").options].some(o => o.value === cd)) $("aoDays").value = cd;
+  $("aoSec").value = cs && [...$("aoSec").options].some(o => o.value === cs) ? cs : ([...$("aoSec").options].find(o => o.value === "30") || $("aoSec").options[0] || {}).value;
+}
 function aoPriceUpd() {
   const p = adPrice($("aoPlace").value, $("aoDays").value, $("aoSec").value);
   $("aoPrice").textContent = "До сплати: " + p + " грн"; $("aoSend").textContent = "Оплатити " + p + " грн";
@@ -1299,6 +1348,7 @@ async function aoAdd(inputId, arr, maxW) {
 }
 function openAdOrder(pre) {
   needLogin(() => {
+    aoFill();
     aoPc = []; aoMob = []; aoDraw(); ["aoTitle", "aoText", "aoUrl", "aoVideo"].forEach(i => {$(i).value = "";}); $("aoVideoField").hidden = $("aoPlace").value !== "video"; $("aoOk").checked = false; $("aoErr").textContent = "";
     const t = new Date(), iso = t.getFullYear() + "-" + String(t.getMonth() + 1).padStart(2, "0") + "-" + String(t.getDate()).padStart(2, "0");
     $("aoStart").min = iso; $("aoStart").value = iso;
@@ -1491,40 +1541,30 @@ function payOverlay(state, text) {
   if (state === "wait") o.innerHTML = '<div><div style="width:46px;height:46px;border:5px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;margin:0 auto 14px;animation:sp 1s linear infinite"></div>' + esc(text) + '<div style="font-weight:400;font-size:.9rem;margin-top:8px;opacity:.85">Це може тривати до 10 секунд. Не закривайте сторінку.</div></div>';
   if (state === "err") {o.innerHTML = '<div style="max-width:420px">' + esc(text) + '<div style="margin-top:14px"><button class="btn btn-soft" type="button" id="payOvX">Закрити</button></div></div>'; $("payOvX").onclick = () => payOverlay("off");}
 }
-async function buyService(kind, it, pkg) {
-  const price = kind === "pkg" ? PLANS.find(p => p[0] === pkg)[1] : PROMO[kind].price;
-  const what = kind === "pkg" ? "пакет на " + pkg + " оголошень (" + PLAN_DAYS + " днів)" : ({highlight: "підсвітку рамкою", garage: "розміщення в розділі «Гараж»", top: "підняття в ТОП-20", day: "розміщення в блоці «Річ дня»"}[kind]) + " для «" + it.title + "» на " + PROMO[kind].days + " днів";
+async function buyService(kind, it, pkg, days) {
+  const pr = kind === "pkg" ? null : PROMO[kind], tf = pr ? (pr.tariffs.find(t => Number(t.days) === Number(days)) || pr.tariffs[0]) : null;
+  const price = kind === "pkg" ? PLANS.find(p => p[0] === pkg)[1] : tf.price;
+  const what = kind === "pkg" ? "пакет на " + pkg + " оголошень (" + PLAN_DAYS + " днів)" : "«" + pr.name + "» для «" + it.title + "» на " + tf.days + " днів";
   if (!confirm("Оплатити " + what + " за " + price + " грн? Далі відкриється сторінка оплати monobank.")) return;
   payOverlay("wait", "Готуємо оплату…");
   const slow = setTimeout(() => payOverlay("wait", "Відповідь трохи затримується, зачекайте ще…"), 12000);
-  try {const r = await fns.httpsCallable("createOrder")({kind: kind, itemId: it ? it.id : undefined, pkg: pkg}); clearTimeout(slow); payOverlay("wait", "Переходимо на оплату…"); location.href = r.data.pageUrl;}
+  try {const r = await fns.httpsCallable("createOrder")({kind: kind, itemId: it ? it.id : undefined, pkg: pkg, days: tf ? tf.days : undefined}); clearTimeout(slow); payOverlay("wait", "Переходимо на оплату…"); location.href = r.data.pageUrl;}
   catch (e) {clearTimeout(slow); payOverlay("err", "Не вдалося створити рахунок: " + (e.message || e.code));}
 }
 function promoRow(i) {
   const r = el("div", "row"); r.style.marginTop = "8px";
-  const hl = isPromo(i, "highlightUntil"), ga = isPromo(i, "garageUntil");
-  const hb = el("button", "btn btn-soft btn-sm", hl ? "✓ Підсвічено до " + fmtD(i.highlightUntil) + " · продовжити " + PROMO.highlight.price + " грн" : "Підсвітити рамкою · " + PROMO.highlight.price + " грн / " + PROMO.highlight.days + " днів");
-  hb.onclick = () => buyService("highlight", i);
-  const gb = el("button", "btn btn-soft btn-sm", ga ? "✓ У Гаражі до " + fmtD(i.garageUntil) + " · продовжити " + PROMO.garage.price + " грн" : "У Гараж · " + PROMO.garage.price + " грн / " + PROMO.garage.days + " днів");
-  gb.onclick = () => buyService("garage", i);
-  const ta = isPromo(i, "topUntil");
-  const tb = el("button", "btn btn-primary btn-sm", ta ? "✓ У ТОП-20 до " + fmtD(i.topUntil) + " · продовжити " + PROMO.top.price + " грн" : "★ В ТОП-20 · " + PROMO.top.price + " грн / " + PROMO.top.days + " днів");
-  tb.onclick = () => buyService("top", i);
-  const da = isPromo(i, "dayUntil");
-  const db_ = el("button", "btn btn-primary btn-sm", da ? "✓ Річ дня до " + fmtD(i.dayUntil) + " · продовжити " + PROMO.day.price + " грн" : "☀ Річ дня · " + PROMO.day.price + " грн / " + PROMO.day.days + " днів");
-  db_.onclick = () => buyService("day", i);
-  r.append(db_, tb, hb, gb); return r;
+  const meta = {day: ["dayUntil", "btn-primary", "☀ "], top: ["topUntil", "btn-primary", "★ "], highlight: ["highlightUntil", "btn-soft", ""], garage: ["garageUntil", "btn-soft", ""]};
+  ["day", "top", "highlight", "garage"].forEach(k => {
+    const p = PROMO[k]; if (!p || !p.active || !p.tariffs.length) return;
+    const [fld, cls, ic] = meta[k], on = isPromo(i, fld);
+    if (on) {const t = el("div", "muted small", "✓ " + p.name + " до " + fmtD(i[fld])); t.style.alignSelf = "center"; r.appendChild(t);}
+    p.tariffs.forEach(t => {
+      const b = el("button", "btn " + cls + " btn-sm", on ? "Продовжити · " + t.price + " грн / " + t.days + " дн." : ic + p.name + " · " + t.price + " грн / " + t.days + " дн.");
+      b.onclick = () => buyService(k, i, null, t.days); r.appendChild(b);
+    });
+  });
+  return r;
 }
-const annVisible = a => a.active !== false && (!a.audience || a.audience === "all" || (a.audience === "brands" && currentUser && brandMap[currentUser.uid]) || (a.audience === "advertisers" && (profile.adBuyer || myAdOrders.length)) || (a.audience === "promoters" && currentUser && (profile.promoBuyer || allItems.some(i => i.ownerId === currentUser.uid && (isPromo(i, "highlightUntil") || isPromo(i, "garageUntil") || isPromo(i, "topUntil") || isPromo(i, "dayUntil"))))));
-const unreadNotes = () => myNotes.filter(n => !n.read).length;
-const unreadAnn = () => annAll.filter(a => annVisible(a) && (a.createdAt || 0) > (profile.annSeen || 0)).length;
-let noteTimer = null, annTimer = null;
-const ntime = ms => new Date(ms).toLocaleString("uk-UA", {day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"});
-function markNotesRead(ids) {
-  if (!ids.length) return;
-  const b = db.batch(); ids.forEach(id => b.update(db.collection("notifications").doc(id), {read: true})); b.commit().catch(() => {});
-}
-function markAnnSeen() {if (currentUser) db.collection("profiles").doc(currentUser.uid).set({annSeen: Date.now()}, {merge: true}).catch(() => {});}
 function openTtn(s) {
   const sh = profile.ship;
   if (!sh || !sh.cityRef || !sh.whRef || !sh.name || !sh.phone) {
@@ -1693,7 +1733,7 @@ function renderCabinet() {
     const nb = el("button", "btn btn-primary", "＋ Замовити рекламу"); nb.style.marginBottom = "12px"; nb.onclick = openAdOrder; v.appendChild(nb);
     if (!myAdOrders.length) none("Замовлень реклами поки немає.");
     myAdOrders.forEach(o => {
-      const bx = el("div", "cardbox"), place = {home: "головна", item: "картка товару", both: "головна й картка товару", cabinet: "кабінет", video: "відеоблок на головній"}[o.place] || o.place;
+      const bx = el("div", "cardbox"), place = placeName(o.place) || o.place;
       bx.appendChild(el("b", "", (o.renewOf ? "↻ " : "") + o.title));
       bx.appendChild(el("div", "muted small", place + " · " + o.days + " дн. · " + o.seconds + " с у колі · " + Math.round((o.amount || 0) / 100) + " грн"));
       let st = "";
@@ -1808,7 +1848,7 @@ $("rulesOk").onclick = () => $("rulesDialog").close();
 document.querySelectorAll(".doc-link").forEach(a => a.onclick = e => {e.preventDefault(); openDoc(a.dataset.doc);});
 window.addEventListener("scroll", () => {$("toTop").hidden = window.scrollY < 600;});
 document.querySelectorAll(".feetxt").forEach(e => e.textContent = FEE_TEXT);
-$("promoRules").innerHTML = "<h3>Просування та бренди</h3><ul><li>Підсвітка рамкою: " + PROMO.highlight.price + " грн на " + PROMO.highlight.days + " днів. Розділ «Гараж»: " + PROMO.garage.price + " грн на " + PROMO.garage.days + " днів (такі речі також стоять угорі головної сторінки).</li><li>Підняття в «ТОП-20»: " + PROMO.top.price + " грн на " + PROMO.top.days + " днів. Річ потрапляє в окремий блок угорі головної сторінки. Якщо охочих понад 20, речі в блоці змінюються по черзі.</li><li>«Річ дня»: " + PROMO.day.price + " грн на " + PROMO.day.days + " днів. Річ показується в окремому блоці праворуч у шапці головної сторінки. Якщо охочих понад 10, речі в блоці змінюються по черзі.</li><li>Бренд (магазин, шоурум, вінтаж) може вести окрему сторінку. Речі бренду продаються без комісії за пакетом розміщення на " + PLAN_DAYS + " днів: " + PLANS.map(p => p[0] + " оголошень за " + p[1] + " грн").join(", ") + ".</li><li>Пакет задає кількість місць для активних речей. Коли річ передана, її місце можна зайняти новою. Після " + PLAN_DAYS + " днів пакет потрібно оновити, інакше речі бренду не показуються в каталозі.</li></ul>";
+renderPromoRules();
 document.querySelectorAll(".minp").forEach(e => e.textContent = MIN_PRICE);
 $("minPrice").min = MIN_PRICE; $("minPrice").placeholder = String(Math.max(50, MIN_PRICE)); $("minPrice").addEventListener("input", updateMinNote);
 $("heroCard").onclick = openRules;
