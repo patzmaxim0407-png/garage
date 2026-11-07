@@ -90,13 +90,15 @@ dialog::backdrop{background:rgba(13,29,22,.55)}
       <label for="adTitle">Заголовок (коротко)</label><input type="text" id="adTitle" maxlength="80" placeholder="Назва рекламодавця або акції">
       <label for="adText">Опис</label><textarea id="adText" rows="2" maxlength="200" placeholder="Одне-два речення"></textarea>
     </div>
+    <div id="adVideoBox" hidden><label for="adVideo">Посилання на відео (YouTube, Vimeo або .mp4)</label><input type="text" id="adVideo" placeholder="https://www.youtube.com/watch?v=...">
+    <div class="hint">Картинки вище стають постером відео (16:9, 1280 × 720).</div></div>
     <label for="adUrl">Посилання на сайт (куди веде клік)</label><input type="text" id="adUrl" placeholder="https://...">
     <label for="adSec">Скільки секунд показується (усі картинки разом)</label>
     <select id="adSec"><option value="10">10 секунд</option><option value="15">15 секунд</option><option value="20">20 секунд</option><option value="30" selected>30 секунд</option><option value="45">45 секунд</option><option value="60">1 хвилина</option><option value="90">1,5 хвилини</option><option value="120">2 хвилини</option><option value="180">3 хвилини</option><option value="300">5 хвилин</option></select>
     <div class="hint">Якщо картинок кілька, час ділиться між ними порівну. Після реклами показується наш банер, потім наступна реклама, і так по колу.</div>
     <div id="adFields2">
       <label for="adPlace">Де показувати</label>
-      <select id="adPlace"><option value="both">Головна й товар</option><option value="home">Головна (над фільтрами)</option><option value="item">Сторінка товару</option><option value="cabinet">Кабінет користувача</option><option value="all">Усюди (3 місця)</option></select>
+      <select id="adPlace"><option value="both">Головна й товар</option><option value="home">Головна (над фільтрами)</option><option value="item">Сторінка товару</option><option value="cabinet">Кабінет користувача</option><option value="all">Усюди (3 місця)</option><option value="video">Відеоблок на головній</option></select>
       <label for="adOrder">Порядок у колі (менше = раніше)</label><input type="text" id="adOrder" value="0">
       <label style="font-weight:400"><input type="checkbox" id="adActive" checked style="width:auto"> Показувати на сайті</label>
     </div>
@@ -188,7 +190,7 @@ async function act(a, id) {
       $("photoTitle").textContent = "Завантаження…"; $("photoBox").innerHTML = ""; $("photoDesc").textContent = ""; $("photoDlg").showModal();
       try {
         const r = await call("adminAdOrder", {orderId: id}), o = r.data.order;
-        $("photoTitle").textContent = o.title; $("photoDesc").textContent = (o.text || "") + " · " + (o.url || "");
+        $("photoTitle").textContent = o.title; $("photoDesc").textContent = (o.text || "") + " · " + (o.url || "") + (o.videoUrl ? " · ВІДЕО: " + o.videoUrl : "");
         $("photoBox").innerHTML = (r.data.images.map(p => '<img src="' + esc(p) + '" style="grid-column:1/-1;aspect-ratio:8/1;object-fit:cover">').join("") + r.data.mobImages.map(p => '<img src="' + esc(p) + '" style="aspect-ratio:3.2/1;object-fit:cover">').join("")) || '<div class="muted">Немає банерів.</div>';
       } catch (e) {$("photoTitle").textContent = "Не вдалося"; $("photoDesc").textContent = e.message || e.code;}
     }
@@ -248,7 +250,7 @@ function openAd(id) {
   $("adOwnNote").hidden = !own; $("adFields").hidden = own; $("adFields2").hidden = own;
   $("adTitle").value = ad ? ad.title || "" : ""; $("adText").value = ad ? ad.text || "" : ""; $("adUrl").value = ad ? ad.url || "" : "";
   $("adSec").value = String(ad && ad.seconds ? ad.seconds : (own ? 15 : 30)); if (!$("adSec").value) $("adSec").value = "30";
-  $("adPlace").value = ad ? ad.placement || "both" : "both"; $("adOrder").value = ad ? ad.order || 0 : 0; $("adActive").checked = ad ? ad.active !== false : true;
+  $("adVideo").value = ad ? ad.videoUrl || "" : ""; $("adPlace").value = ad ? ad.placement || "both" : "both"; $("adVideoBox").hidden = $("adPlace").value !== "video"; $("adOrder").value = ad ? ad.order || 0 : 0; $("adActive").checked = ad ? ad.active !== false : true;
   drawThumbs(); $("adDlg").showModal();
 }
 async function addFiles(inputId, arr) {
@@ -264,13 +266,14 @@ async function addFiles(inputId, arr) {
 $("adFilePc").onchange = () => addFiles("adFilePc", advPc);
 $("adFileMob").onchange = () => addFiles("adFileMob", advMob);
 $("adNew").onclick = () => openAd(null);
+$("adPlace").addEventListener("change", () => {$("adVideoBox").hidden = $("adPlace").value !== "video";});
 $("adX").onclick = () => $("adDlg").close();
 $("adSave").onclick = async () => {
   const b = $("adSave"), own = adEditId === "own"; b.disabled = true; $("adErr").textContent = "";
   try {
     if (!own && !advPc.length) throw new Error("Додайте хоча б одну картинку для комп’ютера.");
     const p = {action: "saveAd", adId: adEditId || undefined, url: $("adUrl").value.trim(), seconds: Number($("adSec").value) || 30, images: advPc, mobImages: advMob};
-    if (!own) Object.assign(p, {title: $("adTitle").value.trim(), text: $("adText").value.trim(), placement: $("adPlace").value, order: Number($("adOrder").value) || 0, active: $("adActive").checked});
+    if (!own) Object.assign(p, {title: $("adTitle").value.trim(), text: $("adText").value.trim(), videoUrl: $("adPlace").value === "video" ? $("adVideo").value.trim() : "", placement: $("adPlace").value, order: Number($("adOrder").value) || 0, active: $("adActive").checked});
     await call("adminAction", p); $("adDlg").close(); await load();
   } catch (e) {$("adErr").textContent = e.message || e.code;}
   b.disabled = false;
@@ -331,7 +334,7 @@ function render() {
       btn("adedit", "own", "Змінити картинки")]];
     D.ads.filter(x => x.id !== "own").sort((x, y) => (x.order || 0) - (y.order || 0)).forEach(ad => rows.push([
       thumbs(ad) + "<br>" + esc(ad.title || "—") + (ad.text ? '<br><span class="muted small">' + esc(ad.text) + "</span>" : ""),
-      esc({both: "Головна й товар", all: "Усюди", cabinet: "Кабінет", home: "Головна", item: "Сторінка товару"}[ad.placement] || ad.placement) + '<br><span class="muted small">порядок ' + (ad.order || 0) + "</span>", secTxt(ad),
+      esc({both: "Головна й товар", all: "Усюди", cabinet: "Кабінет", video: "Відеоблок", home: "Головна", item: "Сторінка товару"}[ad.placement] || ad.placement) + '<br><span class="muted small">порядок ' + (ad.order || 0) + "</span>", secTxt(ad),
       pill(ad.active ? "Показується" : "Вимкнено", ad.active ? "" : "wait"), esc(ad.url || "—"),
       btn("adedit", ad.id, "Змінити") + btn("adtoggle", ad.id, ad.active ? "Вимкнути" : "Увімкнути") + btn("addel", ad.id, "Видалити", "d")]));
   }
@@ -343,7 +346,7 @@ function render() {
       const st = stOf(o);
       return [fmt(o.createdAt), esc(o.name || "—") + '<br><span class="muted small">' + esc(o.email || "") + "</span>",
         "<b>" + (o.renewOf ? "↻ " : "") + esc(o.title) + "</b>" + (o.renewOf ? '<br><span class="muted small">Продовження: схвалюється автоматично після оплати</span>' : "") + (o.text ? '<br><span class="muted small">' + esc(o.text) + "</span>" : "") + '<br><span class="muted small">' + esc(o.url) + "</span>",
-        esc({home: "Головна", item: "Картка товару", both: "Обидва місця", cabinet: "Кабінет"}[o.place] || o.place) + " · " + o.days + " дн. · " + o.seconds + ' с<br><span class="muted small">старт ' + fmt(o.startDate) + "; банерів: " + (o.nImgs || 0) + " + " + (o.nMob || 0) + " моб.</span>",
+        esc({home: "Головна", item: "Картка товару", both: "Обидва місця", cabinet: "Кабінет", video: "Відеоблок"}[o.place] || o.place) + " · " + o.days + " дн. · " + o.seconds + ' с<br><span class="muted small">старт ' + fmt(o.startDate) + "; банерів: " + (o.nImgs || 0) + " + " + (o.nMob || 0) + " моб.</span>",
         Math.round((o.amount || 0) / 100) + " грн",
         pill(st[0], st[1]) + (o.reason ? '<br><span class="muted small">' + esc(o.reason) + "</span>" : "") + (o.refund === "manual" ? '<br><span class="small" style="color:var(--danger)">Поверніть кошти вручну в кабінеті monobank</span>' : ""),
         btn("aoview", o.id, "Банери") + (o.status === "paid" ? btn("aoapprove", o.id, "Схвалити") : "") + ((o.status === "paid" || o.status === "new") ? btn("aoreject", o.id, "Відхилити", "d") : "") + ((o.status === "rejected" || o.status === "new") ? btn("aodel", o.id, "Видалити", "d") : "")];
