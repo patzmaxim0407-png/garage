@@ -285,7 +285,7 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
 .hero > div:first-child{align-self:center}
 .herovideo{aspect-ratio:auto;min-height:200px;align-self:stretch}
 .vmedia{container-type:size}
-.vmedia iframe{position:absolute;left:50%;top:50%;width:max(100cqw,calc(100cqh * 1.7778));height:max(100cqh,calc(100cqw * .5625));transform:translate(-50%,-50%)}
+.vmedia iframe{position:absolute;left:50%;top:50%;width:max(100cqw,calc(100cqh * 1.7778));height:max(100cqh,calc(100cqw * .5625));transform:translate(-50%,-50%) scale(1.18)}
 #homeView .section-head{margin:8px 0 10px;gap:8px}
 #homeTabs{margin:0 0 10px !important}
 .cablabel{font-weight:800;font-size:1.1rem;color:var(--ink)}
@@ -303,6 +303,7 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
 .herovideo{aspect-ratio:16/9;min-height:0;align-self:center}
 @media (min-width: 1101px) {.hero{grid-template-columns:minmax(0,.8fr) minmax(0,1fr) minmax(0,1fr)}}
 @media (max-width: 700px) {.hero-card{aspect-ratio:auto;padding:16px 18px}}
+select{-webkit-appearance:none !important;appearance:none !important;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'><path d='M1 1.5l6 6 6-6' fill='none' stroke='%231B4D3E' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>") !important;background-repeat:no-repeat !important;background-position:right 16px center !important;background-size:14px 9px !important;padding-right:42px !important;text-overflow:ellipsis}
 </style>
 </head>
 <body>
@@ -517,12 +518,12 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
     <div class="field"><label for="aoDays">Строк</label><select id="aoDays"><option value="7">7 днів</option><option value="30">30 днів</option></select></div>
     <div class="field"><label for="aoSec">Скільки секунд показується в колі</label><select id="aoSec"><option value="15">15 секунд (дешевше)</option><option value="30" selected>30 секунд</option><option value="60">1 хвилина (дорожче)</option></select></div>
     <div class="field"><label for="aoStart">Дата старту</label><input id="aoStart" type="date"></div>
-    <div class="field" id="aoVideoField" hidden><label for="aoVideo">Посилання на відео (YouTube, Vimeo або файл .mp4)</label><input id="aoVideo" placeholder="https://www.youtube.com/watch?v=..."><small class="muted">Формат: 16:9 (1280 × 720), до 30 секунд, без звуку. Посилання YouTube або Vimeo (з дозволеним вбудовуванням) або файл .mp4 / .webm до 15 МБ. Як постер завантажте нижче картинку 16:9 (1280 × 720).</small></div>
+    <div class="field" id="aoVideoField" hidden><label for="aoVideo">Посилання на відео: формат 16:9, 1280 × 720 пікселів, до 30 секунд (YouTube, Vimeo або файл .mp4)</label><input id="aoVideo" placeholder="https://www.youtube.com/watch?v=..."><small class="muted">Формат: 16:9 (1280 × 720), до 30 секунд, без звуку. Посилання YouTube або Vimeo (з дозволеним вбудовуванням) або файл .mp4 / .webm до 15 МБ. Як постер завантажте нижче картинку 16:9 (1280 × 720).</small></div>
     <div class="field"><label for="aoTitle">Заголовок (коротко)</label><input id="aoTitle" maxlength="80" placeholder="Назва бренду або акції"></div>
     <div class="field"><label for="aoText">Опис</label><textarea id="aoText" maxlength="200" placeholder="Одне-два речення"></textarea></div>
     <div class="field"><label for="aoUrl">Посилання на ваш сайт</label><input id="aoUrl" placeholder="https://..."></div>
     <div class="field"><label for="aoPc">Банери для комп’ютера: 1600 × 200 пікселів, до 3 штук</label><input id="aoPc" type="file" accept="image/*" multiple><div class="plans" id="aoPcT"></div></div>
-    <div class="field"><label for="aoMob">Банери для телефону: 960 × 300 пікселів, до 3 штук (необов’язково)</label><input id="aoMob" type="file" accept="image/*" multiple><div class="plans" id="aoMobT"></div></div>
+    <div class="field" id="aoMobField"><label for="aoMob">Банери для телефону: 960 × 300 пікселів, до 3 штук (необов’язково)</label><input id="aoMob" type="file" accept="image/*" multiple><div class="plans" id="aoMobT"></div></div>
     <div class="muted small">Формат JPG, PNG або WebP. Головне (логотип, текст) тримайте по центру. Заборонена реклама: зброя, наркотики, алкоголь і тютюн, 18+, обман, сумнівні вакансії («легкі гроші», передоплата від кандидатів, дискримінація).</div>
     <div class="notice" id="aoPrice" style="margin:10px 0 0;font-weight:800"></div>
     <label style="display:flex;gap:8px;align-items:flex-start;margin:10px 0"><input type="checkbox" id="aoOk" style="width:auto;margin-top:4px"> <span class="small">Я ознайомився з умовами реклами в публічній оферті (розділ 5)</span></label>
@@ -950,7 +951,7 @@ function videoNode(a) {
   n._play = () => {
     const v = a.video; if (holder.firstChild || !v || !v.src || (navigator.connection && navigator.connection.saveData)) return;
     if (v.kind === "mp4") {const vd = document.createElement("video"); vd.src = v.src; vd.muted = true; vd.autoplay = true; vd.loop = true; vd.playsInline = true; vd.setAttribute("playsinline", ""); vd.setAttribute("muted", ""); holder.appendChild(vd); const p = vd.play(); if (p && p.catch) p.catch(() => {});}
-    else {const fr = document.createElement("iframe"); fr.src = v.src; fr.allow = "autoplay; encrypted-media; picture-in-picture"; fr.setAttribute("sandbox", "allow-scripts allow-same-origin allow-presentation"); fr.setAttribute("referrerpolicy", "strict-origin-when-cross-origin"); fr.tabIndex = -1; holder.appendChild(fr);}
+    else {const fr = document.createElement("iframe"); fr.src = v.src; fr.allow = "autoplay; encrypted-media; picture-in-picture"; fr.setAttribute("sandbox", "allow-scripts allow-same-origin allow-presentation"); fr.setAttribute("referrerpolicy", "strict-origin-when-cross-origin"); fr.tabIndex = -1; fr.style.opacity = "0"; fr.style.transition = "opacity .8s"; holder.appendChild(fr); setTimeout(() => {fr.style.opacity = "1";}, v.kind === "yt" ? 4500 : 1500);}
   };
   n._stop = () => {holder.innerHTML = "";};
   return n;
@@ -962,7 +963,7 @@ function heroFallback() {
   if (!pool.length) {
     const c = el("div", "vcta");
     c.appendChild(el("b", "", "Тут може бути ваша реклама"));
-    c.appendChild(el("span", "muted", "Відеоблок на головній: від " + AD_BASE.video[0] + " грн / 7 днів. Покази, кліки й статистика в кабінеті."));
+    c.appendChild(el("span", "muted", "Відеоблок на головній: від " + AD_BASE.video[0] + " грн / 7 днів. Формат відео: 16:9, 1280 × 720, до 30 с."));
     const bt = el("button", "btn btn-primary btn-sm", "Замовити відеорекламу"); bt.type = "button"; bt.onclick = () => openAdOrder("video"); c.appendChild(bt);
     return {key: "cta", node: c};
   }
@@ -976,6 +977,11 @@ function heroFallback() {
   n.appendChild(info);
   return {key: it.id, node: n};
 }
+function fbSlide() {
+  const fb = heroFallback(), w = el("div", "vslide");
+  w.appendChild(fb.node); w._play = () => {}; w._stop = () => {};
+  return {node: w, ms: 12000, id: null, key: fb.key};
+}
 function videoSlot() {
   const box = $("heroVideo");
   if (catMode !== "all" || sellerFilter || focusItem) {clearTimeout(adTimers.video); box.dataset.sig = ""; return;}
@@ -986,17 +992,16 @@ function videoSlot() {
     if (box.dataset.sig === sig) return;
     clearTimeout(adTimers.video); box.dataset.sig = sig; box.innerHTML = ""; box.appendChild(fb.node); return;
   }
-  const sig = "v:" + list.map(a => a.id + ":" + (a.updatedAt || 0)).join(",");
+  const probe = heroFallback(), sig = "v:" + list.map(a => a.id + ":" + (a.updatedAt || 0)).join(",") + "|" + probe.key;
   if (box.dataset.sig === sig) return;
   box.dataset.sig = sig; clearTimeout(adTimers.video); box.innerHTML = "";
-  const slides = list.map(a => ({node: videoNode(a), ms: Math.max(8000, (Number(a.seconds) || 30) * 1000), id: a.id}));
+  const slides = [];
+  list.forEach(a => {slides.push({node: videoNode(a), ms: Math.max(8000, (Number(a.seconds) || 30) * 1000), id: a.id}); slides.push(fbSlide());});
   slides.forEach((sl, i) => {if (!i) sl.node.classList.add("on"); box.appendChild(sl.node);});
   slides[0].node._play(); adSeen(slides[0].id);
-  if (slides.length > 1) {
-    let k = 0;
-    const tick = () => {adTimers.video = setTimeout(() => {slides[k].node.classList.remove("on"); slides[k].node._stop(); k = (k + 1) % slides.length; slides[k].node.classList.add("on"); slides[k].node._play(); adSeen(slides[k].id); tick();}, slides[k].ms);};
-    tick();
-  }
+  let k = 0;
+  const tick = () => {adTimers.video = setTimeout(() => {slides[k].node.classList.remove("on"); slides[k].node._stop(); k = (k + 1) % slides.length; slides[k].node.classList.add("on"); slides[k].node._play(); if (slides[k].id) adSeen(slides[k].id); tick();}, slides[k].ms);};
+  tick();
 }
 function renderHome() {
   const q = $("searchInput").value.trim().toLocaleLowerCase("uk"), cat = $("categoryFilter").value, sortF = $("sortFilter").value;
@@ -1283,7 +1288,7 @@ function aoPriceUpd() {
 }
 async function aoAdd(inputId, arr, maxW) {
   const files = [...$(inputId).files]; $("aoErr").textContent = "";
-  try {for (const f of files) {if (arr.length >= 3) {$("aoErr").textContent = "Максимум 3 банери в кожному наборі."; break;} arr.push(await imgFit(f, maxW));}}
+  try {for (const f of files) {if (arr.length >= (arr === aoPc && $("aoPlace").value === "video" ? 1 : 3)) {$("aoErr").textContent = arr === aoPc && $("aoPlace").value === "video" ? "Для відео потрібен один постер." : "Максимум 3 банери в кожному наборі."; break;} arr.push(await imgFit(f, maxW));}}
   catch (e) {$("aoErr").textContent = e.message;}
   $(inputId).value = ""; aoDraw();
 }
@@ -1293,11 +1298,17 @@ function openAdOrder(pre) {
     const t = new Date(), iso = t.getFullYear() + "-" + String(t.getMonth() + 1).padStart(2, "0") + "-" + String(t.getDate()).padStart(2, "0");
     $("aoStart").min = iso; $("aoStart").value = iso;
     if (typeof pre === "string") $("aoPlace").value = pre;
-    $("aoVideoField").hidden = $("aoPlace").value !== "video"; aoPriceUpd(); $("aoDialog").showModal();
+    aoVideoUI(); aoPriceUpd(); $("aoDialog").showModal();
   });
 }
 ["aoPlace", "aoDays", "aoSec"].forEach(id => $(id).addEventListener("change", aoPriceUpd));
-$("aoPlace").addEventListener("change", () => {$("aoVideoField").hidden = $("aoPlace").value !== "video";});
+function aoVideoUI() {
+  const v = $("aoPlace").value === "video";
+  $("aoVideoField").hidden = !v; $("aoMobField").hidden = v;
+  document.querySelector('label[for="aoPc"]').textContent = v ? "Постер для відео: картинка 16:9, 1280 × 720 пікселів (1 штука)" : "Банери для комп’ютера: 1600 × 200 пікселів, до 3 штук";
+  if (v) {aoPc.length = Math.min(aoPc.length, 1); aoMob.length = 0; aoDraw();}
+}
+$("aoPlace").addEventListener("change", aoVideoUI);
 $("aoPc").onchange = () => aoAdd("aoPc", aoPc, 1600); $("aoMob").onchange = () => aoAdd("aoMob", aoMob, 1100);
 ["aoClose", "aoCancel"].forEach(id => $(id).onclick = () => $("aoDialog").close());
 $("aoForm").addEventListener("submit", async e => {
