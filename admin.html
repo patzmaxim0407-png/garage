@@ -79,10 +79,10 @@ dialog::backdrop{background:rgba(13,29,22,.55)}
   <div class="dh"><span id="adHead">Реклама</span><button type="button" id="adX">×</button></div>
   <div class="db">
     <div class="small muted" id="adOwnNote" hidden>Це наш закріплений банер GARAGE 22. Його не можна видалити чи вимкнути: тільки змінити картинки й час показу. Якщо картинок немає, показується стандартний малюнок.</div>
-    <label for="adFilePc">Картинки для комп’ютера: 1600 × 200 пікселів (px), до 3 штук</label>
+    <label for="adFilePc" id="adLblPc">Картинки для комп’ютера: 1600 × 200 пікселів (px), до 3 штук</label>
     <input type="file" id="adFilePc" accept="image/*" multiple>
     <div class="thumbs" id="adThumbsPc"></div>
-    <label for="adFileMob">Картинки для телефону: 960 × 300 px, до 3 штук (необов’язково)</label>
+    <label for="adFileMob" id="adLblMob">Картинки для телефону: 960 × 300 px, до 3 штук (необов’язково)</label>
     <input type="file" id="adFileMob" accept="image/*" multiple>
     <div class="thumbs" id="adThumbsMob"></div>
     <div class="hint">Формат JPG, PNG або WebP. Розмір підганяється автоматично. Головне (логотип, текст) тримайте по центру. Якщо картинок для телефону немає, береться комп’ютерна й обрізається по краях.</div>
@@ -90,7 +90,7 @@ dialog::backdrop{background:rgba(13,29,22,.55)}
       <label for="adTitle">Заголовок (коротко)</label><input type="text" id="adTitle" maxlength="80" placeholder="Назва рекламодавця або акції">
       <label for="adText">Опис</label><textarea id="adText" rows="2" maxlength="200" placeholder="Одне-два речення"></textarea>
     </div>
-    <div id="adVideoBox" hidden><label for="adVideo">Посилання на відео (YouTube, Vimeo або .mp4)</label><input type="text" id="adVideo" placeholder="https://www.youtube.com/watch?v=...">
+    <div id="adVideoBox" hidden><label for="adVideo">Посилання на відео: формат 16:9, 1280 × 720 px, до 30 с (YouTube, Vimeo або .mp4)</label><input type="text" id="adVideo" placeholder="https://www.youtube.com/watch?v=...">
     <div class="hint">Формат відео: 16:9 (1280 × 720), до 30 секунд, без звуку; YouTube/Vimeo (з дозволеним вбудовуванням) або .mp4/.webm до 15 МБ. Картинки вище стають постером (16:9, 1280 × 720). Якщо відеореклами немає, у цьому місці показується «Річ дня».</div></div>
     <label for="adUrl">Посилання на сайт (куди веде клік)</label><input type="text" id="adUrl" placeholder="https://...">
     <label for="adSec">Скільки секунд показується (усі картинки разом)</label>
@@ -250,14 +250,14 @@ function openAd(id) {
   $("adOwnNote").hidden = !own; $("adFields").hidden = own; $("adFields2").hidden = own;
   $("adTitle").value = ad ? ad.title || "" : ""; $("adText").value = ad ? ad.text || "" : ""; $("adUrl").value = ad ? ad.url || "" : "";
   $("adSec").value = String(ad && ad.seconds ? ad.seconds : (own ? 15 : 30)); if (!$("adSec").value) $("adSec").value = "30";
-  $("adVideo").value = ad ? ad.videoUrl || "" : ""; $("adPlace").value = ad ? ad.placement || "both" : "both"; $("adVideoBox").hidden = $("adPlace").value !== "video"; $("adOrder").value = ad ? ad.order || 0 : 0; $("adActive").checked = ad ? ad.active !== false : true;
+  $("adVideo").value = ad ? ad.videoUrl || "" : ""; $("adPlace").value = ad ? ad.placement || "both" : "both"; adUI(); $("adOrder").value = ad ? ad.order || 0 : 0; $("adActive").checked = ad ? ad.active !== false : true;
   drawThumbs(); $("adDlg").showModal();
 }
 async function addFiles(inputId, arr) {
   const files = [...$(inputId).files]; $("adErr").textContent = "";
   try {
     for (const f of files) {
-      if (arr.length >= 3) {$("adErr").textContent = "Максимум 3 картинки в кожному наборі."; break;}
+      if (arr.length >= (arr === advPc && $("adPlace").value === "video" ? 1 : 3)) {$("adErr").textContent = arr === advPc && $("adPlace").value === "video" ? "Для відео потрібен один постер." : "Максимум 3 картинки в кожному наборі."; break;}
       arr.push(await compressImg(f, inputId === "adFilePc" ? 1600 : 1100));
     }
   } catch (e) {$("adErr").textContent = e.message;}
@@ -266,7 +266,14 @@ async function addFiles(inputId, arr) {
 $("adFilePc").onchange = () => addFiles("adFilePc", advPc);
 $("adFileMob").onchange = () => addFiles("adFileMob", advMob);
 $("adNew").onclick = () => openAd(null);
-$("adPlace").addEventListener("change", () => {$("adVideoBox").hidden = $("adPlace").value !== "video";});
+function adUI() {
+  const v = $("adPlace").value === "video";
+  $("adVideoBox").hidden = !v;
+  ["adLblMob", "adFileMob", "adThumbsMob"].forEach(id => {$(id).hidden = v;});
+  $("adLblPc").textContent = v ? "Постер для відео: картинка 16:9, 1280 × 720 px (1 штука)" : "Картинки для комп’ютера: 1600 × 200 пікселів (px), до 3 штук";
+  if (v) {advPc.length = Math.min(advPc.length, 1); advMob.length = 0; drawThumbs();}
+}
+$("adPlace").addEventListener("change", adUI);
 $("adX").onclick = () => $("adDlg").close();
 $("adSave").onclick = async () => {
   const b = $("adSave"), own = adEditId === "own"; b.disabled = true; $("adErr").textContent = "";
