@@ -281,6 +281,20 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
   .vfbi b{font-size:.95rem}
   .vfbi{padding:10px 12px;gap:3px}
 }
+.hero{align-items:stretch;padding:40px 0 14px}
+.hero > div:first-child{align-self:center}
+.herovideo{aspect-ratio:auto;min-height:200px;align-self:stretch}
+.vmedia{container-type:size}
+.vmedia iframe{position:absolute;left:50%;top:50%;width:max(100cqw,calc(100cqh * 1.7778));height:max(100cqh,calc(100cqw * .5625));transform:translate(-50%,-50%)}
+#homeView .section-head{margin:8px 0 10px;gap:8px}
+#homeTabs{margin:0 0 10px !important}
+.cablabel{font-weight:800;font-size:1.1rem;color:var(--ink)}
+@media (max-width: 1100px) {.herovideo{min-height:0}}
+@media (max-width: 700px) {
+  .hero{padding:20px 0 8px}
+  .herovideo{aspect-ratio:16/9}
+  #homeView .section-head{flex-direction:row !important;align-items:center !important;flex-wrap:wrap}
+}
 </style>
 </head>
 <body>
@@ -1033,7 +1047,8 @@ function renderHome() {
   $("allBtn").hidden = !(sellerFilter || focusItem);
   $("listTitle").parentElement.hidden = !!focusItem; $("listTitle").closest(".section-head").classList.toggle("focus", !!focusItem);
   $("listEyebrow").textContent = sellerFilter ? (sbr ? "Бренд" : "Продавець") : (brandsMode ? "Магазини" : (catMode === "garage" ? "Розділ" : "Каталог"));
-  $("listTitle").textContent = sellerFilter ? (sbr ? sbr.name : "Речі від " + (sl ? sl.ownerName : "продавця")) : (focusItem ? "Річ за посиланням" : (brandsMode ? "Бренди" : (catMode === "garage" ? "Гараж" : "Речі, які передають далі")));
+  $("listTitle").textContent = sellerFilter ? (sbr ? sbr.name : "Речі від " + (sl ? sl.ownerName : "продавця")) : (focusItem ? "Річ за посиланням" : (brandsMode ? "Бренди" : (catMode === "garage" ? "Гараж" : "")));
+  $("listTitle").hidden = !$("listTitle").textContent;
   const ht = $("homeTabs"); ht.hidden = !!(sellerFilter || focusItem); ht.innerHTML = "";
   [["all", "Усі речі", ""], ["brands", "Бренди", "brands"], ["garage", "Гараж", "garage"]].forEach(([k, l, h]) => {
     const tb = el("button", "btn " + (catMode === k ? "btn-primary" : "btn-soft"), l); tb.type = "button"; tb.onclick = () => {location.hash = h;}; ht.appendChild(tb);
@@ -1505,8 +1520,8 @@ function ttnBlock(s, bx) {
 }
 function renderCabinet() {
   const v = $("cabinetView"); v.innerHTML = "";
-  const h = el("div", "section-head cabhead"); h.style.cssText = "justify-content:flex-start;margin:14px 0 12px";
-  const back = el("button", "btn btn-soft btn-sm", "← Каталог"); back.onclick = () => setView("home"); h.appendChild(back); v.appendChild(h);
+  const h = el("div", "section-head cabhead"); h.style.cssText = "justify-content:flex-start;gap:14px;align-items:center;margin:14px 0 12px";
+  const back = el("button", "btn btn-soft btn-sm", "← Каталог"); back.onclick = () => setView("home"); h.appendChild(back); h.appendChild(el("span", "cablabel", "Особистий кабінет")); v.appendChild(h);
   const t = el("div", "tabs");
   [["sales", "Запити"], ["mine", "Мої речі"], ["buys", "Покупки"], ["adorders", "Реклама"], ["profile", "Профіль"]].forEach(([k, l]) => {
     const b = el("button", "btn " + (tab === k ? "btn-primary" : "btn-soft"), l); b.onclick = () => {tab = k; render();}; t.appendChild(b);
@@ -1631,11 +1646,10 @@ function renderCabinet() {
   }
   if (tab === "profile") {
     const f = el("form", "cardbox"), sh = profile.ship || {};
-    f.innerHTML = '<div class="field"><label>Пошта, з якою ви увійшли (Google)</label><input id="pe0" disabled></div><div class="field"><label>Ім’я, яке бачать інші</label><input id="pn" maxlength="40"></div><div class="field"><label>Місто, де ви живете або продаєте</label><div id="cityBox"></div></div><label style="display:flex;gap:8px;align-items:center;margin:12px 0 6px;font-weight:700"><input type="checkbox" id="bz" style="width:auto"> Веду сторінку від бренду <span class="muted small" style="font-weight:400">(магазин, шоурум, вінтаж)</span></label><div id="brandBox"></div><h3 style="margin:14px 0 6px">Дані відправника (для ТТН)</h3><div class="field"><label>Відправник (Прізвище Ім’я По батькові)</label><input id="sn" maxlength="80" placeholder="Петренко Іван Іванович"></div><div class="field"><label>Телефон відправника</label><input id="sp" type="tel" placeholder="0991234567"></div><div id="shipBox"></div><div class="muted small">Ці дані потрібні, коли ви обираєте покупця: Нова пошта створить ТТН, а ви віднесете посилку у вказане відділення.</div><div class="err" id="pe"></div><button class="btn btn-primary" id="ps">Зберегти</button>';
+    f.innerHTML = '<div class="field"><label>Пошта, з якою ви увійшли (Google)</label><input id="pe0" disabled></div><label style="display:flex;gap:8px;align-items:center;margin:12px 0 6px;font-weight:700"><input type="checkbox" id="bz" style="width:auto"> Веду сторінку від бренду <span class="muted small" style="font-weight:400">(магазин, шоурум, вінтаж)</span></label><div id="brandBox"></div><h3 style="margin:14px 0 6px">Дані відправника (для ТТН)</h3><div class="field"><label>Відправник (Прізвище Ім’я По батькові)</label><input id="sn" maxlength="80" placeholder="Петренко Іван Іванович"></div><div class="field"><label>Телефон відправника</label><input id="sp" type="tel" placeholder="0991234567"></div><div id="shipBox"></div><div class="muted small">Ці дані потрібні, коли ви обираєте покупця: Нова пошта створить ТТН, а ви віднесете посилку у вказане відділення. Покупці бачать лише ваше ім’я та прізвище й місто.</div><div class="err" id="pe"></div><button class="btn btn-primary" id="ps">Зберегти</button>';
     f.querySelector("#pe0").value = currentUser.email || "—";
-    f.querySelector("#pn").value = profile.name || currentUser.displayName || "";
     f.querySelector("#sn").value = sh.name || ""; f.querySelector("#sp").value = sh.phone || "";
-    const pk = shipPicker(f.querySelector("#shipBox"), sh), cp = cityPicker(f.querySelector("#cityBox"), profile.city || "");
+    const pk = shipPicker(f.querySelector("#shipBox"), sh);
     const bzEl = f.querySelector("#bz"), bBox = f.querySelector("#brandBox"), myUid = currentUser.uid, myBrand = brandMap[myUid] || null;
     let logoData = myBrand ? (myBrand.logo || "") : "";
     bzEl.checked = !!myBrand;
@@ -1670,12 +1684,12 @@ function renderCabinet() {
     bzEl.onchange = buildBrand; buildBrand();
     f.onsubmit = async e => {
       e.preventDefault();
-      const n = f.querySelector("#pn").value.trim(), sn = f.querySelector("#sn").value.trim().replace(/\s+/g, " "), sp = f.querySelector("#sp").value.trim(), er = f.querySelector("#pe"), g = pk.get();
-      const cityVal = cp.get(), any = sn || sp || g.cityRef || g.whRef;
+      const sn = f.querySelector("#sn").value.trim().replace(/\s+/g, " "), sp = f.querySelector("#sp").value.trim(), er = f.querySelector("#pe"), g = pk.get();
+      const any = sn || sp || g.cityRef || g.whRef;
       const bn = bzEl.checked ? f.querySelector("#bn").value.trim() : "", bb = bzEl.checked ? f.querySelector("#bb").value.trim() : "";
       if (bzEl.checked && bn.length < 2) {er.style.color = "var(--danger)"; er.textContent = "Вкажіть назву бренду (мінімум 2 символи)."; return;}
-      if (cp.text() && !cityVal) {er.style.color = "var(--danger)"; er.textContent = "Оберіть місто зі списку підказок."; return;}
       if (any && (sn.split(" ").length < 2 || !validPhone(sp) || !pk.ok())) {er.style.color = "var(--danger)"; er.textContent = "Для ТТН вкажіть прізвище та ім’я, телефон, місто й відділення (зі списку), або залиште ці поля порожніми."; return;}
+      const pts = sn.split(" "), n = any ? (pts.length > 1 ? pts[1] + " " + pts[0] : pts[0]) : (profile.name || ""), cityVal = any ? (g.cityName || "") : (profile.city || "");
       try {
         await db.collection("profiles").doc(currentUser.uid).set({name: n, city: cityVal, ship: any ? {name: sn, phone: normPhone(sp), ...g} : firebase.firestore.FieldValue.delete()}, {merge: true});
         if (bzEl.checked) await db.collection("brands").doc(myUid).set({ownerId: myUid, name: bn, bio: bb, logo: logoData || "", updatedAt: Date.now(), createdAt: myBrand ? (myBrand.createdAt || Date.now()) : Date.now()});
