@@ -1565,6 +1565,16 @@ function promoRow(i) {
   });
   return r;
 }
+const annVisible = a => a.active !== false && (!a.audience || a.audience === "all" || (a.audience === "brands" && currentUser && brandMap[currentUser.uid]) || (a.audience === "advertisers" && (profile.adBuyer || myAdOrders.length)) || (a.audience === "promoters" && currentUser && (profile.promoBuyer || allItems.some(i => i.ownerId === currentUser.uid && (isPromo(i, "highlightUntil") || isPromo(i, "garageUntil") || isPromo(i, "topUntil") || isPromo(i, "dayUntil"))))));
+const unreadNotes = () => myNotes.filter(n => !n.read).length;
+const unreadAnn = () => annAll.filter(a => annVisible(a) && (a.createdAt || 0) > (profile.annSeen || 0)).length;
+let noteTimer = null, annTimer = null;
+const ntime = ms => new Date(ms).toLocaleString("uk-UA", {day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"});
+function markNotesRead(ids) {
+  if (!ids.length) return;
+  const b = db.batch(); ids.forEach(id => b.update(db.collection("notifications").doc(id), {read: true})); b.commit().catch(() => {});
+}
+function markAnnSeen() {if (currentUser) db.collection("profiles").doc(currentUser.uid).set({annSeen: Date.now()}, {merge: true}).catch(() => {});}
 function openTtn(s) {
   const sh = profile.ship;
   if (!sh || !sh.cityRef || !sh.whRef || !sh.name || !sh.phone) {
