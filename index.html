@@ -587,7 +587,7 @@ const EMAILJS = {service: "", template: "", key: ""};
 
 const demoMode = !firebaseConfig.apiKey || firebaseConfig.apiKey.indexOf("ВСТАВТЕ") > -1;
 let auth = null, db = null, fns = null, currentUser = null, profile = {};
-let allItems = [], sales = [], buys = [], unsubs = [], myAdOrders = [], myRefs = [];
+let allItems = [], sales = [], buys = [], unsubs = [], myAdOrders = [], myRefs = [], myNotes = [], annAll = [];
 let view = "home", tab = "sales", pending = null, sellerFilter = null, focusItem = null, catMode = "all";
 const siteBase = () => location.origin + location.pathname;
 function readHash() {
@@ -678,6 +678,7 @@ const DOCS = {
     <h3>Які дані ми збираємо</h3>
     <ul><li>З вашого Google-акаунта: ім'я та адреса електронної пошти (пароль ми не отримуємо).</li>
     <li>Статистика пошуку: тексти запитів без особистих даних (лише кількість), щоб показувати популярні запити й розумно сортувати речі.</li>
+    <li>Сповіщення в кабінеті та листи про ваші запити, послуги й рекламу.</li>
     <li>Запрошення друзів: якщо ви перейшли за запрошенням, зберігається ідентифікатор того, хто вас запросив.</li>
     <li>Сторінка бренду (за вашим бажанням): назва, опис і логотип, які бачать усі відвідувачі.</li>
     <li>Профіль: ім'я, місто; для продавців ще й дані відправника (ПІБ, телефон, місто та відділення Нової пошти).</li>
@@ -816,6 +817,8 @@ function startApp() {
       unsubs.push(db.collection("profiles").doc(u.uid).onSnapshot(d => {profile = d.exists ? d.data() : {}; render();}, () => {}));
       unsubs.push(db.collection("referrals").where("inviter", "==", u.uid).onSnapshot(s => {myRefs = s.docs.map(d => ({id: d.id, ...d.data()})); invStatUpd();}, () => {}));
       claimInvite(u);
+      unsubs.push(db.collection("notifications").where("uid", "==", u.uid).onSnapshot(s => {myNotes = s.docs.map(d => ({id: d.id, ...d.data()})).sort((a, b) => b.createdAt - a.createdAt); render();}, () => {}));
+      unsubs.push(db.collection("announcements").onSnapshot(s => {annAll = s.docs.map(d => ({id: d.id, ...d.data()})); render();}, () => {}));
       unsubs.push(db.collection("adOrders").where("uid", "==", u.uid).onSnapshot(s => {myAdOrders = s.docs.map(d => ({id: d.id, ...d.data()})).sort((a, b) => b.createdAt - a.createdAt); render();}, () => {}));
       unsubs.push(db.collection("blocks").doc(u.uid).onSnapshot(d => {
         const b = d.exists ? d.data() : null;
@@ -861,7 +864,7 @@ function render() {
   const n = sales.filter(s => s.status === "new").length;
   $("userStatus").textContent = currentUser ? pname("") : "Ви не увійшли";
   $("loginBtn").hidden = !!currentUser; $("logoutBtn").hidden = !currentUser; $("cabinetBtn").hidden = !currentUser;
-  $("cabinetBtn").textContent = "Кабінет" + (n ? " (" + n + ")" : "");
+  const bc = currentUser ? unreadNotes() + unreadAnn() : 0; $("cabinetBtn").textContent = "Кабінет" + ((bc || n) ? " (" + (bc || n) + ")" : "");
   const cab = view === "cabinet" && currentUser;
   $("homeView").hidden = !!cab; $("cabinetView").hidden = !cab;
   if (cab) {document.body.classList.remove("has-buybar"); adSlot($("adCabinet"), "cabinet", true, false); renderCabinet();} else {adSlot($("adCabinet"), "cabinet", false, true); renderHome();}
@@ -1513,6 +1516,16 @@ function promoRow(i) {
   db_.onclick = () => buyService("day", i);
   r.append(db_, tb, hb, gb); return r;
 }
+const annVisible = a => a.active !== false && (!a.audience || a.audience === "all" || (a.audience === "brands" && currentUser && brandMap[currentUser.uid]) || (a.audience === "advertisers" && myAdOrders.length));
+const unreadNotes = () => myNotes.filter(n => !n.read).length;
+const unreadAnn = () => annAll.filter(a => annVisible(a) && (a.createdAt || 0) > (profile.annSeen || 0)).length;
+let noteTimer = null, annTimer = null;
+const ntime = ms => new Date(ms).toLocaleString("uk-UA", {day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"});
+function markNotesRead(ids) {
+  if (!ids.length) return;
+  const b = db.batch(); ids.forEach(id => b.update(db.collection("notifications").doc(id), {read: true})); b.commit().catch(() => {});
+}
+function markAnnSeen() {if (currentUser) db.collection("profiles").doc(currentUser.uid).set({annSeen: Date.now()}, {merge: true}).catch(() => {});}
 function openTtn(s) {
   const sh = profile.ship;
   if (!sh || !sh.cityRef || !sh.whRef || !sh.name || !sh.phone) {
@@ -1546,9 +1559,19 @@ function ttnBlock(s, bx) {
 function renderCabinet() {
   const v = $("cabinetView"); v.innerHTML = "";
   const h = el("div", "section-head cabhead"); h.style.cssText = "justify-content:flex-start;gap:14px;align-items:center;margin:14px 0 12px";
-  const back = el("button", "btn btn-soft btn-sm", "← Каталог"); back.onclick = () => setView("home"); h.appendChild(back); h.appendChild(el("span", "cablabel", "Особистий кабінет")); v.appendChild(h);
+  const back = el("button", "btn btn-soft btn-sm", "← Каталог"); back.onclick = () => setView("home"); h.appendChild(back); h.appendChild(el("span", "cablabel", "Особистий кабінет"));
+  const cnt = unreadNotes() + unreadAnn();
+  const bell = el("button", "btn " + (tab === "notes" ? "btn-primary" : "btn-soft") + " btn-sm", "🔔" + (cnt ? " " + cnt : "")); bell.style.marginLeft = "auto"; bell.onclick = () => {tab = "notes"; render();}; h.appendChild(bell);
+  v.appendChild(h);
+  const pin = annAll.filter(annVisible).find(a => a.pinned && (a.createdAt || 0) > (profile.annSeen || 0));
+  if (pin && tab !== "notes") {
+    const pb = el("div", "notice"); pb.style.cssText = "display:flex;gap:10px;align-items:flex-start;margin-bottom:12px";
+    const tx = el("div"); tx.style.flex = "1"; tx.appendChild(el("b", "", "📌 " + pin.title));
+    if (pin.text) {const t = el("div", "small", pin.text); t.style.whiteSpace = "pre-wrap"; tx.appendChild(t);}
+    const ok = el("button", "btn btn-soft btn-sm", "Ок"); ok.onclick = markAnnSeen; pb.append(tx, ok); v.appendChild(pb);
+  }
   const t = el("div", "tabs");
-  [["sales", "Запити"], ["mine", "Мої речі"], ["buys", "Покупки"], ["adorders", "Реклама"], ["profile", "Профіль"]].forEach(([k, l]) => {
+  [["sales", "Запити" + (sales.filter(x => x.status === "new").length ? " (" + sales.filter(x => x.status === "new").length + ")" : "")], ["mine", "Мої речі"], ["buys", "Покупки"], ["adorders", "Реклама"], ["profile", "Профіль"]].forEach(([k, l]) => {
     const b = el("button", "btn " + (tab === k ? "btn-primary" : "btn-soft"), l); b.onclick = () => {tab = k; render();}; t.appendChild(b);
   });
   const add = el("button", "btn btn-outline", "+ Віддати"); add.style.color = "var(--green)"; add.onclick = () => openForm(null); t.appendChild(add);
@@ -1638,6 +1661,34 @@ function renderCabinet() {
       }
       v.appendChild(bx);
     });
+  }
+  if (tab === "notes") {
+    const anns = annAll.filter(annVisible).sort((x, y) => (y.pinned ? 1 : 0) - (x.pinned ? 1 : 0) || (y.createdAt || 0) - (x.createdAt || 0)), seen = profile.annSeen || 0;
+    if (anns.length) {
+      v.appendChild(el("h3", "", "Від адміністрації"));
+      anns.forEach(a => {
+        const bx = el("div", "cardbox"); if ((a.createdAt || 0) > seen) bx.style.borderColor = "var(--green)";
+        bx.appendChild(el("b", "", (a.pinned ? "📌 " : "📣 ") + a.title));
+        if (a.text) {const t = el("div", "small", a.text); t.style.cssText = "white-space:pre-wrap;margin-top:4px"; bx.appendChild(t);}
+        bx.appendChild(el("div", "muted small", ntime(a.createdAt || Date.now())));
+        v.appendChild(bx);
+      });
+      if (anns.some(a => (a.createdAt || 0) > seen)) {clearTimeout(annTimer); annTimer = setTimeout(markAnnSeen, 1500);}
+    }
+    const hh = el("div", "section-head"); hh.style.cssText = "margin:14px 0 8px;align-items:center"; hh.appendChild(el("h3", "", "Мої сповіщення"));
+    if (myNotes.length) {const cl = el("button", "btn btn-soft btn-sm", "Очистити"); cl.onclick = () => {if (!confirm("Видалити всі сповіщення?")) return; const b = db.batch(); myNotes.forEach(n => b.delete(db.collection("notifications").doc(n.id))); b.commit().catch(() => {});}; hh.appendChild(cl);}
+    v.appendChild(hh);
+    if (!myNotes.length) none("Сповіщень поки немає.");
+    myNotes.slice(0, 60).forEach(n => {
+      const bx = el("div", "cardbox"); bx.style.cursor = "pointer"; if (!n.read) bx.style.borderColor = "var(--green)";
+      bx.appendChild(el("b", "", (n.read ? "" : "● ") + n.title));
+      if (n.text) bx.appendChild(el("div", "small", n.text));
+      bx.appendChild(el("div", "muted small", ntime(n.createdAt)));
+      bx.onclick = () => {if (!n.read) markNotesRead([n.id]); if (n.link) {tab = n.link; render();}};
+      v.appendChild(bx);
+    });
+    const fresh = myNotes.filter(n => !n.read).map(n => n.id);
+    if (fresh.length) {clearTimeout(noteTimer); noteTimer = setTimeout(() => markNotesRead(fresh), 2000);}
   }
   if (tab === "adorders") {
     const nb = el("button", "btn btn-primary", "＋ Замовити рекламу"); nb.style.marginBottom = "12px"; nb.onclick = openAdOrder; v.appendChild(nb);
