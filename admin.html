@@ -113,7 +113,7 @@ dialog::backdrop{background:rgba(13,29,22,.55)}
     <label for="annTitle">Заголовок</label><input type="text" id="annTitle" maxlength="100" placeholder="Наприклад: Нова послуга «Річ дня»">
     <label for="annText">Текст</label><textarea id="annText" rows="5" maxlength="1000" placeholder="Що змінилось, ціни, як користуватись"></textarea>
     <label for="annAud">Кому показувати</label>
-    <select id="annAud"><option value="all">Усім користувачам</option><option value="brands">Лише брендам</option><option value="advertisers">Лише рекламодавцям</option></select>
+    <select id="annAud"><option value="all">Усім користувачам</option><option value="brands">Лише брендам</option><option value="advertisers">Рекламодавцям (замовляли рекламний банер)</option><option value="promoters">Тим, хто просуває речі (підсвітка, Гараж, ТОП-20, Річ дня)</option></select>
     <label style="font-weight:400"><input type="checkbox" id="annPin" style="width:auto"> Закріпити (показати плашкою вгорі кабінету)</label>
     <label style="font-weight:400"><input type="checkbox" id="annActive" checked style="width:auto"> Показувати</label>
     <label style="font-weight:400"><input type="checkbox" id="annRenew" style="width:auto"> Показати як нове (знову підсвітити всім, хто вже бачив)</label>
@@ -399,7 +399,7 @@ function render() {
     head = ["Оголошення", "Кому", "Статус", "Дата", "Дії"];
     rows = D.announcements.slice().sort((x, y) => (y.createdAt || 0) - (x.createdAt || 0)).map(n => [
       "<b>" + esc(n.title) + "</b>" + (n.text ? '<br><span class="muted small">' + esc(n.text).slice(0, 160) + "</span>" : ""),
-      esc({all: "Усім", brands: "Брендам", advertisers: "Рекламодавцям"}[n.audience] || "Усім"),
+      esc({all: "Усім", brands: "Брендам", advertisers: "Рекламодавцям", promoters: "Хто просуває речі"}[n.audience] || "Усім"),
       (n.pinned ? pill("Закріплене", "sold") + " " : "") + pill(n.active === false ? "Вимкнено" : "Показується", n.active === false ? "wait" : ""),
       fmt(n.createdAt),
       btn("annedit", n.id, "Змінити") + btn("anntoggle", n.id, n.active === false ? "Увімкнути" : "Вимкнути") + btn("anndel", n.id, "Видалити", "d")]);
