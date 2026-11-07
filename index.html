@@ -514,7 +514,7 @@ select{-webkit-appearance:none !important;appearance:none !important;background-
   <div class="modal-head"><h2>Замовити рекламу</h2><button class="close" type="button" id="aoClose" aria-label="Закрити">×</button></div>
   <form class="form-body" id="aoForm">
     <p class="muted small" style="margin-top:0">Реклама показується по колу разом із банером сайту. Оплата одразу, потім банери перевіряє адміністрація. Якщо реклама не пройде перевірку, гроші повертаються.</p>
-    <div class="field"><label for="aoPlace">Де показувати</label><select id="aoPlace"><option value="home">Головна (над фільтрами)</option><option value="item">Картка товару</option><option value="both">Обидва місця (головна й картка)</option><option value="cabinet">Кабінет користувача (невеликий банер)</option><option value="video">Відеоблок на головній (premium)</option></select></div>
+    <div class="field"><label for="aoPlace">Де показувати</label><select id="aoPlace"><option value="home">Головна (над фільтрами)</option><option value="item">Картка товару</option><option value="both">Обидва місця (головна й картка)</option><option value="cabinet">Кабінет користувача (невеликий банер)</option></select></div>
     <div class="field"><label for="aoDays">Строк</label><select id="aoDays"><option value="7">7 днів</option><option value="30">30 днів</option></select></div>
     <div class="field"><label for="aoSec">Скільки секунд показується в колі</label><select id="aoSec"><option value="15">15 секунд (дешевше)</option><option value="30" selected>30 секунд</option><option value="60">1 хвилина (дорожче)</option></select></div>
     <div class="field"><label for="aoStart">Дата старту</label><input id="aoStart" type="date"></div>
@@ -556,7 +556,7 @@ const firebaseConfig = {
 };
 // ===== EMAILJS: листи продавцю (необов'язково, можна лишити порожнім) =====
 const MIN_PRICE = 20, COMM_FIXED = 10, COMM_PCT = 3, COMM_PCT_FROM = 1000; // мінімальна ціна, комісія: фіксована до 1000 грн, відсоток від 1000 грн
-const PROMO = {highlight: {price: 10, days: 7}, garage: {price: 15, days: 7}, top: {price: 39, days: 7}}, PLAN_DAYS = 30, PLANS = [[10, 99], [20, 199], [50, 349]];
+const PROMO = {highlight: {price: 10, days: 7}, garage: {price: 15, days: 7}, top: {price: 39, days: 7}, day: {price: 59, days: 7}}, PLAN_DAYS = 30, PLANS = [[10, 99], [20, 199], [50, 349]];
 const AD_BASE = {home: [99, 299], item: [49, 149], both: [129, 399], cabinet: [29, 89], video: [149, 449]}, AD_SEC = {15: .7, 30: 1, 60: 1.6};
 const adPrice = (place, days, sec) => Math.round(AD_BASE[place][Number(days) === 30 ? 1 : 0] * AD_SEC[sec]);
 const commissionFor = p => p >= COMM_PCT_FROM ? Math.round(p * COMM_PCT / 100) : COMM_FIXED;
@@ -648,10 +648,10 @@ const DOCS = {
     <li>Розрахунок за річ відбувається між продавцем і покупцем. Адміністрація не приймає та не гарантує такі розрахунки. Онлайн-оплата на Сайті може бути додана пізніше.</li>
     <li>Витрати на повернення посилки, що виникли через відмову або неотримання її покупцем, відшкодовує покупець.</li></ul>
     <h3>5. Платні послуги та пакети брендів</h3>
-    <ul><li>Підсвітка оголошення рамкою: ${PROMO.highlight.price} грн на ${PROMO.highlight.days} днів. Розміщення в розділі «Гараж»: ${PROMO.garage.price} грн на ${PROMO.garage.days} днів. Підняття в «ТОП-20»: ${PROMO.top.price} грн на ${PROMO.top.days} днів (якщо охочих понад 20, речі в блоці змінюються по черзі).</li>
+    <ul><li>Підсвітка оголошення рамкою: ${PROMO.highlight.price} грн на ${PROMO.highlight.days} днів. Розміщення в розділі «Гараж»: ${PROMO.garage.price} грн на ${PROMO.garage.days} днів. Підняття в «ТОП-20»: ${PROMO.top.price} грн на ${PROMO.top.days} днів (якщо охочих понад 20, речі в блоці змінюються по черзі). «Річ дня»: ${PROMO.day.price} грн на ${PROMO.day.days} днів, річ показується в окремому блоці на головній; якщо охочих понад 10, речі в блоці змінюються по черзі.</li>
     <li>Бренд (магазин, шоурум, вінтаж) може вести окрему сторінку. Пакети розміщення на ${PLAN_DAYS} днів: ${PLANS.map(p => p[0] + " оголошень за " + p[1] + " грн").join(", ")}. Речі бренду продаються без комісії Адміністрації.</li>
     <li>Пакет задає кількість місць для активних оголошень; місце переданої речі можна зайняти новим оголошенням. Після завершення строку пакет потрібно оновити, інакше речі бренду не показуються на Сайті.</li>
-    <li>Реклама на Сайті замовляється на сторінці «Замовити рекламу» й оплачується одразу. Ціни за 7 / 30 днів (30 секунд у колі): головна ${AD_BASE.home[0]} / ${AD_BASE.home[1]} грн, картка товару ${AD_BASE.item[0]} / ${AD_BASE.item[1]} грн, обидва місця ${AD_BASE.both[0]} / ${AD_BASE.both[1]} грн, кабінет користувача ${AD_BASE.cabinet[0]} / ${AD_BASE.cabinet[1]} грн, відеоблок на головній ${AD_BASE.video[0]} / ${AD_BASE.video[1]} грн (формат відео: 16:9, 1280 × 720, до 30 секунд, без звуку; YouTube, Vimeo або .mp4 / .webm до 15 МБ). Показ 15 секунд дешевший на 30%, 60 секунд дорожчий на 60%.</li>
+    <li>Реклама на Сайті замовляється на сторінці «Замовити рекламу» й оплачується одразу. Ціни за 7 / 30 днів (30 секунд у колі): головна ${AD_BASE.home[0]} / ${AD_BASE.home[1]} грн, картка товару ${AD_BASE.item[0]} / ${AD_BASE.item[1]} грн, обидва місця ${AD_BASE.both[0]} / ${AD_BASE.both[1]} грн, кабінет користувача ${AD_BASE.cabinet[0]} / ${AD_BASE.cabinet[1]} грн. Показ 15 секунд дешевший на 30%, 60 секунд дорожчий на 60%.</li>
     <li>Банери реклами проходять перевірку. Якщо реклама не відповідає правилам (заборонені товари й послуги, обман, 18+, образливий вміст, сумнівні вакансії: «легкі гроші», передоплата від кандидатів, дискримінаційні вимоги), її відхиляють, а сплачена сума повертається. Адміністрація не гарантує кількість переглядів чи кліків.</li>
     <li>Оплата карткою через monobank. Повернення коштів за послуги розглядається за зверненням на пошту Адміністрації, якщо послугу не було надано.</li></ul>
     <h3>6. Роль Сайту</h3>
@@ -956,52 +956,55 @@ function videoNode(a) {
   n._stop = () => {holder.innerHTML = "";};
   return n;
 }
-function heroFallback() {
+function dayCardNode(it, tag, hint) {
+  const n = el("div", "vfb"); n.onclick = () => {TQ.c["day_" + it.id] = (TQ.c["day_" + it.id] || 0) + 1; trackFlush(); location.hash = "#item=" + it.id;};
+  const im = el("img"); im.src = photosOf(it)[0]; im.alt = it.title || ""; n.appendChild(im);
+  const info = el("div", "vfbi");
+  info.appendChild(el("span", "vtag", tag)); info.appendChild(el("b", "", it.title || "Без назви"));
+  info.appendChild(el("div", "pricetag", priceFrom(it))); info.appendChild(el("div", "muted small", cityDate(it)));
+  const bt = el("span", "btn btn-primary btn-sm", "Подивитись"); bt.style.alignSelf = "flex-start"; info.appendChild(bt);
+  if (hint) {const h = el("span", "small", hint); h.style.cssText = "text-decoration:underline;cursor:pointer;color:var(--muted)"; h.onclick = ev => {ev.stopPropagation(); needLogin(() => {tab = "mine"; setView("cabinet");});}; info.appendChild(h);}
+  n.appendChild(info);
+  return n;
+}
+function dayFallback() {
   const cands = allItems.filter(i => i.status === "open" && brandOk(i) && photosOf(i).length);
   const prom = cands.filter(i => isPromo(i, "topUntil") || isPromo(i, "garageUntil"));
   const pool = prom.length ? prom : cands.slice().sort((x, y) => scoreOf(y) - scoreOf(x)).slice(0, 5);
+  const hint = "Тут може бути ваша річ · " + PROMO.day.price + " грн / " + PROMO.day.days + " днів";
   if (!pool.length) {
     const c = el("div", "vcta");
-    c.appendChild(el("b", "", "Тут може бути ваша реклама"));
-    c.appendChild(el("span", "muted", "Відеоблок на головній: від " + AD_BASE.video[0] + " грн / 7 днів. Формат відео: 16:9, 1280 × 720, до 30 с."));
-    const bt = el("button", "btn btn-primary btn-sm", "Замовити відеорекламу"); bt.type = "button"; bt.onclick = () => openAdOrder("video"); c.appendChild(bt);
+    c.appendChild(el("b", "", "Річ дня"));
+    c.appendChild(el("span", "muted", "Покажіть свою річ у цьому блоці на головній: " + PROMO.day.price + " грн на " + PROMO.day.days + " днів."));
+    const bt = el("button", "btn btn-primary btn-sm", "Підняти свою річ"); bt.type = "button"; bt.onclick = () => needLogin(() => {tab = "mine"; setView("cabinet");}); c.appendChild(bt);
     return {key: "cta", node: c};
   }
   const it = pool[Math.floor(Date.now() / 600000) % pool.length];
-  const n = el("div", "vfb"); n.onclick = () => {location.hash = "#item=" + it.id;};
-  const im = el("img"); im.src = photosOf(it)[0]; im.alt = it.title || ""; n.appendChild(im);
-  const info = el("div", "vfbi");
-  info.appendChild(el("span", "vtag", "★ Річ дня")); info.appendChild(el("b", "", it.title || "Без назви"));
-  info.appendChild(el("div", "pricetag", priceFrom(it))); info.appendChild(el("div", "muted small", cityDate(it)));
-  const bt = el("span", "btn btn-primary btn-sm", "Подивитись"); bt.style.alignSelf = "flex-start"; info.appendChild(bt);
-  n.appendChild(info);
-  return {key: it.id, node: n};
+  return {key: it.id, node: dayCardNode(it, "🔥 Популярне", hint)};
 }
-function fbSlide() {
-  const fb = heroFallback(), w = el("div", "vslide");
-  w.appendChild(fb.node); w._play = () => {}; w._stop = () => {};
-  return {node: w, ms: 12000, id: null, key: fb.key};
-}
-function videoSlot() {
+function daySlot() {
   const box = $("heroVideo");
   if (catMode !== "all" || sellerFilter || focusItem) {clearTimeout(adTimers.video); box.dataset.sig = ""; return;}
   box.hidden = false;
-  const list = ads.filter(a => a.placement === "video" && a.video && a.video.src && (!a.startAt || a.startAt <= Date.now()) && (!a.until || a.until > Date.now())).sort((x, y) => (x.order || 0) - (y.order || 0));
-  if (!list.length) {
-    const fb = heroFallback(), sig = "fb:" + fb.key;
+  const paid = allItems.filter(i => i.status === "open" && brandOk(i) && photosOf(i).length && isPromo(i, "dayUntil")).sort((x, y) => (x.id < y.id ? -1 : 1));
+  let pool = paid;
+  if (paid.length > 10) {const start = (Math.floor(Date.now() / 600000) * 10) % paid.length; pool = []; for (let k = 0; k < 10; k++) pool.push(paid[(start + k) % paid.length]);}
+  if (!pool.length) {
+    const fb = dayFallback(), sig = "fb:" + fb.key;
     if (box.dataset.sig === sig) return;
     clearTimeout(adTimers.video); box.dataset.sig = sig; box.innerHTML = ""; box.appendChild(fb.node); return;
   }
-  const probe = heroFallback(), sig = "v:" + list.map(a => a.id + ":" + (a.updatedAt || 0)).join(",") + "|" + probe.key;
+  const sig = "d:" + pool.map(i => i.id).join(",");
   if (box.dataset.sig === sig) return;
   box.dataset.sig = sig; clearTimeout(adTimers.video); box.innerHTML = "";
-  const slides = [];
-  list.forEach(a => {slides.push({node: videoNode(a), ms: Math.max(8000, (Number(a.seconds) || 30) * 1000), id: a.id}); slides.push(fbSlide());});
-  slides.forEach((sl, i) => {if (!i) sl.node.classList.add("on"); box.appendChild(sl.node);});
-  slides[0].node._play(); adSeen(slides[0].id);
-  let k = 0;
-  const tick = () => {adTimers.video = setTimeout(() => {slides[k].node.classList.remove("on"); slides[k].node._stop(); k = (k + 1) % slides.length; slides[k].node.classList.add("on"); slides[k].node._play(); if (slides[k].id) adSeen(slides[k].id); tick();}, slides[k].ms);};
-  tick();
+  const slides = pool.map(i => {const w = el("div", "vslide"); w.appendChild(dayCardNode(i, "★ Річ дня")); return w;});
+  slides.forEach((n, k) => {if (!k) n.classList.add("on"); box.appendChild(n);});
+  adSeen("day_" + pool[0].id);
+  if (slides.length > 1) {
+    let k = 0;
+    const tick = () => {adTimers.video = setTimeout(() => {slides[k].classList.remove("on"); k = (k + 1) % slides.length; slides[k].classList.add("on"); adSeen("day_" + pool[k].id); tick();}, 9000);};
+    tick();
+  }
 }
 function renderHome() {
   const q = $("searchInput").value.trim().toLocaleLowerCase("uk"), cat = $("categoryFilter").value, sortF = $("sortFilter").value;
@@ -1055,7 +1058,7 @@ function renderHome() {
   const sl = sellerFilter ? allItems.find(i => i.ownerId === sellerFilter) : null, sbr = sellerFilter ? brandMap[sellerFilter] : null;
   const brandsMode = catMode === "brands" && !sellerFilter && !focusItem;
   $("heroSec").hidden = !!(sellerFilter || focusItem || catMode !== "all"); $("toolbar").hidden = !!(focusItem || brandsMode); $("itemCount").hidden = !!focusItem;
-  videoSlot();
+  daySlot();
   adSlot($("adHome"), "home", true, !!focusItem); adSlot($("adItem"), "item", false, !focusItem);
   $("allBtn").hidden = !(sellerFilter || focusItem);
   $("listTitle").parentElement.hidden = !!focusItem; $("listTitle").closest(".section-head").classList.toggle("focus", !!focusItem);
@@ -1488,7 +1491,7 @@ function payOverlay(state, text) {
 }
 async function buyService(kind, it, pkg) {
   const price = kind === "pkg" ? PLANS.find(p => p[0] === pkg)[1] : PROMO[kind].price;
-  const what = kind === "pkg" ? "пакет на " + pkg + " оголошень (" + PLAN_DAYS + " днів)" : ({highlight: "підсвітку рамкою", garage: "розміщення в розділі «Гараж»", top: "підняття в ТОП-20"}[kind]) + " для «" + it.title + "» на " + PROMO[kind].days + " днів";
+  const what = kind === "pkg" ? "пакет на " + pkg + " оголошень (" + PLAN_DAYS + " днів)" : ({highlight: "підсвітку рамкою", garage: "розміщення в розділі «Гараж»", top: "підняття в ТОП-20", day: "розміщення в блоці «Річ дня»"}[kind]) + " для «" + it.title + "» на " + PROMO[kind].days + " днів";
   if (!confirm("Оплатити " + what + " за " + price + " грн? Далі відкриється сторінка оплати monobank.")) return;
   payOverlay("wait", "Готуємо оплату…");
   const slow = setTimeout(() => payOverlay("wait", "Відповідь трохи затримується, зачекайте ще…"), 12000);
@@ -1505,7 +1508,10 @@ function promoRow(i) {
   const ta = isPromo(i, "topUntil");
   const tb = el("button", "btn btn-primary btn-sm", ta ? "✓ У ТОП-20 до " + fmtD(i.topUntil) + " · продовжити " + PROMO.top.price + " грн" : "★ В ТОП-20 · " + PROMO.top.price + " грн / " + PROMO.top.days + " днів");
   tb.onclick = () => buyService("top", i);
-  r.append(tb, hb, gb); return r;
+  const da = isPromo(i, "dayUntil");
+  const db_ = el("button", "btn btn-primary btn-sm", da ? "✓ Річ дня до " + fmtD(i.dayUntil) + " · продовжити " + PROMO.day.price + " грн" : "☀ Річ дня · " + PROMO.day.price + " грн / " + PROMO.day.days + " днів");
+  db_.onclick = () => buyService("day", i);
+  r.append(db_, tb, hb, gb); return r;
 }
 function openTtn(s) {
   const sh = profile.ship;
@@ -1752,7 +1758,7 @@ $("rulesOk").onclick = () => $("rulesDialog").close();
 document.querySelectorAll(".doc-link").forEach(a => a.onclick = e => {e.preventDefault(); openDoc(a.dataset.doc);});
 window.addEventListener("scroll", () => {$("toTop").hidden = window.scrollY < 600;});
 document.querySelectorAll(".feetxt").forEach(e => e.textContent = FEE_TEXT);
-$("promoRules").innerHTML = "<h3>Просування та бренди</h3><ul><li>Підсвітка рамкою: " + PROMO.highlight.price + " грн на " + PROMO.highlight.days + " днів. Розділ «Гараж»: " + PROMO.garage.price + " грн на " + PROMO.garage.days + " днів (такі речі також стоять угорі головної сторінки).</li><li>Підняття в «ТОП-20»: " + PROMO.top.price + " грн на " + PROMO.top.days + " днів. Річ потрапляє в окремий блок угорі головної сторінки. Якщо охочих понад 20, речі в блоці змінюються по черзі.</li><li>Бренд (магазин, шоурум, вінтаж) може вести окрему сторінку. Речі бренду продаються без комісії за пакетом розміщення на " + PLAN_DAYS + " днів: " + PLANS.map(p => p[0] + " оголошень за " + p[1] + " грн").join(", ") + ".</li><li>Пакет задає кількість місць для активних речей. Коли річ передана, її місце можна зайняти новою. Після " + PLAN_DAYS + " днів пакет потрібно оновити, інакше речі бренду не показуються в каталозі.</li></ul>";
+$("promoRules").innerHTML = "<h3>Просування та бренди</h3><ul><li>Підсвітка рамкою: " + PROMO.highlight.price + " грн на " + PROMO.highlight.days + " днів. Розділ «Гараж»: " + PROMO.garage.price + " грн на " + PROMO.garage.days + " днів (такі речі також стоять угорі головної сторінки).</li><li>Підняття в «ТОП-20»: " + PROMO.top.price + " грн на " + PROMO.top.days + " днів. Річ потрапляє в окремий блок угорі головної сторінки. Якщо охочих понад 20, речі в блоці змінюються по черзі.</li><li>«Річ дня»: " + PROMO.day.price + " грн на " + PROMO.day.days + " днів. Річ показується в окремому блоці праворуч у шапці головної сторінки. Якщо охочих понад 10, речі в блоці змінюються по черзі.</li><li>Бренд (магазин, шоурум, вінтаж) може вести окрему сторінку. Речі бренду продаються без комісії за пакетом розміщення на " + PLAN_DAYS + " днів: " + PLANS.map(p => p[0] + " оголошень за " + p[1] + " грн").join(", ") + ".</li><li>Пакет задає кількість місць для активних речей. Коли річ передана, її місце можна зайняти новою. Після " + PLAN_DAYS + " днів пакет потрібно оновити, інакше речі бренду не показуються в каталозі.</li></ul>";
 document.querySelectorAll(".minp").forEach(e => e.textContent = MIN_PRICE);
 $("minPrice").min = MIN_PRICE; $("minPrice").placeholder = String(Math.max(50, MIN_PRICE)); $("minPrice").addEventListener("input", updateMinNote);
 $("heroCard").onclick = openRules;
