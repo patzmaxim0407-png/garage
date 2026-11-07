@@ -45,6 +45,10 @@ dialog::backdrop{background:rgba(13,29,22,.55)}
 .thumb img{display:block;height:54px;border-radius:8px;border:1px solid var(--line)}
 .thumb button{position:absolute;top:-7px;right:-7px;width:22px;height:22px;border-radius:50%;border:0;background:var(--danger);color:#fff;cursor:pointer;font-size:14px;line-height:1;padding:0}
 .hint{font-size:.78rem;color:var(--muted);margin-top:4px}
+.pcard{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px}
+.prow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0}
+.prow input[type=number]{width:96px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;font:inherit}
+.prow input[type=text]{padding:8px 10px}
 </style>
 </head>
 <body>
@@ -56,6 +60,7 @@ dialog::backdrop{background:rgba(13,29,22,.55)}
     <div class="tabs" id="tabs"></div>
     <input type="search" id="q" placeholder="Пошук (ім’я, пошта, назва речі)…">
     <button class="btn s" id="refresh">Оновити</button> <button class="btn s" id="testTg">Тест Telegram</button> <button class="btn s" id="testMail">Тест пошти</button> <button class="btn on" id="adNew" hidden>＋ Додати рекламу</button> <button class="btn on" id="annNew" hidden>＋ Нове оголошення</button>
+    <div id="priceBox" hidden></div>
     <div id="statsBox" hidden></div>
     <div class="wrap"><table><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
   </div>
@@ -140,7 +145,7 @@ const firebaseConfig = {
 const $ = id => document.getElementById(id);
 const esc = v => String(v == null ? "" : v).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const fmt = v => { if (!v) return "—"; const d = new Date(v); return isNaN(d) ? "—" : d.toLocaleString("uk-UA", {dateStyle: "short", timeStyle: "short"}); };
-let D = null, tab = "users", blockUid = null;
+let D = null, tab = "users", blockUid = null, PR = null;
 
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth(), fns = firebase.app().functions("europe-west1");
@@ -166,7 +171,7 @@ async function load() {
   $("gate").hidden = false; $("gate").textContent = "Завантаження…"; $("app").hidden = true;
   try {
     const r = await call("adminData");
-    D = r.data; D.blocks = D.blocks || {}; D.ads = D.ads || []; D.adOrders = D.adOrders || []; D.announcements = D.announcements || []; D.reports = D.reports || {} ; if (!Array.isArray(D.reports)) D.reports = [];
+    D = r.data; D.blocks = D.blocks || {}; D.ads = D.ads || []; D.adOrders = D.adOrders || []; D.announcements = D.announcements || []; PR = null; D.reports = D.reports || {} ; if (!Array.isArray(D.reports)) D.reports = [];
     $("gate").hidden = true; $("app").hidden = false; render();
   } catch (e) {
     $("gate").textContent = (e.code === "functions/permission-denied" || /permission/i.test(e.message || ""))
@@ -228,6 +233,58 @@ async function act(a, id) {
     else if (a === "items") {$("q").value = (D.users.find(x => x.uid === id) || {}).email || ""; tab = "items"; render();}
   } catch (e) {alert("Не вдалося: " + (e.message || e.code));}
 }
+function setPath(obj, path, val) {
+  const t = path.split("."); let o = obj;
+  for (let i = 0; i < t.length - 1; i++) o = o[t[i]];
+  o[t[t.length - 1]] = val;
+}
+function renderPricing() {
+  const box = $("priceBox");
+  if (!D.pricing) {box.innerHTML = '<div class="muted">Для цього розділу потрібні оновлені функції (firebase deploy). Розгорніть їх і оновіть сторінку.</div>'; return;}
+  if (!PR) PR = JSON.parse(JSON.stringify(D.pricing));
+  let h = '<div class="muted small" style="margin-bottom:10px">Змінюйте ціни, назви й строки та натисніть «Зберегти ціни». Нові ціни діють на сайті одразу. Вже оплачені замовлення не змінюються.</div>';
+  h += '<h3 style="margin:14px 0 6px">Просування речей</h3>';
+  PR.promos.forEach((p, i) => {
+    h += '<div class="pcard"><div class="prow"><input type="text" maxlength="40" style="min-width:210px" data-p="promos.' + i + '.name" value="' + esc(p.name) + '"> <label style="font-weight:400"><input type="checkbox" style="width:auto" data-p="promos.' + i + '.active"' + (p.active !== false ? " checked" : "") + '> Активна</label> <span class="muted small">код: ' + esc(p.kind) + "</span></div>";
+    p.tariffs.forEach((t, j) => {h += '<div class="prow"><span>Строк, днів</span><input type="number" min="1" data-p="promos.' + i + ".tariffs." + j + '.days" value="' + t.days + '"><span>Ціна, грн</span><input type="number" min="1" data-p="promos.' + i + ".tariffs." + j + '.price" value="' + t.price + '"><button class="btn sm d" data-a="delTariff" data-i="' + i + '" data-j="' + j + '">×</button></div>';});
+    h += '<button class="btn sm s" data-a="addTariff" data-i="' + i + '">＋ тариф</button></div>';
+  });
+  h += '<h3 style="margin:18px 0 6px">Банерна реклама</h3>';
+  h += '<div class="pcard"><div class="prow"><b>Строки показу, днів:</b>' + PR.banners.durations.map((d, k) => '<input type="number" min="1" data-p="banners.durations.' + k + '" value="' + d + '"><button class="btn sm d" data-a="delDur" data-k="' + k + '">×</button>').join("") + '<button class="btn sm s" data-a="addDur">＋ строк</button></div></div>';
+  PR.banners.places.forEach((p, i) => {
+    h += '<div class="pcard"><div class="prow"><input type="text" maxlength="50" style="min-width:230px" data-p="banners.places.' + i + '.name" value="' + esc(p.name) + '"> <label style="font-weight:400"><input type="checkbox" style="width:auto" data-p="banners.places.' + i + '.active"' + (p.active !== false ? " checked" : "") + '> Активне місце</label> <span class="muted small">код: ' + esc(p.key) + '</span></div><div class="prow">'
+      + PR.banners.durations.map(d => "<span>" + d + ' дн.</span><input type="number" min="0" data-p="banners.places.' + i + ".prices." + d + '" value="' + (p.prices[String(d)] || 0) + '">').join("") + '<span class="muted small">грн (0 = недоступно)</span></div></div>';
+  });
+  h += '<div class="pcard"><div class="prow"><b>Час показу в колі та коефіцієнт до ціни:</b></div>' + PR.banners.seconds.map((x, k) => '<div class="prow"><span>Секунд</span><input type="number" min="5" data-p="banners.seconds.' + k + '.sec" value="' + x.sec + '"><span>Коефіцієнт</span><input type="number" step="0.05" min="0.1" data-p="banners.seconds.' + k + '.factor" value="' + x.factor + '"><button class="btn sm d" data-a="delSec" data-k="' + k + '">×</button></div>').join("") + '<button class="btn sm s" data-a="addSec">＋ варіант часу</button></div>';
+  h += '<h3 style="margin:18px 0 6px">Пакети для брендів</h3><div class="pcard">' + PR.packages.map((x, k) => '<div class="prow"><span>Оголошень</span><input type="number" min="1" data-p="packages.' + k + '.slots" value="' + x.slots + '"><span>Ціна, грн</span><input type="number" min="1" data-p="packages.' + k + '.price" value="' + x.price + '"><span>Днів</span><input type="number" min="1" data-p="packages.' + k + '.days" value="' + x.days + '"><button class="btn sm d" data-a="delPkg" data-k="' + k + '">×</button></div>').join("") + '<button class="btn sm s" data-a="addPkg">＋ пакет</button></div>';
+  h += '<div style="margin:16px 0"><button class="btn on" data-a="savePrices">Зберегти ціни</button> <button class="btn s" data-a="resetPrices">Скинути до стандартних</button></div>';
+  h += '<div class="muted small">Тут можна міняти ціни й назви, додавати та прибирати тарифи, строки, пакети й варіанти часу, а також вимикати послуги й рекламні місця. Нові види послуг (з новою поведінкою на сайті) потребують окремого коду.</div>';
+  box.innerHTML = h;
+}
+$("priceBox").addEventListener("input", e => {
+  const t = e.target, p = t.dataset.p; if (!p || !PR) return;
+  setPath(PR, p, t.type === "checkbox" ? t.checked : (t.type === "number" ? Number(t.value) : t.value));
+});
+$("priceBox").addEventListener("click", async e => {
+  const b = e.target.closest("button[data-a]"); if (!b || !PR) return;
+  const act = b.dataset.a, i = Number(b.dataset.i), j = Number(b.dataset.j), k = Number(b.dataset.k), bn = PR.banners;
+  try {
+    if (act === "addTariff") PR.promos[i].tariffs.push({days: 30, price: 10});
+    else if (act === "delTariff") {if (PR.promos[i].tariffs.length < 2) {alert("Потрібен хоча б один тариф. Щоб прибрати послугу, зніміть галочку «Активна»."); return;} PR.promos[i].tariffs.splice(j, 1);}
+    else if (act === "addDur") {
+      const n = Math.round(Number(prompt("На скільки днів додати строк показу?", "14"))); if (!n || n < 1 || bn.durations.includes(n)) return;
+      bn.durations.push(n); bn.durations.sort((x, y) => x - y); bn.places.forEach(p => {p.prices[String(n)] = 0;});
+    }
+    else if (act === "delDur") {if (bn.durations.length < 2) {alert("Потрібен хоча б один строк."); return;} const d = bn.durations[k]; bn.durations.splice(k, 1); bn.places.forEach(p => {delete p.prices[String(d)];});}
+    else if (act === "addSec") bn.seconds.push({sec: 45, factor: 1.3});
+    else if (act === "delSec") {if (bn.seconds.length < 2) {alert("Потрібен хоча б один варіант."); return;} bn.seconds.splice(k, 1);}
+    else if (act === "addPkg") PR.packages.push({slots: 100, price: 599, days: 30});
+    else if (act === "delPkg") {if (PR.packages.length < 2) {alert("Потрібен хоча б один пакет."); return;} PR.packages.splice(k, 1);}
+    else if (act === "savePrices") {await call("adminAction", {action: "savePricing", pricing: PR}); alert("✅ Ціни збережено й уже діють на сайті."); await load(); return;}
+    else if (act === "resetPrices") {if (!confirm("Повернути стандартні ціни та назви?")) return; await call("adminAction", {action: "resetPricing"}); alert("Повернуто стандартні ціни."); await load(); return;}
+    renderPricing();
+  } catch (x) {alert("Не вдалося: " + (x.message || x.code));}
+});
 let annEditId = null;
 function openAnn(id) {
   const n = id ? D.announcements.find(x => x.id === id) : null; annEditId = id || null;
@@ -345,11 +402,11 @@ function render() {
     [open.length, "Доступні речі"], [sold.length, "Продані / передані"], [D.requests.length, "Запитів покупців"],
     [D.requests.filter(r => r.ttn).length, "Створено ТТН"], [blockedN, "Заблоковано акаунтів"], [newRep.length, "Нових скарг"],
   ].map(s => '<div class="stat"><b>' + s[0] + "</b><span>" + s[1] + "</span></div>").join("");
-  const T = [["users", "Користувачі"], ["items", "Усі речі"], ["ads", "Реклама"], ["ann", "Оголошення"], ["stats", "Статистика"], ["adorders", "Замовлення реклами" + (D.adOrders.filter(o => o.status === "paid").length ? " (" + D.adOrders.filter(o => o.status === "paid").length + ")" : "")], ["reports", "Скарги" + (newRep.length ? " (" + newRep.length + ")" : "")], ["requests", "Запити"]];
+  const T = [["users", "Користувачі"], ["items", "Усі речі"], ["ads", "Реклама"], ["ann", "Оголошення"], ["pricing", "Ціни"], ["stats", "Статистика"], ["adorders", "Замовлення реклами" + (D.adOrders.filter(o => o.status === "paid").length ? " (" + D.adOrders.filter(o => o.status === "paid").length + ")" : "")], ["reports", "Скарги" + (newRep.length ? " (" + newRep.length + ")" : "")], ["requests", "Запити"]];
   $("tabs").innerHTML = T.map(t => '<button class="btn ' + (tab === t[0] ? "on" : "s") + '" data-t="' + t[0] + '">' + t[1] + "</button>").join("");
   $("tabs").querySelectorAll("button").forEach(b => b.onclick = () => {tab = b.dataset.t; render();});
 
-  $("adNew").hidden = tab !== "ads"; $("annNew").hidden = tab !== "ann"; $("statsBox").hidden = tab !== "stats";
+  $("adNew").hidden = tab !== "ads"; $("annNew").hidden = tab !== "ann"; $("priceBox").hidden = tab !== "pricing"; $("tbody").closest(".wrap").hidden = tab === "pricing"; if (tab === "pricing") renderPricing(); $("statsBox").hidden = tab !== "stats";
   const q = $("q").value.trim().toLowerCase();
   let head = [], rows = [];
   if (tab === "users") {
