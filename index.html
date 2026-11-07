@@ -1516,7 +1516,7 @@ function promoRow(i) {
   db_.onclick = () => buyService("day", i);
   r.append(db_, tb, hb, gb); return r;
 }
-const annVisible = a => a.active !== false && (!a.audience || a.audience === "all" || (a.audience === "brands" && currentUser && brandMap[currentUser.uid]) || (a.audience === "advertisers" && myAdOrders.length));
+const annVisible = a => a.active !== false && (!a.audience || a.audience === "all" || (a.audience === "brands" && currentUser && brandMap[currentUser.uid]) || (a.audience === "advertisers" && (profile.adBuyer || myAdOrders.length)) || (a.audience === "promoters" && currentUser && (profile.promoBuyer || allItems.some(i => i.ownerId === currentUser.uid && (isPromo(i, "highlightUntil") || isPromo(i, "garageUntil") || isPromo(i, "topUntil") || isPromo(i, "dayUntil"))))));
 const unreadNotes = () => myNotes.filter(n => !n.read).length;
 const unreadAnn = () => annAll.filter(a => annVisible(a) && (a.createdAt || 0) > (profile.annSeen || 0)).length;
 let noteTimer = null, annTimer = null;
