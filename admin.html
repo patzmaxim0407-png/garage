@@ -247,7 +247,7 @@ function setPath(obj, path, val) {
 function renderPricing() {
   const box = $("priceBox");
   if (!D.pricing) {box.innerHTML = '<div class="muted">Для цього розділу потрібні оновлені функції (firebase deploy). Розгорніть їх і оновіть сторінку.</div>'; return;}
-  if (!PR) PR = JSON.parse(JSON.stringify(D.pricing));
+  if (!PR) {PR = JSON.parse(JSON.stringify(D.pricing)); PR.promos = PR.promos.filter(p => p.kind !== "garage");}
   let h = '<div class="muted small" style="margin-bottom:10px">Змінюйте ціни, назви й строки та натисніть «Зберегти ціни». Нові ціни діють на сайті одразу. Вже оплачені замовлення не змінюються.</div>';
   h += '<h3 style="margin:14px 0 6px">Просування речей</h3>';
   PR.promos.forEach((p, i) => {
