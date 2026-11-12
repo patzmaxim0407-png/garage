@@ -2103,7 +2103,7 @@ window.addEventListener("appinstalled", () => {deferredPwa = null; pwaLinkUpd();
 $("pwaLink").onclick = async e => {e.preventDefault(); if (deferredPwa) {deferredPwa.prompt(); try {await deferredPwa.userChoice;} catch (x) {} deferredPwa = null; pwaLinkUpd();} else $("pwaDialog").showModal();};
 $("pwaX").onclick = $("pwaClose").onclick = () => $("pwaDialog").close();
 pwaLinkUpd();
-try {if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js");} catch (x) {}
+try {if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});} catch (x) {}
 $("heroAddBtn").onclick = () => openForm(null);
 $("itemCategory").addEventListener("change", () => fillSub(""));
 $("searchInput").addEventListener("input", () => {clearTimeout(sqT); sqT = setTimeout(() => trackQuery($("searchInput").value, lastTotal > 0), 1800);});
