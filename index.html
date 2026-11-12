@@ -1691,12 +1691,12 @@ function wrapLines(ctx, text, maxW, maxLines) {
 }
 function roundRect(ctx, x, y, w, h, r) {ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();}
 async function storyBlob(it) {
-  const c = document.createElement("canvas"); c.width = 1080; c.height = 1920; const x = c.getContext("2d"), F = '"Helvetica Neue", Arial, "Segoe UI", sans-serif';
+  const c = document.createElement("canvas"); c.width = 1080; c.height = 1920; const x = c.getContext("2d"), F = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
   const bg = x.createLinearGradient(0, 0, 0, 1920); bg.addColorStop(0, "#1B4D3E"); bg.addColorStop(1, "#102F25"); x.fillStyle = bg; x.fillRect(0, 0, 1080, 1920);
   x.fillStyle = "rgba(214,163,69,.16)"; x.beginPath(); x.arc(990, 250, 270, 0, 7); x.fill();
   x.fillStyle = "rgba(95,154,99,.18)"; x.beginPath(); x.arc(60, 1480, 340, 0, 7); x.fill();
   const T = (t, y, size, color, weight, sp) => {x.font = (weight || 800) + " " + size + "px " + F; x.fillStyle = color; x.textAlign = "center"; if ("letterSpacing" in x) x.letterSpacing = (sp || 0) + "px"; x.fillText(t, 540, y); if ("letterSpacing" in x) x.letterSpacing = "0px";};
-  T("GARAGE 22", 300, 70, "#F6F0E1", 800, 12); T(trText("Маркет ресейлу"), 352, 34, "#E3B65E", 600, 2);
+  T("GARAGE 22", 300, 72, "#FFFFFF", 900, 8.6); T(trText("Маркет ресейлу"), 354, 34, "rgba(255,255,255,.78)", 500, 1.4);
   const px = 150, py = 410, ps = 780, garage = !!it.garageId;
   x.save(); roundRect(x, px - 14, py - 14, ps + 28, ps + 28, 58); x.fillStyle = "#F6F0E1"; x.fill(); x.restore();
   x.save(); roundRect(x, px, py, ps, ps, 44); x.clip();
