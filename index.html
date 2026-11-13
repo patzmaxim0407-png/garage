@@ -394,6 +394,19 @@ dialog.viewer::backdrop{background:#000}
   .cardgrid .cardbox details.promo{margin-top:8px;padding-top:8px}
   .cardgrid .cardbox details.promo .row .btn{width:100%;justify-content:center}
 }
+@media (min-width: 700px) {
+  .cardgrid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;align-items:stretch}
+  .cardgrid .cardbox{display:flex;flex-direction:column;min-width:0;overflow:hidden}
+  .cardgrid .rowflex{align-items:flex-start;min-height:84px}
+  .cardgrid .rowflex > :first-child{flex:0 0 72px;width:72px;height:72px}
+  .cardgrid .rowflex > :first-child img{width:100%;height:100%;object-fit:cover}
+  .cardgrid .rowflex b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.2}
+  .cardgrid .rowflex .small{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .cardgrid .acts{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:auto;padding-top:10px}
+  .cardgrid .acts .btn{white-space:normal;line-height:1.15;min-height:40px;display:flex;align-items:center;justify-content:center;text-align:center;min-width:0}
+}
+@media (min-width: 960px) {.cardgrid{grid-template-columns:repeat(3,minmax(0,1fr)) !important}}
+@media (min-width: 1180px) {.cardgrid{grid-template-columns:repeat(4,minmax(0,1fr)) !important}}
 </style>
 </head>
 <body>
@@ -900,7 +913,7 @@ function readHash() {
   sellerFilter = m && (m[1] === "seller" || m[1] === "brand") ? m[2] : null;
   focusItem = m && m[1] === "item" ? m[2] : null;
   garageFilter = m && m[1] === "garage" ? m[2] : null;
-  catMode = (h === "garage" || garageFilter) ? "garage" : (h === "brands" ? "brands" : "all");
+  catMode = (h === "garage" || garageFilter) ? "garage" : ((h === "brands" || brandView) ? "brands" : "all");
 }
 async function shareLink(url, title) {
   try {if (navigator.share) {await navigator.share({title: title || "GARAGE 22", url: url}); return;}}
@@ -1379,12 +1392,12 @@ function renderHome() {
   $("heroSec").hidden = !!(sellerFilter || focusItem || catMode !== "all"); $("toolbar").hidden = !!(focusItem || brandsMode || catMode === "garage"); $("itemCount").hidden = !!focusItem;
   daySlot();
   adSlot($("adHome"), "home", true, !!focusItem); adSlot($("adItem"), "item", false, !focusItem);
-  $("allBtn").hidden = !(sellerFilter || focusItem || garageFilter);
+  $("allBtn").hidden = !((sellerFilter && !brandView) || focusItem || garageFilter);
   $("listTitle").parentElement.hidden = !!focusItem; $("listTitle").closest(".section-head").classList.toggle("focus", !!focusItem);
   $("listEyebrow").textContent = sellerFilter ? (sbr ? "Бренд" : "Продавець") : (brandsMode ? "Магазини" : (catMode === "garage" ? "Розділ" : "Каталог"));
   $("listTitle").textContent = sellerFilter ? (sbr ? sbr.name : "Речі від " + (sl ? sl.ownerName : "продавця")) : (focusItem ? "Річ за посиланням" : (brandsMode ? "Бренди" : (catMode === "garage" ? (garageFilter && garageById[garageFilter] ? garageById[garageFilter].name : "Гараж") : "")));
   $("listTitle").hidden = !$("listTitle").textContent;
-  const ht = $("homeTabs"); ht.hidden = !!(sellerFilter || focusItem); ht.innerHTML = "";
+  const ht = $("homeTabs"); ht.hidden = !!((sellerFilter && !brandView) || focusItem); ht.innerHTML = "";
   [["all", "Усі речі", ""], ["brands", "Бренди", "brands"], ["garage", "Гараж", "garage"]].forEach(([k, l, h]) => {
     const tb = el("button", "btn " + (catMode === k ? "btn-primary" : "btn-soft"), l); tb.type = "button"; tb.onclick = () => {location.hash = h;}; ht.appendChild(tb);
   });
