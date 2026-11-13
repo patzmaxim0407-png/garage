@@ -61,6 +61,7 @@ dialog::backdrop{background:rgba(13,29,22,.55)}
     <input type="search" id="q" placeholder="Пошук (ім’я, пошта, назва речі)…">
     <button class="btn s" id="refresh">Оновити</button> <button class="btn s" id="testTg">Тест Telegram</button> <button class="btn s" id="testMail">Тест пошти</button> <button class="btn s" id="backfillBtn">Оновити старі речі</button> <button class="btn on" id="adNew" hidden>＋ Додати рекламу</button> <button class="btn on" id="annNew" hidden>＋ Нове оголошення</button>
     <div id="priceBox" hidden></div>
+    <div id="wishBox" hidden></div>
     <div id="statsBox" hidden></div>
     <div class="wrap"><table><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
   </div>
@@ -291,6 +292,15 @@ $("priceBox").addEventListener("click", async e => {
     renderPricing();
   } catch (x) {alert("Не вдалося: " + (x.message || x.code));}
 });
+const DEFAULT_W = ["Хай сьогодні вам пощастить знайти саме ту річ.", "Кожна річ заслуговує на друге життя.", "Передай далі: комусь це зробить день.", "Маленька добра справа сьогодні повернеться до вас удвічі.", "Не викидайте: подаруйте речі новим господарям.", "Гарного дня й легких угод!", "Нехай у вашому домі буде лише те, що приносить радість.", "Купуйте усвідомлено: це простір для всіх.", "Хай сьогодні вам усміхнеться удача й гарна ціна.", "Простір, у якому речі шукають добрі руки."];
+function renderWishes() {
+  const box = $("wishBox");
+  if (D.wishes === undefined) {box.innerHTML = '<div class="muted">Для цього розділу потрібні оновлені функції (firebase deploy). Розгорніть їх і оновіть сторінку.</div>'; return;}
+  const list = D.wishes && D.wishes.length ? D.wishes : DEFAULT_W;
+  box.innerHTML = '<div class="muted small" style="margin-bottom:8px">Одне побажання на рядок. Щодня в блоці «Річ дня» показується наступне по колу (до 140 символів).</div><textarea id="wishText" rows="14" style="width:100%">' + esc(list.join("\n")) + '</textarea><div style="margin:12px 0"><button class="btn on" id="wishSave">Зберегти</button> <button class="btn s" id="wishReset">Повернути стандартні</button></div>';
+  $("wishSave").onclick = async () => {try {await call("adminAction", {action: "saveWishes", list: $("wishText").value.split("\n")}); alert("✅ Збережено."); await load();} catch (e) {alert("Не вдалося: " + (e.message || e.code));}};
+  $("wishReset").onclick = async () => {if (!confirm("Повернути стандартний список?")) return; try {await call("adminAction", {action: "saveWishes", list: []}); await load();} catch (e) {alert("Не вдалося: " + (e.message || e.code));}};
+}
 let annEditId = null;
 function openAnn(id) {
   const n = id ? D.announcements.find(x => x.id === id) : null; annEditId = id || null;
@@ -408,11 +418,11 @@ function render() {
     [open.length, "Доступні речі"], [sold.length, "Продані / передані"], [D.requests.length, "Запитів покупців"],
     [D.requests.filter(r => r.ttn).length, "Створено ТТН"], [blockedN, "Заблоковано акаунтів"], [newRep.length, "Нових скарг"],
   ].map(s => '<div class="stat"><b>' + s[0] + "</b><span>" + s[1] + "</span></div>").join("");
-  const T = [["users", "Користувачі"], ["items", "Усі речі"], ["garages", "Гаражі (" + D.garages.length + ")"], ["brands", "Бренди (" + D.brands.length + ")"], ["ads", "Реклама"], ["ann", "Оголошення"], ["pricing", "Ціни"], ["stats", "Статистика"], ["adorders", "Замовлення реклами" + (D.adOrders.filter(o => o.status === "paid").length ? " (" + D.adOrders.filter(o => o.status === "paid").length + ")" : "")], ["reports", "Скарги" + (newRep.length ? " (" + newRep.length + ")" : "")], ["requests", "Запити"]];
+  const T = [["users", "Користувачі"], ["items", "Усі речі"], ["garages", "Гаражі (" + D.garages.length + ")"], ["brands", "Бренди (" + D.brands.length + ")"], ["ads", "Реклама"], ["ann", "Оголошення"], ["wishes", "Побажання"], ["pricing", "Ціни"], ["stats", "Статистика"], ["adorders", "Замовлення реклами" + (D.adOrders.filter(o => o.status === "paid").length ? " (" + D.adOrders.filter(o => o.status === "paid").length + ")" : "")], ["reports", "Скарги" + (newRep.length ? " (" + newRep.length + ")" : "")], ["requests", "Запити"]];
   $("tabs").innerHTML = T.map(t => '<button class="btn ' + (tab === t[0] ? "on" : "s") + '" data-t="' + t[0] + '">' + t[1] + "</button>").join("");
   $("tabs").querySelectorAll("button").forEach(b => b.onclick = () => {tab = b.dataset.t; render();});
 
-  $("adNew").hidden = tab !== "ads"; $("annNew").hidden = tab !== "ann"; $("priceBox").hidden = tab !== "pricing"; $("tbody").closest(".wrap").hidden = tab === "pricing"; if (tab === "pricing") renderPricing(); $("statsBox").hidden = tab !== "stats";
+  $("adNew").hidden = tab !== "ads"; $("annNew").hidden = tab !== "ann"; $("priceBox").hidden = tab !== "pricing"; $("tbody").closest(".wrap").hidden = tab === "pricing" || tab === "wishes"; $("wishBox").hidden = tab !== "wishes"; if (tab === "wishes") renderWishes(); if (tab === "pricing") renderPricing(); $("statsBox").hidden = tab !== "stats";
   const q = $("q").value.trim().toLowerCase();
   let head = [], rows = [];
   if (tab === "users") {
