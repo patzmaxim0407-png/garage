@@ -321,6 +321,13 @@ select{-webkit-appearance:none !important;appearance:none !important;background-
 .lockpic b{position:relative;font-size:84px;font-weight:900;letter-spacing:.1em;color:#F6F0E1;line-height:1}
 .lockpic i{position:relative;font-style:normal;font-size:56px;font-weight:800;color:#E3B65E;line-height:1}
 .lockcard h3{margin:6px 18px 0}.lockcard p{margin:0 22px}
+@media (max-width: 700px) {
+  .herovideo{aspect-ratio:auto !important;height:236px}
+  .vfb{grid-template-columns:40% 60%}
+  .vfbi{padding:10px 12px;gap:4px}
+  .vfbi b{font-size:1rem}
+  .vfbi .pricetag{font-size:1.1rem}
+}
 </style>
 </head>
 <body>
@@ -822,7 +829,7 @@ const SUBCATS = {
 const icons = {"Одяг":"♧","Дім":"⌂","Техніка":"⌁","Книги":"▤","Дитяче":"☆","Спорт":"↗","Інше":"◇"};
 let noticeTimer = null;
 
-const OWNER = {name: "ФОП Пац Максим Сергійович", address: "Київ, Україна", email: "biznes.ua24@gmail.com", phone: "", telegram: ""}; // заповніть дані власника сайту
+const OWNER = {name: "ФОП Пац Максим Сергійович", code: "3562901597", address: "Київ, Україна", email: "biznes.ua24@gmail.com", phone: "", telegram: ""}; // заповніть дані власника сайту
 function ownerList() {
   const L = [];
   if (OWNER.name) L.push("Адміністрація: " + OWNER.name);
@@ -1176,7 +1183,7 @@ function dayCardNode(it, tag, hint) {
   const im = el("img"); im.src = photosOf(it)[0]; im.alt = it.title || ""; n.appendChild(im);
   const info = el("div", "vfbi");
   info.appendChild(el("span", "vtag", tag)); info.appendChild(el("b", "", it.title || "Без назви"));
-  info.appendChild(el("div", "pricetag", priceFrom(it))); info.appendChild(el("div", "muted small", cityDate(it)));
+  info.appendChild(el("div", "pricetag", minPriceOf(it) > 0 ? minPriceOf(it) + " грн" : "Безкоштовно")); info.appendChild(el("div", "muted small", cityDate(it)));
   const bt = el("span", "btn btn-primary btn-sm", "Подивитись"); bt.style.alignSelf = "flex-start"; info.appendChild(bt);
   if (hint) {const h = el("span", "small", hint); h.style.cssText = "text-decoration:underline;cursor:pointer;color:var(--muted)"; h.onclick = ev => {ev.stopPropagation(); needLogin(() => {tab = "mine"; setView("cabinet");});}; info.appendChild(h);}
   n.appendChild(info);
