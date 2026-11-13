@@ -177,7 +177,7 @@ async function load() {
   $("gate").hidden = false; $("gate").textContent = "Завантаження…"; $("app").hidden = true;
   try {
     const r = await call("adminData");
-    D = r.data; D.blocks = D.blocks || {}; D.ads = D.ads || []; D.adOrders = D.adOrders || []; D.announcements = D.announcements || []; PR = null; D.reports = D.reports || {} ; if (!Array.isArray(D.reports)) D.reports = [];
+    D = r.data; D.blocks = D.blocks || {}; D.ads = D.ads || []; D.adOrders = D.adOrders || []; D.announcements = D.announcements || []; D.garages = D.garages || []; D.brands = D.brands || []; D.brandPlans = D.brandPlans || []; PR = null; D.reports = D.reports || {} ; if (!Array.isArray(D.reports)) D.reports = [];
     $("gate").hidden = true; $("app").hidden = false; render();
   } catch (e) {
     $("gate").textContent = (e.code === "functions/permission-denied" || /permission/i.test(e.message || ""))
@@ -408,7 +408,7 @@ function render() {
     [open.length, "Доступні речі"], [sold.length, "Продані / передані"], [D.requests.length, "Запитів покупців"],
     [D.requests.filter(r => r.ttn).length, "Створено ТТН"], [blockedN, "Заблоковано акаунтів"], [newRep.length, "Нових скарг"],
   ].map(s => '<div class="stat"><b>' + s[0] + "</b><span>" + s[1] + "</span></div>").join("");
-  const T = [["users", "Користувачі"], ["items", "Усі речі"], ["ads", "Реклама"], ["ann", "Оголошення"], ["pricing", "Ціни"], ["stats", "Статистика"], ["adorders", "Замовлення реклами" + (D.adOrders.filter(o => o.status === "paid").length ? " (" + D.adOrders.filter(o => o.status === "paid").length + ")" : "")], ["reports", "Скарги" + (newRep.length ? " (" + newRep.length + ")" : "")], ["requests", "Запити"]];
+  const T = [["users", "Користувачі"], ["items", "Усі речі"], ["garages", "Гаражі (" + D.garages.length + ")"], ["brands", "Бренди (" + D.brands.length + ")"], ["ads", "Реклама"], ["ann", "Оголошення"], ["pricing", "Ціни"], ["stats", "Статистика"], ["adorders", "Замовлення реклами" + (D.adOrders.filter(o => o.status === "paid").length ? " (" + D.adOrders.filter(o => o.status === "paid").length + ")" : "")], ["reports", "Скарги" + (newRep.length ? " (" + newRep.length + ")" : "")], ["requests", "Запити"]];
   $("tabs").innerHTML = T.map(t => '<button class="btn ' + (tab === t[0] ? "on" : "s") + '" data-t="' + t[0] + '">' + t[1] + "</button>").join("");
   $("tabs").querySelectorAll("button").forEach(b => b.onclick = () => {tab = b.dataset.t; render();});
 
@@ -456,6 +456,35 @@ function render() {
         Math.round((o.amount || 0) / 100) + " грн",
         pill(st[0], st[1]) + (o.reason ? '<br><span class="muted small">' + esc(o.reason) + "</span>" : "") + (o.refund === "manual" ? '<br><span class="small" style="color:var(--danger)">Поверніть кошти вручну в кабінеті monobank</span>' : ""),
         btn("aoview", o.id, "Банери") + (o.status === "paid" ? btn("aoapprove", o.id, "Схвалити") : "") + ((o.status === "paid" || o.status === "new") ? btn("aoreject", o.id, "Відхилити", "d") : "") + ((o.status === "rejected" || o.status === "new") ? btn("aodel", o.id, "Видалити", "d") : "")];
+    });
+  }
+  if (tab === "garages") {
+    const base = location.href.replace(/admin\.html.*$/, "");
+    head = ["Гараж", "Власник", "Тип", "Речей", "Відкрили", "Створено", "Дії"];
+    rows = D.garages.slice().sort((x, y) => (y.createdAt || 0) - (x.createdAt || 0)).map(g => {
+      const its = D.items.filter(i => i.garageId === g.id), op = its.filter(i => i.status === "open").length, u = U[g.ownerId];
+      return ["<b>" + esc(g.name) + "</b>" + (g.desc ? '<br><span class="muted small">' + esc(g.desc) + "</span>" : ""),
+        esc(g.ownerName || (u && u.name) || "—") + (u && u.email ? '<br><span class="muted small">' + esc(u.email) + "</span>" : ""),
+        pill(g.closed ? "Закритий" : "Відкритий", g.closed ? "wait" : ""),
+        op + " з " + its.length,
+        g.closed ? (g.memberCount || 0) + (g.maxViewers ? " з " + g.maxViewers : " (без ліміту)") : "—",
+        fmt(g.createdAt),
+        '<a class="btn sm s" target="_blank" href="' + esc(base + "#garage=" + g.id) + '">Відкрити</a>'];
+    });
+  }
+  if (tab === "brands") {
+    const base = location.href.replace(/admin\.html.*$/, ""), planBy = {};
+    D.brandPlans.forEach(p => {planBy[p.id] = p;});
+    head = ["Бренд", "Власник", "Пакет", "Речей", "Оновлено", "Дії"];
+    rows = D.brands.slice().sort((x, y) => (y.updatedAt || 0) - (x.updatedAt || 0)).map(b => {
+      const u = U[b.id], pl = planBy[b.id], live = pl && pl.until > Date.now();
+      const its = D.items.filter(i => i.brandId === b.id), op = its.filter(i => i.status === "open").length;
+      return ["<b>" + esc(b.name || "—") + "</b>" + (b.bio ? '<br><span class="muted small">' + esc(b.bio) + "</span>" : ""),
+        esc((u && u.name) || "—") + (u && u.email ? '<br><span class="muted small">' + esc(u.email) + "</span>" : ""),
+        pl ? pill(live ? "Активний до " + fmt(pl.until) : "Закінчився " + fmt(pl.until), live ? "" : "bad") + '<br><span class="muted small">місць: ' + (pl.slots || 0) + "</span>" : pill("Без пакета", "wait"),
+        op + " з " + its.length,
+        fmt(b.updatedAt),
+        '<a class="btn sm s" target="_blank" href="' + esc(base + "#seller=" + b.id) + '">Сторінка</a>'];
     });
   }
   if (tab === "ann") {
