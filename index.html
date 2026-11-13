@@ -328,6 +328,14 @@ select{-webkit-appearance:none !important;appearance:none !important;background-
   .vfbi b{font-size:1rem}
   .vfbi .pricetag{font-size:1.1rem}
 }
+.vfb{grid-template-columns:44% 56%;grid-template-rows:minmax(0,1fr) auto}
+.vfb img{grid-row:1;width:100%;height:100%;min-height:0}
+.vfbi{grid-row:1;min-height:0;justify-content:center}
+.vfoot{grid-column:1/-1;padding:9px 14px;background:#F6F0E1;color:var(--muted);font-size:.82rem;font-weight:600;text-decoration:underline;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;border-top:1px solid var(--line)}
+@media (max-width: 700px) {
+  .vfb{grid-template-columns:40% 60%}
+  .vfbi{padding:10px 12px}
+}
 </style>
 </head>
 <body>
@@ -1185,8 +1193,8 @@ function dayCardNode(it, tag, hint) {
   info.appendChild(el("span", "vtag", tag)); info.appendChild(el("b", "", it.title || "Без назви"));
   info.appendChild(el("div", "pricetag", minPriceOf(it) > 0 ? minPriceOf(it) + " грн" : "Безкоштовно")); info.appendChild(el("div", "muted small", cityDate(it)));
   const bt = el("span", "btn btn-primary btn-sm", "Подивитись"); bt.style.alignSelf = "flex-start"; info.appendChild(bt);
-  if (hint) {const h = el("span", "small", hint); h.style.cssText = "text-decoration:underline;cursor:pointer;color:var(--muted)"; h.onclick = ev => {ev.stopPropagation(); needLogin(() => {tab = "mine"; setView("cabinet");});}; info.appendChild(h);}
   n.appendChild(info);
+  if (hint) {const h = el("div", "vfoot", hint); h.onclick = ev => {ev.stopPropagation(); needLogin(() => {tab = "mine"; setView("cabinet");});}; n.appendChild(h);}
   return n;
 }
 function dayFallback() {
