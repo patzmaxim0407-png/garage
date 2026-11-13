@@ -1922,7 +1922,7 @@ $("itemForm").addEventListener("submit", async e => {
       let gid = "", closedFlag = false; const dv = $("itemDest").value;
       if (dv) {
         gid = dv === "open" ? "go_" + uid : dv;
-        const gref = db.collection("garages").doc(gid), gsnap = await gref.get();
+        const gref = db.collection("garages").doc(gid); let gsnap; try {gsnap = await gref.get();} catch (e0) {gsnap = {exists: false};}
         if (!gsnap.exists) {
           if (dv !== "open") throw new Error("Гараж не знайдено.");
           await gref.set({ownerId: uid, ownerName: pname("Продавець"), name: "Відкритий гараж", desc: "", closed: false, createdAt: Date.now(), itemIds: []});
@@ -2338,4 +2338,3 @@ startApp();
 </script>
 </body>
 </html>
-
