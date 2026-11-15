@@ -99,6 +99,9 @@ dialog::backdrop{background:rgba(13,29,22,.55)}
     <div id="adVideoBox" hidden><label for="adVideo">Посилання на відео: формат 16:9, 1280 × 720 px, до 30 с (YouTube, Vimeo або .mp4)</label><input type="text" id="adVideo" placeholder="https://www.youtube.com/watch?v=...">
     <div class="hint">Формат відео: 16:9 (1280 × 720), до 30 секунд, без звуку; YouTube/Vimeo (з дозволеним вбудовуванням) або .mp4/.webm до 15 МБ. Картинки вище стають постером (16:9, 1280 × 720). Якщо відеореклами немає, у цьому місці показується «Річ дня».</div></div>
     <label for="adUrl">Посилання на сайт (куди веде клік)</label><input type="text" id="adUrl" placeholder="https://...">
+    <div id="adEveryBox" hidden><label for="adEvery">Як часто показувати наш банер між рекламодавцями</label>
+      <select id="adEvery"><option value="1">Перед кожним рекламодавцем (як було)</option><option value="2">Раз на 2 реклами</option><option value="3">Раз на 3 реклами</option><option value="5">Раз на 5 реклам</option><option value="10">Раз на 10 реклам</option><option value="0">Лише раз на коло, на початку</option></select>
+      <div class="hint">Якщо кожна реклама триває 10 секунд, то «раз на 5 реклам» означає наш банер приблизно раз на хвилину.</div></div>
     <label for="adSec">Скільки секунд показується (усі картинки разом)</label>
     <select id="adSec"><option value="10">10 секунд</option><option value="15">15 секунд</option><option value="20">20 секунд</option><option value="30" selected>30 секунд</option><option value="45">45 секунд</option><option value="60">1 хвилина</option><option value="90">1,5 хвилини</option><option value="120">2 хвилини</option><option value="180">3 хвилини</option><option value="300">5 хвилин</option></select>
     <div class="hint">Якщо картинок кілька, час ділиться між ними порівну. Після реклами показується наш банер, потім наступна реклама, і так по колу.</div>
@@ -357,7 +360,7 @@ function openAd(id) {
   adEditId = id || null; advPc = ad ? adImgsA(ad).slice() : []; advMob = ad && ad.mobImages ? ad.mobImages.slice() : [];
   $("adHead").textContent = own ? "Наш банер GARAGE 22" : (ad ? "Змінити рекламу" : "Нова реклама"); $("adErr").textContent = "";
   $("adFilePc").value = ""; $("adFileMob").value = "";
-  $("adOwnNote").hidden = !own; $("adFields").hidden = own; $("adFields2").hidden = own;
+  $("adEveryBox").hidden = !own; $("adEvery").value = String(ad && ad.every != null ? ad.every : 1); $("adOwnNote").hidden = !own; $("adFields").hidden = own; $("adFields2").hidden = own;
   $("adTitle").value = ad ? ad.title || "" : ""; $("adText").value = ad ? ad.text || "" : ""; $("adUrl").value = ad ? ad.url || "" : "";
   $("adSec").value = String(ad && ad.seconds ? ad.seconds : (own ? 15 : 30)); if (!$("adSec").value) $("adSec").value = "30";
   $("adVideo").value = ad ? ad.videoUrl || "" : ""; $("adPlace").value = ad ? ad.placement || "both" : "both"; adUI(); $("adOrder").value = ad ? ad.order || 0 : 0; $("adActive").checked = ad ? ad.active !== false : true;
@@ -390,6 +393,7 @@ $("adSave").onclick = async () => {
   try {
     if (!own && !advPc.length) throw new Error("Додайте хоча б одну картинку для комп’ютера.");
     const p = {action: "saveAd", adId: adEditId || undefined, url: $("adUrl").value.trim(), seconds: Number($("adSec").value) || 30, images: advPc, mobImages: advMob};
+    if (own) p.every = Number($("adEvery").value);
     if (!own) Object.assign(p, {title: $("adTitle").value.trim(), text: $("adText").value.trim(), videoUrl: $("adPlace").value === "video" ? $("adVideo").value.trim() : "", placement: $("adPlace").value, order: Number($("adOrder").value) || 0, active: $("adActive").checked});
     await call("adminAction", p); $("adDlg").close(); await load();
   } catch (e) {$("adErr").textContent = e.message || e.code;}
