@@ -177,13 +177,13 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
 .subrow{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
 .ls{display:none}
 @media (min-width: 561px) {
-  .grid.compact{grid-template-columns:repeat(auto-fill,minmax(205px,1fr)) !important;gap:14px !important}
+  .grid.compact{grid-template-columns:repeat(auto-fill,minmax(180px,1fr)) !important;gap:12px !important}
   .grid.compact .item-body{padding:12px;gap:2px}
   .grid.compact .item h3{font-size:1.02rem;margin:4px 0 2px}
   .grid.compact .item-desc{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:.88rem}
   .grid.compact .pricetag,.grid.compact .item-body > .muted,.grid.compact .hint,.grid.compact .item-meta .pill{display:none}
-  .grid.compact .act{flex-direction:column;gap:6px}
-  .grid.compact .act .btn{width:100%;padding:8px 10px;font-size:.84rem;white-space:nowrap}
+  .grid.compact .act{flex-direction:row;gap:6px}
+  .grid.compact .act .btn{flex:1 1 0;width:auto;min-width:0;padding:8px 6px;font-size:.84rem;white-space:nowrap}
   .grid.compact .act .notice{padding:7px 10px;font-size:.78rem;border-radius:10px;text-align:center;line-height:1.3}
   .grid.compact .ll{display:none}
   .grid.compact .ls{display:inline}
@@ -1741,7 +1741,7 @@ function card(it) {
         if (it.bidUntil) act.appendChild(el("div", "muted small", "Пропозиції приймаються до " + fmtD(it.bidUntil)));
       }
     } else {
-    const b1 = el("button", "btn btn-primary", m <= 0 ? "Забрати безкоштовно" : "Забрати за " + m.toLocaleString("uk-UA") + " грн"); b1.type = "button"; b1.onclick = () => needVar() && openOffer(it, true, chosen);
+    const b1 = el("button", "btn btn-primary", m <= 0 ? (focusItem ? "Забрати безкоштовно" : "Безкоштовно") : (focusItem ? "Забрати за " : "") + m.toLocaleString("uk-UA") + " грн"); b1.type = "button"; b1.onclick = () => needVar() && openOffer(it, true, chosen);
     const b2 = el("button", "btn btn-soft"); b2.innerHTML = '<span class="ll">Запропонувати свою ціну</span><span class="ls">Своя ціна</span>'; b2.type = "button"; b2.onclick = () => needVar() && openOffer(it, false, chosen);
     act.append(b1, b2);
     }
