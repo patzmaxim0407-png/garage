@@ -480,7 +480,8 @@ function render() {
     [open.length, "Доступні речі"], [sold.length, "Продані / передані"], [D.requests.length, "Запитів покупців"],
     [D.requests.filter(r => r.ttn).length, "Створено ТТН"], [blockedN, "Заблоковано акаунтів"], [newRep.length, "Нових скарг"],
   ].map(s => '<div class="stat"><b>' + s[0] + "</b><span>" + s[1] + "</span></div>").join("");
-  const T = [["users", "Користувачі"], ["items", "Усі речі"], ["garages", "Гаражі (" + D.garages.length + ")"], ["brands", "Бренди (" + D.brands.length + ")"], ["ads", "Реклама"], ["ann", "Оголошення"], ["wishes", "Побажання"], ["pricing", "Ціни"], ["stats", "Статистика"], ["adorders", "Замовлення реклами" + (D.adOrders.filter(o => o.status === "paid").length ? " (" + D.adOrders.filter(o => o.status === "paid").length + ")" : "")], ["errors", "Помилки" + (D.errors.filter(e => e.at > Date.now() - 86400000).length ? " (" + D.errors.filter(e => e.at > Date.now() - 86400000).length + ")" : "")], ["reports", "Скарги" + (newRep.length ? " (" + newRep.length + ")" : "")], ["requests", "Запити"]];
+  const supNew = Object.values(D.sup || {}).filter(x => x.lastBy === "b").length;
+  const T = [["users", "Користувачі"], ["items", "Усі речі"], ["garages", "Гаражі (" + D.garages.length + ")"], ["brands", "Бренди (" + D.brands.length + ")"], ["ads", "Реклама"], ["ann", "Оголошення"], ["wishes", "Побажання"], ["pricing", "Ціни"], ["stats", "Статистика"], ["adorders", "Замовлення реклами" + (D.adOrders.filter(o => o.status === "paid").length ? " (" + D.adOrders.filter(o => o.status === "paid").length + ")" : "")], ["errors", "Помилки" + (D.errors.filter(e => e.at > Date.now() - 86400000).length ? " (" + D.errors.filter(e => e.at > Date.now() - 86400000).length + ")" : "")], ["reports", "Скарги" + (newRep.length ? " (" + newRep.length + ")" : "")], ["requests", "Запити"], ["support", "Підтримка" + (supNew ? " (" + supNew + ")" : "")]];
   $("tabs").innerHTML = T.map(t => '<button class="btn ' + (tab === t[0] ? "on" : "s") + '" data-t="' + t[0] + '">' + t[1] + "</button>").join("");
   $("tabs").querySelectorAll("button").forEach(b => b.onclick = () => {tab = b.dataset.t; render();});
 
@@ -615,6 +616,15 @@ function render() {
     head = ["Річ", "Покупець", "Продавець", "Ціна", "Статус", "Дата", "ТТН"];
     rows = D.requests.slice().sort((a, b) => b.createdAt - a.createdAt).map(r => { const u = U[r.sellerId];
       return [esc(r.itemTitle), esc(r.buyerName), esc((u && (u.name || u.email)) || "—"), r.price, pill(r.status === "accepted" ? "Покупця обрано" : "Очікує вибору", r.status === "accepted" ? "sold" : "wait"), fmt(r.createdAt), esc(r.ttn || "—")]; });
+  }
+  if (tab === "support") {
+    head = ["Користувач", "Пошта", "Останнє повідомлення", "Коли", "Статус", "Дії"];
+    const act_ = x => x.lastBy === "b" ? 0 : 1;
+    rows = Object.keys(D.sup || {}).sort((a, b) => act_(D.sup[a]) - act_(D.sup[b]) || (D.sup[b].unread - D.sup[a].unread) || D.sup[b].at - D.sup[a].at).map(uid => {
+      const s_ = D.sup[uid], u = U[uid] || {};
+      const st = s_.unread ? pill("Нове", "wait") : (s_.lastBy === "b" ? pill("Чекає відповіді", "wait") : pill("Відповіли", "sold"));
+      return [(s_.unread ? "<b>" : "") + esc(u.name || "—") + (s_.unread ? "</b>" : ""), esc(u.email || uid), (s_.lastBy === "s" ? "Ви: " : "") + esc(s_.last), fmt(s_.at), st, btn("msg", uid, "Відкрити листування" + (s_.unread ? " ●" : ""))];
+    });
   }
   const shown = rows.filter(r => !q || r.join(" ").replace(/<[^>]+>/g, " ").toLowerCase().includes(q));
   $("thead").innerHTML = "<tr>" + head.map(h => "<th>" + h + "</th>").join("") + "</tr>";
