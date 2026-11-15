@@ -92,6 +92,14 @@ dialog{border:0;padding:0;width:min(560px,calc(100% - 28px));border-radius:22px;
 .gm-lv{display:flex;gap:6px}
 .gm-lv button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 14px;font:inherit;font-size:.9rem;cursor:pointer;color:var(--ink)}
 .gm-lv button.on{background:var(--green);color:#fff;border-color:var(--green)}
+.gm-lv{gap:4px}.gm-lv button{padding:6px 0;min-width:34px;width:34px;text-align:center}
+.gm-lv button:disabled{opacity:.45;cursor:not-allowed}
+.gm-lv{flex-wrap:wrap}
+.gm-meta{font-size:.92rem;font-weight:700;margin-bottom:8px;color:var(--green)}
+.gm-grid.c5{max-width:520px;grid-template-columns:repeat(5,1fr);gap:6px}
+.gm-win .stars{font-size:1.8rem;letter-spacing:4px;display:block;margin:2px 0 4px}
+.gm-card.done .gm-f{animation:gmpop .35s}
+@keyframes gmpop{0%{transform:rotateY(180deg) scale(1)}50%{transform:rotateY(180deg) scale(1.12)}100%{transform:rotateY(180deg) scale(1)}}
 .gm-st{font-size:.9rem;color:var(--muted)}
 .gm-grid{display:grid;gap:8px;margin:0 auto}
 .gm-grid.c3{max-width:330px}.gm-grid.c4{max-width:430px}
@@ -525,6 +533,7 @@ dialog.viewer::backdrop{background:#000}
       <a href="#" class="linkbtn" id="langLink">English</a>
       <a href="#" class="linkbtn" id="pwaLink" hidden>Додати на екран</a>
       <a href="#" class="linkbtn" id="gameLink">Гра: знайди пару</a>
+      <a href="#" class="linkbtn" id="shakeHint" hidden>📳 Потрусіть телефон, щоб пограти</a>
       <a href="#" class="linkbtn" id="adOrderLink">Замовити рекламу</a>
     </div>
     <div class="fbottom small">© 2026 GARAGE 22 · Київ, Україна · Доставка: Нова пошта</div>
@@ -611,9 +620,10 @@ dialog.viewer::backdrop{background:#000}
 <dialog id="gameDlg">
   <div class="modal-head"><h2>Знайди пару</h2><button class="close" type="button" id="gameX" aria-label="Закрити">×</button></div>
   <div class="form-body">
-    <div class="gm-top"><div class="gm-lv"><button type="button" data-n="12" class="on">Легко</button><button type="button" data-n="20">Складніше</button></div><div class="gm-st" id="gmSt"></div></div>
+    <div class="gm-meta" id="gmMeta"></div>
+    <div class="gm-top"><div class="gm-lv" id="gmLv"></div><div class="gm-st" id="gmSt"></div></div>
     <div class="gm-grid c3" id="gmGrid"></div>
-    <div class="gm-win" id="gmWin" hidden><b id="gmWinT"></b><span class="small" id="gmWinS"></span><div class="form-actions"><button type="button" class="btn btn-primary" id="gmAgain">Ще раз</button><button type="button" class="btn" id="gmClose">До каталогу</button></div></div>
+    <div class="gm-win" id="gmWin" hidden><b id="gmWinT"></b><span class="small" id="gmWinS"></span><div class="form-actions"><button type="button" class="btn btn-primary" id="gmNext">Наступний рівень</button><button type="button" class="btn btn-soft" id="gmAgain">Ще раз</button><button type="button" class="btn" id="gmClose">До каталогу</button></div></div>
   </div>
 </dialog>
 <dialog id="docDialog">
@@ -2873,58 +2883,120 @@ $("closeDoc").onclick = () => $("docDialog").close();
   const KEYS = Object.keys(IC);
   const col = ["#1B4D3E","#B8860B","#A33A32","#2F6F8F","#6B4E9B"];
   const icon = (k,i) => '<svg viewBox="0 0 48 48" fill="none" stroke="'+col[i%col.length]+'" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">'+IC[k]+'</svg>';
-  let n = 12, first = null, lock = false, moves = 0, found = 0, t0 = 0, timer = null;
+  const LV = [{p:3,c:3},{p:6,c:3},{p:8,c:4},{p:10,c:4,t:70},{p:12,c:4},{p:12,c:4,t:75},{p:15,c:5},{p:15,c:5,t:90}];
+  const TITLES = [[24,"Легенда GARAGE 22"],[18,"Майстер ресейлу"],[12,"Колекціонер"],[6,"Новачок гаража"],[0,"Гість гаража"]];
   const $g = id => document.getElementById(id);
-  const bestKey = () => "g22_memo_best_" + n;
-  const fmt = sec => Math.floor(sec/60) + ":" + String(sec%60).padStart(2,"0");
+  const fmt = sec => Math.floor(sec/60) + ":" + String(Math.max(0,sec)%60).padStart(2,"0");
+  let prog = {}; try { prog = JSON.parse(localStorage.getItem("g22_memo_prog")||"{}") || {}; } catch(e){}
+  const stars = i => prog[i] || 0;
+  const total = () => LV.reduce((a,_,i) => a + stars(i), 0);
+  const title = () => { const t = total(); return TITLES.find(x => t >= x[0])[1]; };
+  const save = () => { try { localStorage.setItem("g22_memo_prog", JSON.stringify(prog)); } catch(e){} };
+  const unlocked = i => i === 0 || stars(i-1) > 0;
+  let lvl = 0, first = null, lock = false, moves = 0, found = 0, t0 = 0, timer = null, left = 0, streak = 0, bonus = 0, over = false;
+  const star = k => "★".repeat(k) + "☆".repeat(3-k);
+  function head(){
+    $g("gmMeta").textContent = "★ " + total() + "/" + (LV.length*3) + " · " + title();
+    $g("gmLv").innerHTML = LV.map((x,i) => '<button type="button" data-i="'+i+'" class="'+(i===lvl?"on":"")+'"'+(unlocked(i)?"":" disabled")+'>'+(unlocked(i)?(i+1):"🔒")+'</button>').join("");
+    $g("gmLv").querySelectorAll("button").forEach(b => b.onclick = () => {lvl = Number(b.dataset.i); start();});
+  }
   function stat(){
-    const sec = t0 ? Math.round((Date.now()-t0)/1000) : 0;
-    $g("gmSt").textContent = "Ходів: " + moves + " · " + fmt(sec);
+    const L = LV[lvl], sec = t0 ? Math.round((Date.now()-t0)/1000) : 0;
+    let t = "Рівень " + (lvl+1) + " · Ходів: " + moves + " · " + (L.t ? "Лишилось: " + fmt(left) : fmt(sec));
+    if (streak >= 2) t += " · Серія ×" + streak;
+    $g("gmSt").textContent = t;
   }
   function start(){
-    clearInterval(timer); first = null; lock = false; moves = 0; found = 0; t0 = 0;
+    clearInterval(timer); first = null; lock = false; moves = 0; found = 0; t0 = 0; streak = 0; bonus = 0; over = false;
+    const L = LV[lvl]; left = L.t || 0;
     $g("gmWin").hidden = true;
-    const keys = KEYS.slice().sort(() => Math.random()-.5).slice(0, n/2);
-    const deck = keys.concat(keys).map((k,i) => ({k, c: KEYS.indexOf(k)})).sort(() => Math.random()-.5);
-    const g = $g("gmGrid"); g.className = "gm-grid " + (n === 12 ? "c3" : "c4");
-    g.innerHTML = deck.map(d => '<button type="button" class="gm-card" data-k="'+d.k+'" aria-label="Картка"><div class="gm-in"><div class="gm-b">22</div><div class="gm-f">'+icon(d.k,d.c)+'</div></div></button>').join("");
+    const pool = []; KEYS.forEach(k => col.forEach((_,c) => pool.push({k, c, id: k+c})));
+    const pick = pool.sort(() => Math.random()-.5).slice(0, L.p);
+    const deck = pick.concat(pick).sort(() => Math.random()-.5);
+    const g = $g("gmGrid"); g.className = "gm-grid c" + L.c;
+    g.innerHTML = deck.map(d => '<button type="button" class="gm-card" data-k="'+d.id+'" aria-label="Картка"><div class="gm-in"><div class="gm-b">22</div><div class="gm-f">'+icon(d.k,d.c)+'</div></div></button>').join("");
+    head(); stat();
+  }
+  function tick(){
+    const L = LV[lvl];
+    if (L.t) { left = Math.max(0, L.t + bonusTime - Math.round((Date.now()-t0)/1000)); if (left <= 0) return lose(); }
     stat();
   }
+  let bonusTime = 0;
+  function end(titleTxt, sub, k, next){
+    over = true; clearInterval(timer);
+    $g("gmWinT").innerHTML = (k ? '<span class="stars">'+star(k)+'</span>' : "") + titleTxt;
+    $g("gmWinS").textContent = sub;
+    $g("gmNext").hidden = !next; $g("gmWin").hidden = false;
+  }
+  function lose(){ end("Час вийшов", "Спробуйте ще раз: кожна знайдена пара додає 3 секунди.", 0, false); }
   function win(){
-    clearInterval(timer);
-    const sec = Math.round((Date.now()-t0)/1000);
-    let best = null; try { best = JSON.parse(localStorage.getItem(bestKey())||"null"); } catch(e){}
-    const better = !best || moves < best.m || (moves === best.m && sec < best.s);
-    if (better) { try { localStorage.setItem(bestKey(), JSON.stringify({m:moves,s:sec})); } catch(e){} }
-    $g("gmWinT").textContent = better ? "Новий рекорд!" : "Всі пари знайдено!";
-    $g("gmWinS").textContent = "Ходів: " + moves + " · Час: " + fmt(sec) + (!better && best ? " · Найкраще: " + best.m + " ходів, " + fmt(best.s) : "");
-    $g("gmWin").hidden = false;
+    const L = LV[lvl], sec = Math.round((Date.now()-t0)/1000);
+    let k = moves <= Math.ceil(L.p*1.6) ? 3 : moves <= Math.ceil(L.p*2.4) ? 2 : 1;
+    if (bonus >= 2 && k < 3) k++;
+    const was = stars(lvl); if (k > was) { prog[lvl] = k; save(); }
+    head();
+    const last = lvl === LV.length-1;
+    const sub = "Ходів: " + moves + " · Час: " + fmt(sec) + (bonus ? " · Серій по 3 підряд: " + bonus : "") + (k > was && was ? " · Новий рекорд!" : "");
+    if (last && total() >= LV.length*3) end("Ви пройшли всі рівні! Титул: " + title(), sub, k, false);
+    else end(last ? "Усі рівні пройдено!" : "Рівень " + (lvl+1) + " пройдено!", sub + " · " + title() + " (★ " + total() + "/" + (LV.length*3) + ")", k, !last);
   }
   $g("gmGrid").addEventListener("click", e => {
     const c = e.target.closest(".gm-card");
-    if (!c || lock || c.classList.contains("open") || c.classList.contains("done")) return;
-    if (!t0) { t0 = Date.now(); timer = setInterval(stat, 1000); }
+    if (!c || lock || over || c.classList.contains("open") || c.classList.contains("done")) return;
+    if (!t0) { t0 = Date.now(); bonusTime = 0; timer = setInterval(tick, 500); }
     c.classList.add("open");
     if (!first) { first = c; return; }
-    moves++; stat();
+    moves++;
     if (first.dataset.k === c.dataset.k) {
       first.classList.replace("open","done"); c.classList.replace("open","done");
-      first = null; found++;
-      if (found === n/2) setTimeout(win, 450);
+      first = null; found++; streak++;
+      if (LV[lvl].t) bonusTime += 3;
+      if (streak === 3) { bonus++; streak = 0; }
+      stat();
+      if (found === LV[lvl].p) setTimeout(win, 450);
     } else {
-      lock = true; const a = first; first = null;
+      streak = 0; stat(); lock = true; const a = first; first = null;
       setTimeout(() => { a.classList.remove("open"); c.classList.remove("open"); lock = false; }, 800);
     }
   });
-  document.querySelectorAll(".gm-lv button").forEach(b => b.onclick = () => {
-    document.querySelectorAll(".gm-lv button").forEach(x => x.classList.toggle("on", x === b));
-    n = Number(b.dataset.n); start();
-  });
-  const open = () => { const d = $g("gameDlg"); if (!d.open) d.showModal(); start(); };
+  const open = () => { const d = $g("gameDlg"); if (!d.open) d.showModal(); let i = 0; while (i < LV.length-1 && stars(i) > 0) i++; lvl = unlocked(lvl) ? lvl : i; start(); };
   $g("gameLink").onclick = e => { e.preventDefault(); open(); };
   $g("gmAgain").onclick = start;
+  $g("gmNext").onclick = () => { if (lvl < LV.length-1) lvl++; start(); };
   $g("gameX").onclick = $g("gmClose").onclick = () => { clearInterval(timer); $g("gameDlg").close(); };
   $g("gameDlg").addEventListener("close", () => clearInterval(timer));
+
+  /* потрусіть телефон: відкрити гру */
+  let shakeOn = false, lastShake = 0, lastMag = 0, hits = 0, hitT = 0;
+  function onMotion(e){
+    const a = e.accelerationIncludingGravity; if (!a) return;
+    const mag = Math.abs(a.x||0) + Math.abs(a.y||0) + Math.abs(a.z||0), d = Math.abs(mag - lastMag); lastMag = mag;
+    const now = Date.now();
+    if (d > 28) { if (now - hitT > 700) hits = 0; hits++; hitT = now; }
+    if (hits >= 3 && now - lastShake > 3000) {
+      hits = 0; lastShake = now;
+      if (document.querySelector("dialog[open]")) return;
+      open();
+    }
+  }
+  function enableShake(){
+    if (shakeOn || typeof DeviceMotionEvent === "undefined") return Promise.resolve(false);
+    const go = () => {window.addEventListener("devicemotion", onMotion); shakeOn = true; try {localStorage.setItem("g22_shake", "1");} catch(e){} return true;};
+    if (typeof DeviceMotionEvent.requestPermission === "function") return DeviceMotionEvent.requestPermission().then(r => r === "granted" ? go() : false).catch(() => false);
+    return Promise.resolve(go());
+  }
+  const touch = navigator.maxTouchPoints > 0 && window.matchMedia("(pointer:coarse)").matches;
+  if (touch) {
+    const ios = typeof DeviceMotionEvent !== "undefined" && typeof DeviceMotionEvent.requestPermission === "function";
+    const hint = $g("shakeHint"); if (hint) {
+      let on = false; try {on = localStorage.getItem("g22_shake") === "1";} catch(e){}
+      hint.hidden = false;
+      hint.onclick = e => {e.preventDefault(); enableShake().then(ok => {hint.textContent = ok ? "📳 Готово: потрусіть телефон" : "📳 Не вдалося увімкнути";});};
+      if (!ios) enableShake().then(ok => {if (ok) hint.textContent = "📳 Потрусіть телефон: відкриється гра";});
+      else if (on) {window.addEventListener("devicemotion", onMotion); shakeOn = true; hint.textContent = "📳 Потрусіть телефон: відкриється гра";}
+    }
+  }
 })();
 
 $("docOk").onclick = () => $("docDialog").close();
