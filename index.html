@@ -1292,8 +1292,9 @@ function adSlot(box, place, withOwn, off) {
   box.dataset.sig = sig; clearTimeout(adTimers[place]); box.innerHTML = "";
   let slides = [];
   if (!list.length) slides = ownSlides();
-  else list.forEach(a => {
-    if (withOwn) slides.push(...ownSlides());
+  else list.forEach((a, idx) => {
+    const ev = own && own.every != null ? Number(own.every) : 1;
+    if (withOwn && (ev === 0 ? idx === 0 : idx % ev === 0)) slides.push(...ownSlides());
     const imgs = adImgs(a); imgs.forEach((_, i) => slides.push({node: adSlideNode(a, i, false), ms: slideMs(a, imgs.length), ad: i === 0 ? a.id : null}));
   });
   const wrap = el("div", "adwrap");
