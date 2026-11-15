@@ -1709,7 +1709,7 @@ function card(it) {
     (isPromo(it, "topUntil") ? '<span class="tbadge">★ ТОП</span>' : "") + (it.garageId ? '<span class="gbadge">🔨 Гараж</span>' : "") + (rankHot.has(it.id) && !isPromo(it, "topUntil") ? '<span class="hbadge">🔥 Популярне</span>' : "") + (ph.length ? '<div class="gal">' + ph.map(u => '<img src="' + esc(u) + '" alt="' + esc(it.title) + '">').join("") + "</div>" : '<div class="item-visual">' + (icons[it.category] || "◇") + "</div>") +
     (ph.length > 1 ? '<div class="hint">← гортайте фото (' + ph.length + ") →</div>" : "") +
     '<div class="item-body"><div class="item-meta"><span>' + esc((it.category || "Інше") + (it.subcategory ? " · " + it.subcategory : "")) + '</span><span class="pill ' + (given ? "given" : "") + '">' + (given ? "Передано далі" : "Доступна") + "</span></div>" +
-    "<h3>" + esc(it.title || "Без назви") + '</h3>' + (brandName(it) ? '<div class="brandline"><span class="bb">' + (it.category === "Книги" ? "Видавництво" : "Бренд") + '</span><a href="#brand=' + esc(it.brandId) + '">' + esc(brandName(it)) + "</a></div>" : "") + bookLine(it) + '<div class="item-desc">' + esc(it.desc || it.description || "Без опису") + "</div>" +
+    "<h3>" + esc(it.title || "Без назви") + '</h3>' + (brandName(it) ? '<div class="brandline"><span class="bb">' + (it.category === "Книги" ? "Видавництво" : "Бренд") + '</span><a href="#brand=' + esc(it.brandId) + '">' + esc(brandName(it)) + "</a></div>" : "") + bookLine(it) + '' + (focusItem ? '<div class="item-desc">' + esc(it.desc || it.description || "Без опису") + "</div>" : "") +
     '<div class="muted small">Від: ' + (it.ownerId ? '<a href="#' + (it.brandId ? "brand" : "seller") + '=' + esc(it.ownerId) + '" style="color:inherit;text-decoration:underline">' + esc(brandName(it) || it.ownerName || "Користувач") + '</a>' : esc(brandName(it) || it.ownerName || "Користувач")) + '</div><div class="pricetag">' + (minPriceOf(it) > 0 ? '<span class="pl">' + (it.garageId ? "Мінімальна ціна від продавця: " : "Ціна продавця: ") + "</span>" : "") + esc(priceShort(it)) + '</div>' + bidLine(it) + '<div class="citydate">' + esc(cityDate(it)) + '</div><div class="act"></div></div>';
   if (focusItem && ph.length) {
     c.querySelectorAll(".gal img").forEach((im, k) => {im.style.cursor = "zoom-in"; im.onclick = ev => {ev.stopPropagation(); openViewer(ph, k);};});
@@ -1745,7 +1745,7 @@ function card(it) {
     act.append(b1, b2);
     }
   }
-  if (!it.demo && !given) {
+  if (focusItem && !it.demo && !given) {
     const sub = el("div", "subrow"); c.querySelector(".item-body").appendChild(sub);
     const sh = el("button", "btn btn-soft btn-sm"); sh.type = "button";
     if (it.closed) sh.textContent = "↗ Поділитись"; else sh.innerHTML = igIcon() + "Поділитись";
