@@ -1988,9 +1988,32 @@ $("askForm").addEventListener("submit", async e => {
   b.disabled = false;
 });
 ["askX", "askCancel"].forEach(id => $(id).onclick = () => $("askDialog").close());
+function supportCard(v) {
+  const q = myQs().find(x => x.itemId === "support"), bx = el("div", "cardbox"), unread = q && q.unreadFor === "b"; bx.style.borderColor = "var(--green)";
+  const head = el("div"); head.style.cssText = "display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap";
+  head.appendChild(el("b", "", (unread ? "● " : "") + "💬 GARAGE Team · Підтримка")); head.appendChild(el("span", "muted small", "Пишіть у будь-який момент")); bx.appendChild(head);
+  const msgs = q ? (q.msgs || []) : [], n = msgs.length, long = n > 3; if (unread) qOpen.add(q.id);
+  const open = !long || (q && qOpen.has(q.id));
+  const f = el("div", "qform"), ta = el("textarea"); ta.maxLength = 500; ta.placeholder = "Є питання чи проблема? Напишіть нам";
+  const ok = el("button", "btn btn-primary btn-sm", "Надіслати"); ok.type = "button"; const er = el("div", "err"); er.style.cssText = "font-weight:700;margin-top:6px";
+  ok.onclick = async () => {
+    const t = ta.value.trim(); if (!t) return; ok.disabled = true; er.textContent = ""; const now = Date.now(), msg = {by: "b", text: t.slice(0, 500), at: now}, ref = db.collection("questions").doc("support_" + currentUser.uid);
+    try {
+      if (q) await ref.update({msgs: (q.msgs || []).concat([msg]), updatedAt: now, unreadFor: "s"});
+      else await ref.set({itemId: "support", itemTitle: "GARAGE Team", ownerId: "support", askerId: currentUser.uid, askerName: String(pname("Користувач")).split(" ")[0].slice(0, 30), msgs: [msg], unreadFor: "s", createdAt: now, updatedAt: now});
+      showNotice("Надіслано. Відповідь прийде сюди.");
+    } catch (e) {ok.disabled = false; er.textContent = "⛔ Не вдалося надіслати. Спробуйте ще раз.";}
+  };
+  f.append(ta, ok); bx.appendChild(f); bx.appendChild(er);
+  if (!n) bx.appendChild(el("div", "muted small", "Тут ви можете написати команді GARAGE 22: питання про сайт, проблеми, пропозиції."));
+  (open ? msgs : msgs.slice(-1)).slice().reverse().forEach(m => {const mine = m.by === "b", d = el("div", "qm1 " + (mine ? "me" : "ot"), m.text); d.appendChild(el("small", "", (mine ? "Ви" : "GARAGE Team") + " · " + ntime(m.at))); bx.appendChild(d);});
+  if (long) {const tg = el("button", "btn btn-soft btn-sm", open ? "Згорнути" : "Показати все листування (" + n + ")"); tg.type = "button"; tg.style.marginTop = "6px"; tg.onclick = () => {if (open) qOpen.delete(q.id); else qOpen.add(q.id); render();}; bx.appendChild(tg);}
+  v.appendChild(bx);
+}
 function renderQuestions(v, none) {
-  const list = myQs().sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-  if (!list.length) {none("Запитань поки немає. Покупець може написати вам зі сторінки речі («Запитати продавця»), а ви можете запитати продавця про його річ."); return;}
+  const all = myQs().sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)), list = all.filter(q => q.itemId !== "support");
+  supportCard(v);
+  if (!list.length) {none("Запитань про речі поки немає. Покупець може написати вам зі сторінки речі («Запитати продавця»), а ви можете запитати продавця про його річ."); }
   list.forEach(q => {
     const role = qRole(q), unread = q.unreadFor === role, bx = el("div", "cardbox"); if (unread) bx.style.borderColor = "var(--green)";
     const head = el("div"); head.style.cssText = "display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap";
@@ -2027,7 +2050,7 @@ function renderQuestions(v, none) {
     dl.onclick = async () => {if (!confirm("Видалити це листування?")) return; try {await db.collection("questions").doc(q.id).delete();} catch (e) {showNotice("Не вдалося видалити.", true);}};
     bx.appendChild(rp); bx.appendChild(dl); v.appendChild(bx);
   });
-  const fresh = list.filter(q => q.unreadFor === qRole(q));
+  const fresh = all.filter(q => q.unreadFor === qRole(q));
   if (fresh.length) {clearTimeout(qTimer); qTimer = setTimeout(() => fresh.forEach(q => db.collection("questions").doc(q.id).update({unreadFor: ""}).catch(() => {})), 2000);}
 }
 
@@ -2654,7 +2677,7 @@ function renderCabinet() {
     }
     myQs().filter(q => q.unreadFor === qRole(q)).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)).forEach(q => {
       const bx = el("div", "cardbox"); bx.style.cssText = "cursor:pointer;border-color:var(--green)";
-      bx.appendChild(el("b", "", "● " + (qRole(q) === "s" ? "Нове запитання до вашої речі" : "Продавець відповів на ваше запитання")));
+      bx.appendChild(el("b", "", "● " + (q.itemId === "support" ? "Повідомлення від GARAGE Team" : qRole(q) === "s" ? "Нове запитання до вашої речі" : "Продавець відповів на ваше запитання")));
       const last = (q.msgs || [])[(q.msgs || []).length - 1]; bx.appendChild(el("div", "small", "«" + q.itemTitle + "»: " + (last ? String(last.text).slice(0, 120) : "")));
       bx.appendChild(el("div", "muted small", ntime(q.updatedAt || Date.now()))); bx.onclick = () => {tab = "questions"; render();}; v.appendChild(bx);
     });
