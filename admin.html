@@ -59,7 +59,7 @@ dialog::backdrop{background:rgba(13,29,22,.55)}
     <div class="stats" id="stats"></div>
     <div class="tabs" id="tabs"></div>
     <input type="search" id="q" placeholder="Пошук (ім’я, пошта, назва речі)…">
-    <button class="btn s" id="refresh">Оновити</button> <button class="btn s" id="testTg">Тест Telegram</button> <button class="btn s" id="testMail">Тест пошти</button> <button class="btn s" id="backfillBtn">Оновити старі речі</button> <button class="btn on" id="adNew" hidden>＋ Додати рекламу</button> <button class="btn on" id="annNew" hidden>＋ Нове оголошення</button>
+    <button class="btn s" id="refresh">Оновити</button> <button class="btn s" id="testTg">Тест Telegram</button> <button class="btn s" id="testMail">Тест пошти</button> <button class="btn s" id="backfillBtn">Оновити старі речі</button> <button class="btn on" id="brandNew" hidden>＋ Додати бренд</button> <button class="btn on" id="adNew" hidden>＋ Додати рекламу</button> <button class="btn on" id="annNew" hidden>＋ Нове оголошення</button>
     <div id="priceBox" hidden></div>
     <div id="wishBox" hidden></div>
     <div id="statsBox" hidden></div>
@@ -67,6 +67,22 @@ dialog::backdrop{background:rgba(13,29,22,.55)}
   </div>
 </main>
 
+<dialog id="brandDlg">
+  <div class="dh"><span>Додати бренд безкоштовно</span><button type="button" id="brandX">×</button></div>
+  <div class="db">
+    <label for="brOwner">Власник (почніть вводити пошту чи ім'я)</label>
+    <input type="text" id="brOwner" list="brUsers" autocomplete="off" placeholder="name@gmail.com"><datalist id="brUsers"></datalist>
+    <label for="brName">Назва бренду</label><input type="text" id="brName" maxlength="40">
+    <label for="brBio">Короткий опис</label><textarea id="brBio" rows="2" maxlength="300"></textarea>
+    <label for="brSlots">Пакет оголошень від бренду</label>
+    <select id="brSlots"><option value="0">Без пакета (лише сторінка бренду)</option><option value="10">10 оголошень</option><option value="20">20 оголошень</option><option value="50" selected>50 оголошень</option><option value="100">100 оголошень</option><option value="500">500 оголошень</option></select>
+    <label for="brDays">Скільки діє пакет</label>
+    <select id="brDays"><option value="30">30 днів</option><option value="90">3 місяці</option><option value="180">півроку</option><option value="365" selected>рік</option><option value="3650">10 років (фактично без обмеження)</option></select>
+    <div class="hint">Логотип власник додасть сам у Кабінеті → Профіль. Якщо в нього вже є активний пакет, він не зменшиться: час і кількість місць беруться більші.</div>
+    <div class="small muted" id="brErr" style="color:var(--danger);min-height:18px"></div>
+    <button class="btn on" id="brGo">Додати бренд</button>
+  </div>
+</dialog>
 <dialog id="blockDlg">
   <div class="dh"><span>Заблокувати акаунт</span><button type="button" id="blockX">×</button></div>
   <div class="db">
@@ -171,6 +187,21 @@ $("backfillBtn").onclick = async () => {
 };});
 $("q").oninput = render;
 $("blockX").onclick = () => $("blockDlg").close();
+$("brandX").onclick = () => $("brandDlg").close();
+$("brandNew").onclick = () => {
+  $("brUsers").innerHTML = D.users.slice().sort((a, b) => String(a.name || a.email).localeCompare(String(b.name || b.email))).map(u => '<option value="' + esc(u.email || u.uid) + '">' + esc(u.name || "") + "</option>").join("");
+  $("brOwner").value = ""; $("brName").value = ""; $("brBio").value = ""; $("brErr").textContent = ""; $("brandDlg").showModal();
+};
+$("brGo").onclick = async () => {
+  const b = $("brGo"); b.disabled = true; $("brErr").textContent = "";
+  try {
+    const v = $("brOwner").value.trim().toLowerCase(), u = D.users.find(x => String(x.email || "").toLowerCase() === v || x.uid === $("brOwner").value.trim());
+    if (!u) throw new Error("Оберіть власника зі списку користувачів: він має хоч раз увійти на сайт.");
+    await call("adminAction", {action: "addBrand", uid: u.uid, name: $("brName").value.trim(), bio: $("brBio").value.trim(), slots: Number($("brSlots").value), days: Number($("brDays").value)});
+    $("brandDlg").close(); await load();
+  } catch (e) {$("brErr").textContent = e.message || e.code;}
+  b.disabled = false;
+};
 $("photoX").onclick = () => $("photoDlg").close();
 auth.onAuthStateChanged(u => {
   $("loginBtn").hidden = !!u; $("outBtn").hidden = !u; $("who").textContent = u ? (u.email || "") : "";
@@ -427,7 +458,7 @@ function render() {
   $("tabs").innerHTML = T.map(t => '<button class="btn ' + (tab === t[0] ? "on" : "s") + '" data-t="' + t[0] + '">' + t[1] + "</button>").join("");
   $("tabs").querySelectorAll("button").forEach(b => b.onclick = () => {tab = b.dataset.t; render();});
 
-  $("adNew").hidden = tab !== "ads"; $("annNew").hidden = tab !== "ann"; $("priceBox").hidden = tab !== "pricing"; $("tbody").closest(".wrap").hidden = tab === "pricing" || tab === "wishes"; $("wishBox").hidden = tab !== "wishes"; if (tab === "wishes") renderWishes(); if (tab === "pricing") renderPricing(); $("statsBox").hidden = tab !== "stats";
+  $("brandNew").hidden = tab !== "brands"; $("adNew").hidden = tab !== "ads"; $("annNew").hidden = tab !== "ann"; $("priceBox").hidden = tab !== "pricing"; $("tbody").closest(".wrap").hidden = tab === "pricing" || tab === "wishes"; $("wishBox").hidden = tab !== "wishes"; if (tab === "wishes") renderWishes(); if (tab === "pricing") renderPricing(); $("statsBox").hidden = tab !== "stats";
   const q = $("q").value.trim().toLowerCase();
   let head = [], rows = [];
   if (tab === "users") {
