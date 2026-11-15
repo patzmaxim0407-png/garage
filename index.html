@@ -950,11 +950,10 @@ function bookLine(i) {
 const icons = {"Одяг":"♧","Дім":"⌂","Техніка":"⌁","Книги":"▤","Дитяче":"☆","Спорт":"↗","Інше":"◇"};
 let noticeTimer = null;
 
-const OWNER = {name: "ФОП Пац Максим Сергійович", code: "3562901597", address: "Київ, Україна", email: "biznes.ua24@gmail.com", phone: "", telegram: ""}; // заповніть дані власника сайту
+const OWNER = {name: "ФОП Пац Максим Сергійович", address: "Київ, Україна", email: "biznes.ua24@gmail.com", phone: "", telegram: ""}; // заповніть дані власника сайту
 function ownerList() {
   const L = [];
   if (OWNER.name) L.push("Адміністрація: " + OWNER.name);
-  if (OWNER.code) L.push("РНОКПП/ЄДРПОУ: " + OWNER.code);
   L.push("Місцезнаходження: " + OWNER.address);
   if (OWNER.email) L.push("E-mail: " + OWNER.email);
   if (OWNER.phone) L.push("Телефон: " + OWNER.phone);
