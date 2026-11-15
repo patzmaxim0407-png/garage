@@ -236,6 +236,7 @@ async function act(a, id) {
     if (a === "delq") {if (!confirm("Видалити це листування?")) return; await call("adminAction", {action: "deleteQuestion", id: id}); await load();}
     else if (a === "clearerr") {if (!confirm("Очистити весь журнал помилок?")) return; await call("adminAction", {action: "clearErrors"}); await load();}
     else if (a === "del") {if (!confirm("Видалити цю річ назавжди?")) return; await call("adminAction", {action: "deleteItem", itemId: id}); await load();}
+    else if (a === "msg") {const t = prompt("Повідомлення користувачу (прийде в кабінет і на пошту):"); if (!t || t.trim().length < 2) return; await call("adminAction", {action: "notifyUser", uid: id, text: t.trim()}); alert("Надіслано.");}
     else if (a === "unblock") {if (!confirm("Розблокувати акаунт?")) return; await call("adminAction", {action: "unblockUser", uid: id}); await load();}
     else if (a === "block") {
       blockUid = id; const u = D.users.find(x => x.uid === id) || {};
@@ -468,7 +469,7 @@ function render() {
       const L = byOwner[u.uid] || [], bl = D.blocks[u.uid], on = isBlocked(bl);
       const st = on ? pill(bl.until ? "Заблоковано до " + fmt(bl.until) : "Заблоковано назавжди", "bad") + (bl.reason ? '<br><span class="muted small">' + esc(bl.reason) + "</span>" : "") : pill("Активний", "");
       return [esc(u.name || "—"), esc(u.email), fmt(u.created), fmt(u.last), L.filter(i => i.status === "open").length, L.filter(i => i.status === "given").length, byBuyer[u.uid] || 0, st,
-        btn("items", u.uid, "Речі") + (on ? btn("unblock", u.uid, "Розблокувати") : btn("block", u.uid, "Заблокувати", "d"))];
+        btn("msg", u.uid, "Написати") + btn("items", u.uid, "Речі") + (on ? btn("unblock", u.uid, "Розблокувати") : btn("block", u.uid, "Заблокувати", "d"))];
     });
   }
   if (tab === "items") {
@@ -584,7 +585,7 @@ function render() {
     rows = D.reports.slice().sort((a, b) => b.createdAt - a.createdAt).map(r => { const o = U[r.ownerId], rp = U[r.reporterId], isNew = r.status === "new";
       return [esc(r.itemTitle), esc((o && (o.name || o.email)) || r.ownerId), esc(r.reason) + (r.text ? '<br><span class="muted small" style="white-space:pre-wrap">' + esc(r.text) + "</span>" : ""), esc(r.reporterId === "auto" ? "Автоперевірка" : ((rp && (rp.name || rp.email)) || "—")), fmt(r.createdAt),
         pill(isNew ? "Нова" : (r.status === "dismissed" ? "Відхилена" : "Опрацьована"), isNew ? "wait" : ""),
-        (r.qid ? btn("delq", r.qid, "Видалити листування", "d") + btn("block", r.ownerId, "Заблокувати іншого учасника", "d") : btn("photos", r.itemId, "Фото") + btn("approve", r.itemId, "Дозволити річ") + btn("del", r.itemId, "Видалити річ", "d") + btn("block", r.ownerId, "Заблокувати власника", "d")) + (isNew ? btn("close", r.id, "Опрацьовано") + btn("dismiss", r.id, "Відхилити") : "")]; });
+        (r.qid ? btn("msg", r.reporterId, "Написати скаржнику") + btn("msg", r.ownerId, "Написати іншому") + btn("delq", r.qid, "Видалити листування", "d") + btn("block", r.ownerId, "Заблокувати іншого учасника", "d") : btn("photos", r.itemId, "Фото") + btn("approve", r.itemId, "Дозволити річ") + btn("del", r.itemId, "Видалити річ", "d") + btn("block", r.ownerId, "Заблокувати власника", "d")) + (isNew ? btn("close", r.id, "Опрацьовано") + btn("dismiss", r.id, "Відхилити") : "")]; });
   }
   if (tab === "requests") {
     head = ["Річ", "Покупець", "Продавець", "Ціна", "Статус", "Дата", "ТТН"];
