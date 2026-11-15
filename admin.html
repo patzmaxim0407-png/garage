@@ -178,7 +178,7 @@ async function load() {
   $("gate").hidden = false; $("gate").textContent = "Завантаження…"; $("app").hidden = true;
   try {
     const r = await call("adminData");
-    D = r.data; D.blocks = D.blocks || {}; D.ads = D.ads || []; D.adOrders = D.adOrders || []; D.announcements = D.announcements || []; D.garages = D.garages || []; D.brands = D.brands || []; D.brandPlans = D.brandPlans || []; PR = null; D.reports = D.reports || {} ; if (!Array.isArray(D.reports)) D.reports = [];
+    D = r.data; D.blocks = D.blocks || {}; D.ads = D.ads || []; D.adOrders = D.adOrders || []; D.announcements = D.announcements || []; D.garages = D.garages || []; D.brands = D.brands || []; D.brandPlans = D.brandPlans || []; D.errors = D.errors || []; PR = null; D.reports = D.reports || {} ; if (!Array.isArray(D.reports)) D.reports = [];
     $("gate").hidden = true; $("app").hidden = false; render();
   } catch (e) {
     $("gate").textContent = (e.code === "functions/permission-denied" || /permission/i.test(e.message || ""))
@@ -199,7 +199,8 @@ const btn = (a, id, label, cls) => '<button class="btn sm ' + (cls || "s") + '" 
 
 async function act(a, id) {
   try {
-    if (a === "del") {if (!confirm("Видалити цю річ назавжди?")) return; await call("adminAction", {action: "deleteItem", itemId: id}); await load();}
+    if (a === "clearerr") {if (!confirm("Очистити весь журнал помилок?")) return; await call("adminAction", {action: "clearErrors"}); await load();}
+    else if (a === "del") {if (!confirm("Видалити цю річ назавжди?")) return; await call("adminAction", {action: "deleteItem", itemId: id}); await load();}
     else if (a === "unblock") {if (!confirm("Розблокувати акаунт?")) return; await call("adminAction", {action: "unblockUser", uid: id}); await load();}
     else if (a === "block") {
       blockUid = id; const u = D.users.find(x => x.uid === id) || {};
@@ -418,7 +419,7 @@ function render() {
     [open.length, "Доступні речі"], [sold.length, "Продані / передані"], [D.requests.length, "Запитів покупців"],
     [D.requests.filter(r => r.ttn).length, "Створено ТТН"], [blockedN, "Заблоковано акаунтів"], [newRep.length, "Нових скарг"],
   ].map(s => '<div class="stat"><b>' + s[0] + "</b><span>" + s[1] + "</span></div>").join("");
-  const T = [["users", "Користувачі"], ["items", "Усі речі"], ["garages", "Гаражі (" + D.garages.length + ")"], ["brands", "Бренди (" + D.brands.length + ")"], ["ads", "Реклама"], ["ann", "Оголошення"], ["wishes", "Побажання"], ["pricing", "Ціни"], ["stats", "Статистика"], ["adorders", "Замовлення реклами" + (D.adOrders.filter(o => o.status === "paid").length ? " (" + D.adOrders.filter(o => o.status === "paid").length + ")" : "")], ["reports", "Скарги" + (newRep.length ? " (" + newRep.length + ")" : "")], ["requests", "Запити"]];
+  const T = [["users", "Користувачі"], ["items", "Усі речі"], ["garages", "Гаражі (" + D.garages.length + ")"], ["brands", "Бренди (" + D.brands.length + ")"], ["ads", "Реклама"], ["ann", "Оголошення"], ["wishes", "Побажання"], ["pricing", "Ціни"], ["stats", "Статистика"], ["adorders", "Замовлення реклами" + (D.adOrders.filter(o => o.status === "paid").length ? " (" + D.adOrders.filter(o => o.status === "paid").length + ")" : "")], ["errors", "Помилки" + (D.errors.filter(e => e.at > Date.now() - 86400000).length ? " (" + D.errors.filter(e => e.at > Date.now() - 86400000).length + ")" : "")], ["reports", "Скарги" + (newRep.length ? " (" + newRep.length + ")" : "")], ["requests", "Запити"]];
   $("tabs").innerHTML = T.map(t => '<button class="btn ' + (tab === t[0] ? "on" : "s") + '" data-t="' + t[0] + '">' + t[1] + "</button>").join("");
   $("tabs").querySelectorAll("button").forEach(b => b.onclick = () => {tab = b.dataset.t; render();});
 
@@ -535,6 +536,12 @@ function render() {
       const rb = $("rankBtn"); if (rb) rb.onclick = async () => {rb.disabled = true; try {const r = await call("adminRank"); alert("Рейтинг оновлено: речей " + r.data.items + ", популярних " + r.data.hot + ", запитів " + r.data.queries);} catch (e) {alert("Не вдалося: " + (e.message || e.code));} rb.disabled = false;};
       rows = st.map(d => [esc(d.day), d.uniques || 0, d.visits || 0, d.itemViews || 0, sumO(d.adViews), sumO(d.adClicks), ctr(sumO(d.adClicks), sumO(d.adViews))]);
     }
+  }
+  if (tab === "errors") {
+    const dev = ua => { ua = ua || ""; const os = /iPhone|iPad/.test(ua) ? "iPhone" : (/Android/.test(ua) ? "Android" : (/Windows/.test(ua) ? "Windows" : (/Mac/.test(ua) ? "Mac" : "—"))), br = /Edg\//.test(ua) ? "Edge" : (/Firefox|FxiOS/.test(ua) ? "Firefox" : (/Chrome|CriOS/.test(ua) ? "Chrome" : (/Safari/.test(ua) ? "Safari" : ""))); return os + (br ? " · " + br : ""); };
+    head = ["Коли", "Що сталось", "Де", "Разів", "Користувач", "Пристрій"];
+    rows = D.errors.map(e => { const u = U[e.uid]; return [fmt(e.at), esc(e.msg), esc(e.where), esc(e.n || 1), e.uid ? esc((u && (u.name || u.email)) || e.uid) : "гість", esc(dev(e.ua))]; });
+    rows.push(['<button class="btn sm d" data-a="clearerr" data-id="x">Очистити журнал</button>', "Помилки старші за 30 днів видаляються самі.", "", "", "", ""]);
   }
   if (tab === "reports") {
     head = ["Річ", "Власник", "Причина", "Скаржився", "Дата", "Статус", "Дії"];
