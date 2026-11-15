@@ -1069,7 +1069,24 @@ function openRules() {
   const c = $("rulesContact"); c.hidden = !ADMIN_CONTACT; if (ADMIN_CONTACT) c.textContent = "Бачите порушення? Напишіть адміністратору: " + ADMIN_CONTACT;
   $("rulesDialog").showModal();
 }
+const ERR_SEEN = new Set();
+function logErr(msg) {
+  try {
+    msg = String(msg || "").replace(/\s+/g, " ").slice(0, 280);
+    if (!msg || ERR_SEEN.size >= 8 || ERR_SEEN.has(msg)) return;
+    if (/ResizeObserver|Script error|extension:|Non-Error promise|popup-closed|cancelled-popup|network-request-failed|Failed to fetch|Load failed|NetworkError/i.test(msg)) return;
+    ERR_SEEN.add(msg);
+    if (typeof demoMode !== "undefined" && demoMode) return;
+    let h = 0; for (let i = 0; i < msg.length; i++) h = (h * 31 + msg.charCodeAt(i)) | 0;
+    const day = new Date().toISOString().slice(0, 10);
+    db.collection("errorLogs").doc(day + "_" + (h >>> 0).toString(36)).set({
+      msg: msg, where: ((location.hash || "#") + " · " + (typeof view !== "undefined" ? view : "")).slice(0, 100), ua: navigator.userAgent.slice(0, 190),
+      uid: (typeof currentUser !== "undefined" && currentUser) ? currentUser.uid : "", url: location.host.slice(0, 70), at: Date.now(), n: firebase.firestore.FieldValue.increment(1)
+    }, {merge: true}).catch(() => {});
+  } catch (e) {}
+}
 function showNotice(msg, isErr) {
+  if (isErr && msg) logErr(msg);
   const n = $("notice");
   n.textContent = msg || "";
   n.className = msg ? "notice" + (isErr ? " error" : "") : "";
