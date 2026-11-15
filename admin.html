@@ -233,7 +233,7 @@ const btn = (a, id, label, cls) => '<button class="btn sm ' + (cls || "s") + '" 
 
 async function act(a, id) {
   try {
-    if (a === "delq") {if (!confirm("Видалити це запитання?")) return; await call("adminAction", {action: "deleteQuestion", id: id}); await load();}
+    if (a === "delq") {if (!confirm("Видалити це листування?")) return; await call("adminAction", {action: "deleteQuestion", id: id}); await load();}
     else if (a === "clearerr") {if (!confirm("Очистити весь журнал помилок?")) return; await call("adminAction", {action: "clearErrors"}); await load();}
     else if (a === "del") {if (!confirm("Видалити цю річ назавжди?")) return; await call("adminAction", {action: "deleteItem", itemId: id}); await load();}
     else if (a === "unblock") {if (!confirm("Розблокувати акаунт?")) return; await call("adminAction", {action: "unblockUser", uid: id}); await load();}
@@ -574,8 +574,8 @@ function render() {
     }
   }
   if (tab === "questions") {
-    head = ["Коли", "Річ", "Питання", "Відповідь", "Хто питав", "Дії"];
-    rows = D.questions.map(q => { const u = U[q.askerId]; return [fmt(q.createdAt), esc(q.itemTitle), esc(q.text), q.answer ? esc(q.answer) : '<span class="muted">без відповіді</span>', esc((u && (u.name || u.email)) || q.askerName || q.askerId), btn("delq", q.id, "Видалити", "d")]; });
+    head = ["Оновлено", "Річ", "Покупець", "Листування", "Дії"];
+    rows = D.questions.map(q => { const u = U[q.askerId]; return [fmt(q.updatedAt || q.createdAt), esc(q.itemTitle), esc((u && (u.name || u.email)) || q.askerName || q.askerId), (q.msgs || []).map(m => "<b>" + (m.by === "s" ? "Продавець" : "Покупець") + ":</b> " + esc(m.text)).join("<br>"), btn("delq", q.id, "Видалити", "d")]; });
   }
   if (tab === "errors") {
     const dev = ua => { ua = ua || ""; const os = /iPhone|iPad/.test(ua) ? "iPhone" : (/Android/.test(ua) ? "Android" : (/Windows/.test(ua) ? "Windows" : (/Mac/.test(ua) ? "Mac" : "—"))), br = /Edg\//.test(ua) ? "Edge" : (/Firefox|FxiOS/.test(ua) ? "Firefox" : (/Chrome|CriOS/.test(ua) ? "Chrome" : (/Safari/.test(ua) ? "Safari" : ""))); return os + (br ? " · " + br : ""); };
