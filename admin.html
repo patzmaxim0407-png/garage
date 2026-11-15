@@ -212,7 +212,7 @@ async function load() {
   $("gate").hidden = false; $("gate").textContent = "Завантаження…"; $("app").hidden = true;
   try {
     const r = await call("adminData");
-    D = r.data; D.blocks = D.blocks || {}; D.ads = D.ads || []; D.adOrders = D.adOrders || []; D.announcements = D.announcements || []; D.garages = D.garages || []; D.brands = D.brands || []; D.brandPlans = D.brandPlans || []; D.errors = D.errors || []; D.questions = D.questions || []; PR = null; D.reports = D.reports || {} ; if (!Array.isArray(D.reports)) D.reports = [];
+    D = r.data; D.blocks = D.blocks || {}; D.ads = D.ads || []; D.adOrders = D.adOrders || []; D.announcements = D.announcements || []; D.garages = D.garages || []; D.brands = D.brands || []; D.brandPlans = D.brandPlans || []; D.errors = D.errors || []; PR = null; D.reports = D.reports || {} ; if (!Array.isArray(D.reports)) D.reports = [];
     $("gate").hidden = true; $("app").hidden = false; render();
   } catch (e) {
     $("gate").textContent = (e.code === "functions/permission-denied" || /permission/i.test(e.message || ""))
@@ -455,7 +455,7 @@ function render() {
     [open.length, "Доступні речі"], [sold.length, "Продані / передані"], [D.requests.length, "Запитів покупців"],
     [D.requests.filter(r => r.ttn).length, "Створено ТТН"], [blockedN, "Заблоковано акаунтів"], [newRep.length, "Нових скарг"],
   ].map(s => '<div class="stat"><b>' + s[0] + "</b><span>" + s[1] + "</span></div>").join("");
-  const T = [["users", "Користувачі"], ["items", "Усі речі"], ["garages", "Гаражі (" + D.garages.length + ")"], ["brands", "Бренди (" + D.brands.length + ")"], ["ads", "Реклама"], ["ann", "Оголошення"], ["wishes", "Побажання"], ["pricing", "Ціни"], ["stats", "Статистика"], ["adorders", "Замовлення реклами" + (D.adOrders.filter(o => o.status === "paid").length ? " (" + D.adOrders.filter(o => o.status === "paid").length + ")" : "")], ["questions", "Питання (" + D.questions.length + ")"], ["errors", "Помилки" + (D.errors.filter(e => e.at > Date.now() - 86400000).length ? " (" + D.errors.filter(e => e.at > Date.now() - 86400000).length + ")" : "")], ["reports", "Скарги" + (newRep.length ? " (" + newRep.length + ")" : "")], ["requests", "Запити"]];
+  const T = [["users", "Користувачі"], ["items", "Усі речі"], ["garages", "Гаражі (" + D.garages.length + ")"], ["brands", "Бренди (" + D.brands.length + ")"], ["ads", "Реклама"], ["ann", "Оголошення"], ["wishes", "Побажання"], ["pricing", "Ціни"], ["stats", "Статистика"], ["adorders", "Замовлення реклами" + (D.adOrders.filter(o => o.status === "paid").length ? " (" + D.adOrders.filter(o => o.status === "paid").length + ")" : "")], ["errors", "Помилки" + (D.errors.filter(e => e.at > Date.now() - 86400000).length ? " (" + D.errors.filter(e => e.at > Date.now() - 86400000).length + ")" : "")], ["reports", "Скарги" + (newRep.length ? " (" + newRep.length + ")" : "")], ["requests", "Запити"]];
   $("tabs").innerHTML = T.map(t => '<button class="btn ' + (tab === t[0] ? "on" : "s") + '" data-t="' + t[0] + '">' + t[1] + "</button>").join("");
   $("tabs").querySelectorAll("button").forEach(b => b.onclick = () => {tab = b.dataset.t; render();});
 
@@ -573,10 +573,6 @@ function render() {
       rows = st.map(d => [esc(d.day), d.uniques || 0, d.visits || 0, d.itemViews || 0, sumO(d.adViews), sumO(d.adClicks), ctr(sumO(d.adClicks), sumO(d.adViews))]);
     }
   }
-  if (tab === "questions") {
-    head = ["Оновлено", "Річ", "Покупець", "Листування", "Дії"];
-    rows = D.questions.map(q => { const u = U[q.askerId]; return [fmt(q.updatedAt || q.createdAt), esc(q.itemTitle), esc((u && (u.name || u.email)) || q.askerName || q.askerId), (q.msgs || []).map(m => "<b>" + (m.by === "s" ? "Продавець" : "Покупець") + ":</b> " + esc(m.text)).join("<br>"), btn("delq", q.id, "Видалити", "d")]; });
-  }
   if (tab === "errors") {
     const dev = ua => { ua = ua || ""; const os = /iPhone|iPad/.test(ua) ? "iPhone" : (/Android/.test(ua) ? "Android" : (/Windows/.test(ua) ? "Windows" : (/Mac/.test(ua) ? "Mac" : "—"))), br = /Edg\//.test(ua) ? "Edge" : (/Firefox|FxiOS/.test(ua) ? "Firefox" : (/Chrome|CriOS/.test(ua) ? "Chrome" : (/Safari/.test(ua) ? "Safari" : ""))); return os + (br ? " · " + br : ""); };
     head = ["Коли", "Що сталось", "Де", "Разів", "Користувач", "Пристрій"];
@@ -586,9 +582,9 @@ function render() {
   if (tab === "reports") {
     head = ["Річ", "Власник", "Причина", "Скаржився", "Дата", "Статус", "Дії"];
     rows = D.reports.slice().sort((a, b) => b.createdAt - a.createdAt).map(r => { const o = U[r.ownerId], rp = U[r.reporterId], isNew = r.status === "new";
-      return [esc(r.itemTitle), esc((o && (o.name || o.email)) || r.ownerId), esc(r.reason) + (r.text ? '<br><span class="muted small">' + esc(r.text) + "</span>" : ""), esc(r.reporterId === "auto" ? "Автоперевірка" : ((rp && (rp.name || rp.email)) || "—")), fmt(r.createdAt),
+      return [esc(r.itemTitle), esc((o && (o.name || o.email)) || r.ownerId), esc(r.reason) + (r.text ? '<br><span class="muted small" style="white-space:pre-wrap">' + esc(r.text) + "</span>" : ""), esc(r.reporterId === "auto" ? "Автоперевірка" : ((rp && (rp.name || rp.email)) || "—")), fmt(r.createdAt),
         pill(isNew ? "Нова" : (r.status === "dismissed" ? "Відхилена" : "Опрацьована"), isNew ? "wait" : ""),
-        btn("photos", r.itemId, "Фото") + btn("approve", r.itemId, "Дозволити річ") + btn("del", r.itemId, "Видалити річ", "d") + btn("block", r.ownerId, "Заблокувати власника", "d") + (isNew ? btn("close", r.id, "Опрацьовано") + btn("dismiss", r.id, "Відхилити") : "")]; });
+        (r.qid ? btn("delq", r.qid, "Видалити листування", "d") + btn("block", r.ownerId, "Заблокувати іншого учасника", "d") : btn("photos", r.itemId, "Фото") + btn("approve", r.itemId, "Дозволити річ") + btn("del", r.itemId, "Видалити річ", "d") + btn("block", r.ownerId, "Заблокувати власника", "d")) + (isNew ? btn("close", r.id, "Опрацьовано") + btn("dismiss", r.id, "Відхилити") : "")]; });
   }
   if (tab === "requests") {
     head = ["Річ", "Покупець", "Продавець", "Ціна", "Статус", "Дата", "ТТН"];
