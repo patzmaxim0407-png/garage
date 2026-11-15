@@ -152,6 +152,13 @@ dialog::backdrop{background:rgba(13,29,22,.55)}
   <div class="db"><div id="photoDesc" class="small muted"></div><div class="photos" id="photoBox"></div></div>
 </dialog>
 
+<dialog id="supDlg">
+  <div class="dh"><span id="supTitle">Листування</span><button type="button" id="supX">×</button></div>
+  <div class="db"><textarea id="supText" maxlength="500" rows="3" style="width:100%;box-sizing:border-box" placeholder="Ваше повідомлення"></textarea>
+  <div style="margin:8px 0"><button class="btn on" id="supSend" type="button">Надіслати</button> <span class="small muted" id="supErr"></span></div>
+  <div id="supBox"></div></div>
+</dialog>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-functions-compat.js"></script>
@@ -231,12 +238,29 @@ function itemState(i) {
 const pill = (t, c) => '<span class="pill ' + (c || "") + '">' + esc(t) + "</span>";
 const btn = (a, id, label, cls) => '<button class="btn sm ' + (cls || "s") + '" data-a="' + a + '" data-id="' + esc(id) + '">' + label + "</button>";
 
+let supUid = null;
+async function openSup(uid) {
+  supUid = uid; const u = (D.users || []).find(x => x.uid === uid);
+  $("supTitle").textContent = "GARAGE Team · " + ((u && (u.name || u.email)) || uid); $("supText").value = ""; $("supErr").textContent = ""; $("supBox").innerHTML = "Завантаження…"; $("supDlg").showModal();
+  try {const r = await call("adminAction", {action: "supportGet", uid: uid}); drawSup(r.data.msgs || []);} catch (e) {$("supBox").textContent = "Помилка: " + (e.message || e);}
+}
+function drawSup(msgs) {
+  const b = $("supBox"); b.innerHTML = msgs.length ? "" : '<span class="muted small">Листування ще немає. Напишіть перше повідомлення.</span>';
+  msgs.slice().reverse().forEach(m => {const d = document.createElement("div"); const me = m.by === "s"; d.style.cssText = "margin:6px 0;padding:8px 10px;border-radius:10px;white-space:pre-wrap;background:" + (me ? "#dfeee6" : "#f1f1ee"); d.textContent = (me ? "GARAGE Team" : "Користувач") + " · " + fmt(m.at) + "\n" + m.text; b.appendChild(d);});
+}
+$("supX").onclick = () => $("supDlg").close();
+$("supSend").onclick = async () => {
+  const t = $("supText").value.trim(); if (!t || !supUid) return; $("supSend").disabled = true; $("supErr").textContent = "";
+  try {await call("adminAction", {action: "supportReply", uid: supUid, text: t}); $("supText").value = ""; const r = await call("adminAction", {action: "supportGet", uid: supUid}); drawSup(r.data.msgs || []); await load();}
+  catch (e) {$("supErr").textContent = "Помилка: " + (e.message || e);}
+  $("supSend").disabled = false;
+};
 async function act(a, id) {
   try {
     if (a === "delq") {if (!confirm("Видалити це листування?")) return; await call("adminAction", {action: "deleteQuestion", id: id}); await load();}
     else if (a === "clearerr") {if (!confirm("Очистити весь журнал помилок?")) return; await call("adminAction", {action: "clearErrors"}); await load();}
     else if (a === "del") {if (!confirm("Видалити цю річ назавжди?")) return; await call("adminAction", {action: "deleteItem", itemId: id}); await load();}
-    else if (a === "msg") {const t = prompt("Повідомлення користувачу (прийде в кабінет і на пошту):"); if (!t || t.trim().length < 2) return; await call("adminAction", {action: "notifyUser", uid: id, text: t.trim()}); alert("Надіслано.");}
+    else if (a === "msg") {await openSup(id);}
     else if (a === "unblock") {if (!confirm("Розблокувати акаунт?")) return; await call("adminAction", {action: "unblockUser", uid: id}); await load();}
     else if (a === "block") {
       blockUid = id; const u = D.users.find(x => x.uid === id) || {};
@@ -469,7 +493,7 @@ function render() {
       const L = byOwner[u.uid] || [], bl = D.blocks[u.uid], on = isBlocked(bl);
       const st = on ? pill(bl.until ? "Заблоковано до " + fmt(bl.until) : "Заблоковано назавжди", "bad") + (bl.reason ? '<br><span class="muted small">' + esc(bl.reason) + "</span>" : "") : pill("Активний", "");
       return [esc(u.name || "—"), esc(u.email), fmt(u.created), fmt(u.last), L.filter(i => i.status === "open").length, L.filter(i => i.status === "given").length, byBuyer[u.uid] || 0, st,
-        btn("msg", u.uid, "Написати") + btn("items", u.uid, "Речі") + (on ? btn("unblock", u.uid, "Розблокувати") : btn("block", u.uid, "Заблокувати", "d"))];
+        btn("msg", u.uid, (D.sup && D.sup[u.uid] ? "Відкрити листування" + (D.sup[u.uid].unread ? " ●" : "") : "Написати")) + btn("items", u.uid, "Речі") + (on ? btn("unblock", u.uid, "Розблокувати") : btn("block", u.uid, "Заблокувати", "d"))];
     });
   }
   if (tab === "items") {
