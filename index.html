@@ -95,6 +95,16 @@ dialog{border:0;padding:0;width:min(560px,calc(100% - 28px));border-radius:22px;
 .gm-lv{gap:4px}.gm-lv button{padding:6px 0;min-width:34px;width:34px;text-align:center}
 .gm-lv button:disabled{opacity:.45;cursor:not-allowed}
 .gm-lv{flex-wrap:wrap}
+.cg-stage{position:relative;height:290px;border-radius:14px;background:linear-gradient(#E4EFE3 0%,#F6ECD2 100%);overflow:hidden;margin-bottom:10px;border:1px solid var(--line)}
+.cg-hint{position:absolute;left:0;right:0;top:8px;text-align:center;font-size:.8rem;color:var(--muted);pointer-events:none}
+.cg-car{position:absolute;width:84px;top:0;will-change:top;pointer-events:none}
+.cg-car svg{width:100%;display:block}
+.cg-car.ok{animation:cgok .25s forwards}.cg-car.bad{animation:cgbad .3s forwards}
+@keyframes cgok{to{transform:scale(.3);opacity:0}}@keyframes cgbad{0%{transform:translateX(0)}25%{transform:translateX(-10px)}50%{transform:translateX(10px)}100%{transform:translateX(0);opacity:0}}
+.cg-row{display:grid;gap:8px}
+.cg-g{border:0;background:none;padding:0;cursor:pointer;text-align:center;font:inherit;font-size:.72rem;font-weight:700;color:var(--ink);-webkit-tap-highlight-color:transparent}
+.cg-g svg{width:100%;max-width:90px;display:block;margin:0 auto 2px}
+.cg-g:active svg{transform:scale(.94)}
 .gm-meta{font-size:.92rem;font-weight:700;margin-bottom:8px;color:var(--green)}
 .gm-grid.c5{max-width:520px;grid-template-columns:repeat(5,1fr);gap:6px}
 .gm-win .stars{font-size:1.8rem;letter-spacing:4px;display:block;margin:2px 0 4px}
@@ -326,6 +336,8 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
 .vgame .gt b{font-size:1.2rem;line-height:1.2}
 .vgame .gt .muted{font-size:.88rem;line-height:1.35}
 .vgame .gp{flex:0 0 auto;display:flex;gap:8px}
+.vgame .gbtns{display:flex;gap:8px;flex-wrap:wrap}
+@media (max-width:480px){.vgame .gp.two{display:none}.vgame .gbtns{flex-wrap:nowrap;width:100%}.vgame .gbtns .btn{flex:1 1 0;padding:8px 6px;font-size:.8rem;white-space:nowrap}}
 .vgame .gp i{display:flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:12px;font-style:normal}
 .vgame .gp .o{background:#fff;border:1px solid var(--line)}
 .vgame .gp .o svg{width:40px;height:40px}
@@ -533,6 +545,7 @@ dialog.viewer::backdrop{background:#000}
       <a href="#" class="linkbtn" id="langLink">English</a>
       <a href="#" class="linkbtn" id="pwaLink" hidden>Додати на екран</a>
       <a href="#" class="linkbtn" id="gameLink">Гра: знайди пару</a>
+      <a href="#" class="linkbtn" id="carLink">Гра: авто в гараж</a>
       <a href="#" class="linkbtn" id="shakeHint" hidden>📳 Потрусіть телефон, щоб пограти</a>
       <a href="#" class="linkbtn" id="adOrderLink">Замовити рекламу</a>
     </div>
@@ -624,6 +637,16 @@ dialog.viewer::backdrop{background:#000}
     <div class="gm-top"><div class="gm-lv" id="gmLv"></div><div class="gm-st" id="gmSt"></div></div>
     <div class="gm-grid c3" id="gmGrid"></div>
     <div class="gm-win" id="gmWin" hidden><b id="gmWinT"></b><span class="small" id="gmWinS"></span><div class="form-actions"><button type="button" class="btn btn-primary" id="gmNext">Наступний рівень</button><button type="button" class="btn btn-soft" id="gmAgain">Ще раз</button><button type="button" class="btn" id="gmClose">До каталогу</button></div></div>
+  </div>
+</dialog>
+<dialog id="carDlg">
+  <div class="modal-head"><h2>Авто в гараж</h2><button class="close" type="button" id="carX" aria-label="Закрити">×</button></div>
+  <div class="form-body">
+    <div class="gm-meta" id="carMeta"></div>
+    <div class="gm-top"><div class="gm-lv" id="carLv"></div><div class="gm-st" id="carSt"></div></div>
+    <div class="cg-stage" id="carStage"><div class="cg-hint" id="carHint">Торкніться гаража того ж кольору, що й машинка</div></div>
+    <div class="cg-row" id="carRow"></div>
+    <div class="gm-win" id="carWin" hidden><b id="carWinT"></b><span class="small" id="carWinS"></span><div class="form-actions"><button type="button" class="btn btn-primary" id="carNext">Наступний рівень</button><button type="button" class="btn btn-soft" id="carAgain">Ще раз</button><button type="button" class="btn" id="carClose">До каталогу</button></div></div>
   </div>
 </dialog>
 <dialog id="docDialog">
@@ -1471,13 +1494,16 @@ function garageAdNode() {
 function gameNode() {
   const c = el("div", "vgame");
   const t = el("div", "gt");
-  t.appendChild(el("small", "", "Не сумуй"));
-  t.appendChild(el("b", "", "Знайди пару"));
-  t.appendChild(el("span", "muted", "Міні-гра: відкривай картки й шукай однакові речі. Хвилинка відпочинку."));
-  const bt = el("button", "btn btn-primary btn-sm", "Пограти"); bt.type = "button"; bt.onclick = () => $("gameLink").click(); t.appendChild(bt);
+  t.appendChild(el("small", "", "Хвилинка відпочинку"));
+  t.appendChild(el("b", "", "Пограй з нами"));
+  t.appendChild(el("span", "muted", "Дві міні-ігри: знайди пару та розсортуй авто по гаражах."));
+  const row = el("div", "gbtns");
+  const b1 = el("button", "btn btn-primary btn-sm", "Знайди пару"); b1.type = "button"; b1.onclick = () => $("gameLink").click();
+  const b2 = el("button", "btn btn-soft btn-sm", "Авто в гараж"); b2.type = "button"; b2.onclick = () => $("carLink").click();
+  row.append(b1, b2); t.appendChild(row);
   c.appendChild(t);
-  const pic = el("div", "gp");
-  pic.innerHTML = '<i class="o"><svg viewBox="0 0 48 48" fill="none" stroke="#6B4E9B" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M16 6l-11 7 5 7 5-3v22h18V17l5 3 5-7-11-7c-1 4-4 6-8 6s-7-2-8-6z"/></svg></i><i class="c">?</i>';
+  const pic = el("div", "gp two");
+  pic.innerHTML = '<i class="o"><svg viewBox="0 0 48 48" fill="none" stroke="#6B4E9B" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M16 6l-11 7 5 7 5-3v22h18V17l5 3 5-7-11-7c-1 4-4 6-8 6s-7-2-8-6z"/></svg></i><i class="o"><svg viewBox="0 0 48 48" fill="none" stroke="#A33A32" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 30c0-3 2-5 5-5l6-8c1-1 2-2 4-2h12c2 0 3 1 4 2l5 8c3 1 4 3 4 5v3H5z"/><circle cx="15" cy="36" r="4"/><circle cx="35" cy="36" r="4"/></svg></i>';
   c.appendChild(pic);
   return c;
 }
@@ -2977,7 +3003,7 @@ $("closeDoc").onclick = () => $("docDialog").close();
     if (hits >= 3 && now - lastShake > 3000) {
       hits = 0; lastShake = now;
       if (document.querySelector("dialog[open]")) return;
-      open();
+      if (Math.random() < .5) open(); else $g("carLink").click();
     }
   }
   function enableShake(){
@@ -2997,6 +3023,79 @@ $("closeDoc").onclick = () => $("docDialog").close();
       else if (on) {window.addEventListener("devicemotion", onMotion); shakeOn = true; hint.textContent = "📳 Потрусіть телефон: відкриється гра";}
     }
   }
+})();
+
+/* ===== game: cars to garages ===== */
+(function(){
+  const $c = id => document.getElementById(id);
+  const COLS = [["Червоний","#D64545"],["Синій","#2F6FBF"],["Жовтий","#E9B53A"],["Зелений","#2E8B57"],["Фіолетовий","#7B4FB3"]];
+  const LV = [{k:3,n:8,d:4800},{k:3,n:12,d:4000},{k:4,n:12,d:4000},{k:4,n:15,d:3300},{k:5,n:15,d:3300},{k:5,n:20,d:2700}];
+  const TITLES = [[18,"Король гаражу"],[15,"Диспетчер гаража"],[9,"Водій"],[3,"Паркувальник"],[0,"Стажер"]];
+  let prog = {}; try { prog = JSON.parse(localStorage.getItem("g22_car_prog")||"{}") || {}; } catch(e){}
+  const stars = i => prog[i] || 0, total = () => LV.reduce((a,_,i) => a + stars(i), 0), unlocked = i => i === 0 || stars(i-1) > 0;
+  const title = () => TITLES.find(x => total() >= x[0])[1];
+  const save = () => { try { localStorage.setItem("g22_car_prog", JSON.stringify(prog)); } catch(e){} };
+  const star = k => "★".repeat(k) + "☆".repeat(3-k);
+  const carSvg = (col, kind) => {
+    const body = ['<path d="M5 32c0-4 2-6 6-7l9-10c1-1 3-2 5-2h20c2 0 4 1 5 2l9 10c5 1 8 3 8 7v5c0 2-1 3-3 3H8c-2 0-3-1-3-3z"/><path d="M26 17h12v8H20zM42 17h8l7 8H42z" fill="#DDEFF7"/>',
+                  '<path d="M5 32c0-4 2-6 6-7l5-9c1-2 3-3 5-3h28c3 0 5 2 6 4l3 8c4 1 6 3 6 7v5c0 2-1 3-3 3H8c-2 0-3-1-3-3z"/><path d="M20 15h14v10H17zM38 15h12l3 10H38z" fill="#DDEFF7"/>',
+                  '<path d="M5 14c0-2 1-4 4-4h46c3 0 4 2 4 4v8l7 4c3 1 4 3 4 6v7c0 2-1 3-3 3H8c-2 0-3-1-3-3z"/><path d="M12 14h14v9H12zM30 14h14v9H30zM48 14h8v9H48z" fill="#DDEFF7"/>'][kind % 3];
+    return '<svg viewBox="0 0 84 52" stroke="#222" stroke-width="2.2" stroke-linejoin="round"><g fill="'+col+'">'+body+'</g><circle cx="24" cy="42" r="7" fill="#333"/><circle cx="24" cy="42" r="2.5" fill="#ccc" stroke="none"/><circle cx="62" cy="42" r="7" fill="#333"/><circle cx="62" cy="42" r="2.5" fill="#ccc" stroke="none"/></svg>';
+  };
+  const gSvg = col => '<svg viewBox="0 0 64 56" stroke="'+col+'" stroke-width="3" stroke-linejoin="round"><path d="M4 22L32 6l28 16v30H4z" fill="#fff"/><rect x="14" y="26" width="36" height="26" fill="'+col+'"/><path d="M14 33h36M14 40h36M14 47h36" stroke="#fff" stroke-width="2"/></svg>';
+  let lvl = 0, lives = 3, done = 0, cur = null, raf = 0, running = false, spawnT = 0;
+  const L = () => LV[lvl];
+  function head(){
+    $c("carMeta").textContent = "★ " + total() + "/" + (LV.length*3) + " · " + title();
+    $c("carLv").innerHTML = LV.map((x,i) => '<button type="button" data-i="'+i+'" class="'+(i===lvl?"on":"")+'"'+(unlocked(i)?"":" disabled")+'>'+(unlocked(i)?(i+1):"🔒")+'</button>').join("");
+    $c("carLv").querySelectorAll("button").forEach(b => b.onclick = () => {lvl = Number(b.dataset.i); start();});
+  }
+  function stat(){ $c("carSt").textContent = "Рівень " + (lvl+1) + " · " + done + "/" + L().n + " · " + "♥".repeat(lives) + "♡".repeat(3-lives); }
+  function stop(){ running = false; cancelAnimationFrame(raf); clearTimeout(spawnT); if (cur) {cur.el.remove(); cur = null;} }
+  function start(){
+    stop(); lives = 3; done = 0; $c("carWin").hidden = true; $c("carHint").style.display = "";
+    const k = L().k, row = $c("carRow"); row.style.gridTemplateColumns = "repeat(" + k + ",1fr)";
+    row.innerHTML = COLS.slice(0,k).map((c,i) => '<button type="button" class="cg-g" data-c="'+i+'" aria-label="'+c[0]+' гараж">'+gSvg(c[1])+c[0]+'</button>').join("");
+    row.querySelectorAll(".cg-g").forEach(b => b.onclick = () => pick(Number(b.dataset.c)));
+    head(); stat(); running = true; spawnT = setTimeout(spawn, 600);
+  }
+  function spawn(){
+    if (!running) return;
+    const st = $c("carStage"), c = Math.floor(Math.random()*L().k), el = document.createElement("div"); el.className = "cg-car";
+    el.innerHTML = carSvg(COLS[c][1], Math.floor(Math.random()*3));
+    const w = st.clientWidth, x = 10 + Math.random()*(w - 84 - 20); el.style.left = x + "px"; st.appendChild(el);
+    cur = {c, el, t0: performance.now(), dur: L().d, maxTop: st.clientHeight - 52}; $c("carHint").style.display = "none";
+    raf = requestAnimationFrame(tick);
+  }
+  function tick(now){
+    if (!running || !cur) return;
+    const p = (now - cur.t0) / cur.dur;
+    if (p >= 1) return miss();
+    cur.el.style.top = (p * cur.maxTop) + "px"; raf = requestAnimationFrame(tick);
+  }
+  function next(){ cur = null; if (!running) return; if (done >= L().n) return win(); spawnT = setTimeout(spawn, 450); }
+  function pick(i){
+    if (!running || !cur) return;
+    const c = cur; cur = null; cancelAnimationFrame(raf);
+    if (c.c === i) {done++; c.el.classList.add("ok");} else {lives--; c.el.classList.add("bad");}
+    setTimeout(() => c.el.remove(), 320); stat();
+    if (lives <= 0) return lose(); cur = null; spawnT = setTimeout(() => {if (done >= L().n) win(); else spawn();}, 450);
+  }
+  function miss(){ const c = cur; cur = null; lives--; c.el.classList.add("bad"); setTimeout(() => c.el.remove(), 320); stat(); if (lives <= 0) return lose(); spawnT = setTimeout(spawn, 450); }
+  function fin(t, sub, k, nx){ running = false; cancelAnimationFrame(raf); clearTimeout(spawnT); $c("carWinT").innerHTML = (k ? '<span class="stars">'+star(k)+'</span>' : "") + t; $c("carWinS").textContent = sub; $c("carNext").hidden = !nx; $c("carWin").hidden = false; }
+  function lose(){ fin("Спробуйте ще раз", "Життя закінчились. Дивіться на колір машинки та торкайтесь гаража.", 0, false); }
+  function win(){
+    const k = lives, was = stars(lvl); if (k > was) {prog[lvl] = k; save();} head();
+    const last = lvl === LV.length-1;
+    fin(last ? "Усі рівні пройдено! Титул: " + title() : "Рівень " + (lvl+1) + " пройдено!", "Життів лишилось: " + lives + " · " + title() + " (★ " + total() + "/" + (LV.length*3) + ")", k, !last);
+  }
+  const open = () => { const d = $c("carDlg"); if (!d.open) d.showModal(); let i = 0; while (i < LV.length-1 && stars(i) > 0) i++; lvl = unlocked(lvl) ? lvl : i; start(); };
+  $c("carLink").onclick = e => {e.preventDefault(); open();};
+  $c("carAgain").onclick = start;
+  $c("carNext").onclick = () => {if (lvl < LV.length-1) lvl++; start();};
+  $c("carX").onclick = $c("carClose").onclick = () => $c("carDlg").close();
+  $c("carDlg").addEventListener("close", stop);
+  document.addEventListener("visibilitychange", () => {if (document.hidden && $c("carDlg").open && running) start();});
 })();
 
 $("docOk").onclick = () => $("docDialog").close();
