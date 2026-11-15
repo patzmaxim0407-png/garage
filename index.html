@@ -1926,11 +1926,16 @@ async function repayAd(o) {
 /* ---------- скарги ---------- */
 let reportTarget = null;
 function openReport(it) {
-  needLogin(() => {reportTarget = it; $("reportTitle").textContent = "«" + it.title + "»"; $("reportText").value = ""; $("reportErr").textContent = ""; $("reportDialog").showModal();});
+  needLogin(() => {reportTarget = it; $("reportReason").innerHTML = ["Заборонена річ", "Шахрайство", "Неправдивий опис або фото", "Образливий вміст", "Інше"].map(x => "<option>" + x + "</option>").join(""); $("reportTitle").textContent = "«" + it.title + "»"; $("reportText").value = ""; $("reportErr").textContent = ""; $("reportDialog").showModal();});
 }
 $("reportForm").addEventListener("submit", async e => {
   e.preventDefault(); const b = $("sendReport"); b.disabled = true; $("reportErr").textContent = "";
   try {
+    if (reportTarget.thread) {
+      const q = reportTarget.thread, role = reportTarget.role, com = $("reportText").value.trim().slice(0, 500);
+      const snap = (q.msgs || []).slice(-12).map(m => (m.by === "s" ? "Продавець: " : "Покупець: ") + m.text).join("\n").slice(0, 1400);
+      await db.collection("reports").add({itemId: "q:" + q.id, itemTitle: "Листування: " + q.itemTitle, ownerId: role === "s" ? q.askerId : q.ownerId, reporterId: currentUser.uid, reason: $("reportReason").value, text: (com ? "Коментар скаржника: " + com + "\n\n" : "") + "Листування:\n" + snap, qid: q.id, status: "new", createdAt: Date.now()});
+    } else
     await db.collection("reports").add({itemId: reportTarget.id, itemTitle: reportTarget.title, ownerId: reportTarget.ownerId, reporterId: currentUser.uid, reason: $("reportReason").value, text: $("reportText").value.trim().slice(0, 500), status: "new", createdAt: Date.now()});
     $("reportDialog").close(); showNotice("Дякуємо! Скаргу надіслано адміністрації.");
   } catch (er) {$("reportErr").textContent = "Не вдалося надіслати: " + (er.code || er.message);}
@@ -2013,11 +2018,10 @@ function renderQuestions(v, none) {
     if (!open) bx.appendChild(el("div", "muted small", "Попередніх повідомлень: " + (n - 1)));
 
     const rp = el("button", "linkbtn small", "Поскаржитись"); rp.type = "button"; rp.style.cssText = "background:none;border:0;color:var(--muted);padding:6px 14px 0 0;display:inline-block";
-    rp.onclick = async () => {
-      if (!confirm("Поскаржитись на цю розмову? Адміністрація побачить її текст.")) return;
-      const snap = (q.msgs || []).slice(-12).map(m => (m.by === "s" ? "Продавець: " : "Покупець: ") + m.text).join("\n").slice(0, 1800);
-      try {await db.collection("reports").add({itemId: "q:" + q.id, itemTitle: "Листування: " + q.itemTitle, ownerId: role === "s" ? q.askerId : q.ownerId, reporterId: currentUser.uid, reason: "Листування", text: snap, qid: q.id, status: "new", createdAt: Date.now()}); showNotice("Скаргу надіслано. Адміністрація розгляне цю розмову.");}
-      catch (e) {showNotice("Не вдалося надіслати скаргу.", true);}
+    rp.onclick = () => {
+      reportTarget = {thread: q, role: role};
+      $("reportReason").innerHTML = ["Образи або погрози", "Спроба обміну контактами", "Шахрайство", "Заборонений товар", "Спам", "Інше"].map(x => "<option>" + x + "</option>").join("");
+      $("reportTitle").textContent = "Листування: «" + q.itemTitle + "»"; $("reportText").value = ""; $("reportErr").textContent = ""; $("reportDialog").showModal();
     };
     const dl = el("button", "linkbtn small", "Видалити листування"); dl.type = "button"; dl.style.cssText = "background:none;border:0;color:var(--muted);padding:6px 0 0;display:inline-block";
     dl.onclick = async () => {if (!confirm("Видалити це листування?")) return; try {await db.collection("questions").doc(q.id).delete();} catch (e) {showNotice("Не вдалося видалити.", true);}};
