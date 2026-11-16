@@ -3028,7 +3028,7 @@ $("closeDoc").onclick = () => $("docDialog").close();
     if (hits >= 3 && now - lastShake > 3000) {
       hits = 0; lastShake = now;
       if (document.querySelector("dialog[open]")) return;
-      $g("gamesLink").click();
+      if (Math.random() < .5) open(); else $g("carLink").click();
     }
   }
   function enableShake(){
@@ -3041,11 +3041,16 @@ $("closeDoc").onclick = () => $("docDialog").close();
   const gl = $g("gamesLink"), picker = $g("gamesDlg");
   const ios = typeof DeviceMotionEvent !== "undefined" && typeof DeviceMotionEvent.requestPermission === "function";
   if (touch) {
-    gl.textContent = "Ігри (потруси телефон)";
+    gl.textContent = "📳 Потруси телефон: випадкова гра";
     let on = false; try {on = localStorage.getItem("g22_shake") === "1";} catch(e){}
-    if (!ios) enableShake(); else if (on) {window.addEventListener("devicemotion", onMotion); shakeOn = true;}
+    window.addEventListener("devicemotion", onMotion);
   }
-  gl.onclick = e => {e.preventDefault(); if (touch && ios && !shakeOn) enableShake(); if (!picker.open) picker.showModal();};
+  gl.onclick = e => {
+    e.preventDefault();
+    if (!touch) {if (!picker.open) picker.showModal(); return;}
+    if (ios && !shakeOn) enableShake().then(ok => {gl.textContent = ok ? "📳 Готово! Труси телефон" : "📳 Не вдалося увімкнути";});
+    else showNotice("Просто потруси телефон: відкриється випадкова гра.");
+  };
   $g("gamesX").onclick = () => picker.close();
   $g("pickPair").onclick = () => {picker.close(); open();};
   $g("pickCar").onclick = () => {picker.close(); $g("carLink").click();};
