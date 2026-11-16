@@ -125,6 +125,10 @@ dialog{border:0;padding:0;width:min(560px,calc(100% - 28px));border-radius:22px;
 .gm-f svg{width:62%;height:62%}
 .gm-card.done .gm-f{background:var(--accent);border-color:var(--green)}
 .gm-win{text-align:center;padding:14px 0 2px}
+.gm-over{position:absolute;inset:0;z-index:5;background:#fff;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px}
+.gm-over[hidden]{display:none}
+.gm-over .form-actions{flex-wrap:wrap;gap:8px;margin-top:10px}
+.gm-over .btn{padding:9px 16px;font-size:.9rem}
 .gm-win b{display:block;font-size:1.15rem;margin-bottom:4px}
 .gm-win .form-actions{justify-content:center;margin-top:12px}
 .qabox{margin-top:14px;border-top:1px dashed var(--line);padding-top:12px;display:flex;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:8px 10px}
@@ -635,8 +639,16 @@ dialog.viewer::backdrop{background:#000}
   <div class="form-body">
     <div class="gm-meta" id="gmMeta"></div>
     <div class="gm-top"><div class="gm-lv" id="gmLv"></div><div class="gm-st" id="gmSt"></div></div>
-    <div class="gm-grid c3" id="gmGrid"></div>
-    <div class="gm-win" id="gmWin" hidden><b id="gmWinT"></b><span class="small" id="gmWinS"></span><div class="form-actions"><button type="button" class="btn btn-primary" id="gmNext">Наступний рівень</button><button type="button" class="btn btn-soft" id="gmAgain">Ще раз</button><button type="button" class="btn" id="gmClose">До каталогу</button></div></div>
+    <div style="position:relative;min-height:290px"><div class="gm-grid c3" id="gmGrid"></div>
+    <div class="gm-win gm-over" id="gmWin" hidden><b id="gmWinT"></b><span class="small" id="gmWinS"></span><div class="form-actions"><button type="button" class="btn btn-primary" id="gmNext">Наступний рівень</button><button type="button" class="btn btn-soft" id="gmAgain">Ще раз</button><button type="button" class="btn" id="gmClose">До каталогу</button></div></div></div>
+  </div>
+</dialog>
+<dialog id="sentDlg">
+  <div class="modal-head"><h2 id="sentH">Запит надіслано</h2><button class="close" type="button" id="sentX" aria-label="Закрити">×</button></div>
+  <div class="form-body">
+    <p id="sentT" style="margin-top:0"></p>
+    <p class="muted">Поки чекаєте, розслабтесь і пограйте.</p>
+    <div class="form-actions"><button type="button" class="btn btn-primary" id="sentPlay">Пограти</button><button type="button" class="btn" id="sentClose">До каталогу</button></div>
   </div>
 </dialog>
 <dialog id="gamesDlg">
@@ -652,9 +664,9 @@ dialog.viewer::backdrop{background:#000}
   <div class="form-body">
     <div class="gm-meta" id="carMeta"></div>
     <div class="gm-top"><div class="gm-lv" id="carLv"></div><div class="gm-st" id="carSt"></div></div>
-    <div class="cg-stage" id="carStage"><div class="cg-hint" id="carHint">Торкніться гаража того ж кольору, що й машинка</div></div>
+    <div class="cg-stage" id="carStage"><div class="cg-hint" id="carHint">Торкніться гаража того ж кольору, що й машинка</div>
+    <div class="gm-win gm-over" id="carWin" hidden><b id="carWinT"></b><span class="small" id="carWinS"></span><div class="form-actions"><button type="button" class="btn btn-primary" id="carNext">Наступний рівень</button><button type="button" class="btn btn-soft" id="carAgain">Ще раз</button><button type="button" class="btn" id="carClose">До каталогу</button></div></div></div>
     <div class="cg-row" id="carRow"></div>
-    <div class="gm-win" id="carWin" hidden><b id="carWinT"></b><span class="small" id="carWinS"></span><div class="form-actions"><button type="button" class="btn btn-primary" id="carNext">Наступний рівень</button><button type="button" class="btn btn-soft" id="carAgain">Ще раз</button><button type="button" class="btn" id="carClose">До каталогу</button></div></div>
   </div>
 </dialog>
 <dialog id="docDialog">
@@ -1195,6 +1207,11 @@ function logErr(msg) {
     }, {merge: true}).catch(() => {});
   } catch (e) {}
 }
+function openSent(t) {
+  $("sentT").textContent = t; const d = $("sentDlg"); if (!d.open) d.showModal();
+}
+$("sentX").onclick = $("sentClose").onclick = () => $("sentDlg").close();
+$("sentPlay").onclick = () => {$("sentDlg").close(); $("gamesLink").click();};
 function showNotice(msg, isErr) {
   if (isErr && msg) logErr(msg);
   const n = $("notice");
@@ -2130,7 +2147,7 @@ $("offerForm").addEventListener("submit", async e => {
     bt.set(db.collection("recipients").doc(rref.id), {buyerId: currentUser.uid, name: name, phone: normPhone(phone), cityRef: sh.cityRef, cityName: sh.cityName, whRef: sh.whRef, whName: sh.whName});
     await bt.commit();
     db.collection("profiles").doc(currentUser.uid).set({recv: {name: name, phone: phone, ...sh}}, {merge: true}).catch(() => {});
-    $("offerDialog").close(); setTimeout(() => {delete bidAt[it.id]; loadBids([it.id]);}, 2500); showNotice(pending.fixed ? "Запит надіслано. Коли продавець підтвердить, ви побачите ТТН у кабінеті." : "Дякуємо! Продавець обере покупця, і ви побачите ТТН у кабінеті.");
+    $("offerDialog").close(); setTimeout(() => {delete bidAt[it.id]; loadBids([it.id]);}, 2500); openSent(pending.fixed ? "Коли продавець підтвердить, ви побачите ТТН у кабінеті." : "Продавець обере покупця, і ви побачите ТТН у кабінеті.");
   } catch (er) {err.textContent = "Не вдалося надіслати: " + (er.code || er.message);}
   b.disabled = false; b.textContent = pending.fixed ? "Надіслати запит" : "Запропонувати";
 });
