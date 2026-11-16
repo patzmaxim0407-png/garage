@@ -3041,7 +3041,7 @@ $("closeDoc").onclick = () => $("docDialog").close();
   const gl = $g("gamesLink"), picker = $g("gamesDlg");
   const ios = typeof DeviceMotionEvent !== "undefined" && typeof DeviceMotionEvent.requestPermission === "function";
   if (touch) {
-    gl.textContent = "📳 Потруси телефон: випадкова гра";
+    gl.textContent = "Потруси телефон: ігри";
     let on = false; try {on = localStorage.getItem("g22_shake") === "1";} catch(e){}
     window.addEventListener("devicemotion", onMotion);
   }
