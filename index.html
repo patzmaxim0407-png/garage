@@ -115,6 +115,12 @@ dialog{border:0;padding:0;width:min(560px,calc(100% - 28px));border-radius:22px;
 .rl-d{font-size:.86rem;color:var(--muted);line-height:1.4}
 .rl-p{font-size:1.3rem;font-weight:800;color:var(--green);margin-top:4px;white-space:nowrap}
 .rl-btns{display:flex;gap:8px;margin-top:10px}.rl-btns .btn{flex:1}
+.rl-rules{position:absolute;inset:0;z-index:6;background:#fff;overflow:auto;padding:4px 2px 12px;font-size:.9rem;line-height:1.4}
+.rl-rules[hidden]{display:none}
+.rl-rules ol{margin:6px 0;padding-left:20px}.rl-rules li{margin-bottom:4px}.rl-rules p{margin:8px 0}
+.rl-rules .btn{width:100%;margin-top:6px}
+.rl-t{display:grid;grid-template-columns:1fr auto;gap:2px 10px;background:var(--cream);border-radius:10px;padding:8px 12px;margin:8px 0}
+.rl-t i{font-style:normal;font-weight:700;text-align:right}
 .rl-fb{min-height:2.4em;text-align:center;font-weight:700;margin-top:8px;font-size:.92rem}
 .rl-fb.g{color:#2E8B57}.rl-fb.b{color:#A33A32}.rl-fb.n{color:var(--muted)}
 .rl-leg{font-size:.7rem;color:var(--muted);margin-top:6px;line-height:1.35}
@@ -681,8 +687,20 @@ dialog.viewer::backdrop{background:#000}
   </div>
 </dialog>
 <dialog id="richDlg">
-  <div class="modal-head"><h2>Багате життя</h2><button class="close" type="button" id="richX" aria-label="Закрити">×</button></div>
-  <div class="form-body">
+  <div class="modal-head"><h2>Багате життя</h2><button class="btn btn-soft btn-sm" type="button" id="richHelp" style="margin-left:auto;margin-right:8px">Правила</button><button class="close" type="button" id="richX" aria-label="Закрити">×</button></div>
+  <div class="form-body" style="position:relative">
+    <div class="rl-rules" id="richRules" hidden><b>Як грати</b>
+      <ol>
+        <li>Ви перекупник на барахолці. На початку рівня є стартові гроші та мета.</li>
+        <li>Вам показують речі по одній: ціну продавця, скільки коштує нова така річ і в якому вона стані.</li>
+        <li><b>Купити</b>: ви купуєте й одразу перепродаєте за реальною ціною. Реальна ціна = ціна нової × стан. Різниця (плюс або мінус) додається до ваших грошей.</li>
+        <li><b>Пропустити</b>: гроші не змінюються, але одна угода з ліміту витрачена.</li>
+      </ol>
+      <div class="rl-t"><span>Як новий</span><i>100%</i><span>Є сліди використання</span><i>80%</i><span>Потертий, з дефектами</span><i>50%</i><span>«Оригінал» без чека</span><i>10%</i></div>
+      <p>Після останньої угоди порівнюємо гроші з метою. Мета досягнута: ★. На 20% більше за старт: ★★. На 45% більше: ★★★. Нова зірка відкриває наступний рівень, речі там дорожчі.</p>
+      <p><b>Порада:</b> порівнюйте ціну продавця з «ціною нової × стан». Якщо ціна нижча, купуйте. «Оригінал» без чека майже завжди пастка. Якщо грошей не вистачає, річ можна лише пропустити.</p>
+      <button type="button" class="btn btn-primary" id="richRulesOk">Зрозуміло, грати</button>
+    </div>
     <div class="gm-meta" id="richMeta"></div>
     <div class="gm-top"><div class="gm-lv" id="richLv"></div><div class="gm-st" id="richSt"></div></div>
     <div class="rl-bar"><i id="richBar"></i></div>
@@ -3270,9 +3288,12 @@ $("closeDoc").onclick = () => $("docDialog").close();
     $r("richWinS").textContent = "Капітал: " + money(cash) + " з " + money(L.cash) + " · Мета: " + money(L.cash*L.g) + " · " + rank() + " (★ " + total() + "/" + (LV.length*3) + ")";
     $r("richNext").hidden = !(k && !last); $r("richWin").hidden = false;
   }
+  const showRules = v => { $r("richRules").hidden = !v; if (!v) { try { localStorage.setItem("g22_rich_seen", "1"); } catch(e){} } };
+  $r("richHelp").onclick = () => showRules(true);
+  $r("richRulesOk").onclick = () => showRules(false);
   $r("richBuy").onclick = () => decide(true);
   $r("richSkip").onclick = () => decide(false);
-  const open = () => { const d = $r("richDlg"); if (!d.open) d.showModal(); let i = 0; while (i < LV.length-1 && stars(i) > 0) i++; lvl = i; start(); };
+  const open = () => { const d = $r("richDlg"); if (!d.open) d.showModal(); let seen = false; try { seen = !!localStorage.getItem("g22_rich_seen"); } catch(e){} showRules(!seen); let i = 0; while (i < LV.length-1 && stars(i) > 0) i++; lvl = i; start(); };
   $r("richLink").onclick = e => {e.preventDefault(); open();};
   $r("richAgain").onclick = start;
   $r("richNext").onclick = () => {if (lvl < LV.length-1) lvl++; start();};
