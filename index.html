@@ -88,7 +88,7 @@ a.link{display:inline-block;padding:9px 14px;border-radius:999px;background:var(
 dialog{border:0;padding:0;width:min(560px,calc(100% - 28px));border-radius:22px;box-shadow:0 25px 90px rgba(0,0,0,.25)}
 
 /* game */
-.gm-top{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px}
+.gm-top{display:flex;flex-direction:column;gap:6px;align-items:flex-start;margin-bottom:12px}
 .gm-lv{display:flex;gap:6px}
 .gm-lv button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 14px;font:inherit;font-size:.9rem;cursor:pointer;color:var(--ink)}
 .gm-lv button.on{background:var(--green);color:#fff;border-color:var(--green)}
@@ -106,6 +106,19 @@ dialog{border:0;padding:0;width:min(560px,calc(100% - 28px));border-radius:22px;
 .cg-g svg{width:100%;max-width:90px;display:block;margin:0 auto 2px}
 .cg-g:active svg{transform:scale(.94)}
 #carLv{align-items:center;gap:8px}#carLv .lvl{font-weight:700;font-size:.92rem}#carLv button{width:34px;padding:6px 0}
+.rl-bar{height:8px;background:#e7e7e2;border-radius:6px;overflow:hidden;margin:0 0 10px}
+.rl-bar i{display:block;height:100%;width:0;background:var(--green);transition:width .4s}
+.rl-stage{position:relative;min-height:290px}
+.rl-card{border:1px solid var(--line);border-radius:14px;padding:12px;text-align:center;background:linear-gradient(#fff,#F6F3EA);min-height:150px}
+.rl-ic svg{width:54px;height:54px}
+.rl-n{font-weight:800;font-size:1.1rem;margin:2px 0}
+.rl-d{font-size:.86rem;color:var(--muted);line-height:1.4}
+.rl-p{font-size:1.3rem;font-weight:800;color:var(--green);margin-top:4px;white-space:nowrap}
+.rl-btns{display:flex;gap:8px;margin-top:10px}.rl-btns .btn{flex:1}
+.rl-fb{min-height:2.4em;text-align:center;font-weight:700;margin-top:8px;font-size:.92rem}
+.rl-fb.g{color:#2E8B57}.rl-fb.b{color:#A33A32}.rl-fb.n{color:var(--muted)}
+.rl-leg{font-size:.7rem;color:var(--muted);margin-top:6px;line-height:1.35}
+#richLv{align-items:center;gap:8px}#richLv .lvl{font-weight:700;font-size:.92rem}#richLv button{width:34px;padding:6px 0}
 .gm-meta{font-size:.92rem;font-weight:700;margin-bottom:8px;color:var(--green)}
 .gm-grid.c5{max-width:520px;grid-template-columns:repeat(5,1fr);gap:6px}
 .gm-grid.c6{max-width:520px;grid-template-columns:repeat(6,1fr);gap:5px}
@@ -113,7 +126,7 @@ dialog{border:0;padding:0;width:min(560px,calc(100% - 28px));border-radius:22px;
 .gm-win .stars{font-size:1.8rem;letter-spacing:4px;display:block;margin:2px 0 4px}
 .gm-card.done .gm-f{animation:gmpop .35s}
 @keyframes gmpop{0%{transform:rotateY(180deg) scale(1)}50%{transform:rotateY(180deg) scale(1.12)}100%{transform:rotateY(180deg) scale(1)}}
-.gm-st{font-size:.9rem;color:var(--muted)}
+.gm-st{font-size:.9rem;color:var(--muted);min-height:1.3em;white-space:nowrap}
 .gm-grid{display:grid;gap:8px;margin:0 auto}
 .gm-grid.c3{max-width:330px}.gm-grid.c4{max-width:430px}
 .gm-grid.c3{grid-template-columns:repeat(3,1fr)}
@@ -192,6 +205,11 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
   .grid.compact .pricetag { font-size: 1rem; margin: 2px 0 0; }
 }
 .citydate{color:var(--muted);font-size:.82rem;margin-top:2px}
+#stickyBar{position:sticky;top:0;z-index:30;background:var(--cream);padding:8px 0 10px;margin:0 0 12px;box-shadow:0 8px 10px -8px rgba(0,0,0,.18)}
+#stickyBar .search-wrap{flex:none;width:100%}
+#stickyBar .search-wrap input{padding:11px 16px 11px 44px}
+#stickyBar .search-icon{top:9px}
+@media (max-width:560px){#stickyBar .tabs{flex-wrap:nowrap;gap:6px}#stickyBar .tabs .btn{flex:1 1 0;min-width:0;padding:9px 2px;font-size:.78rem}}
 #toTop{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));width:46px;height:46px;border-radius:50%;border:0;background:var(--green);color:#fff;font-size:1.4rem;line-height:1;box-shadow:0 6px 20px rgba(0,0,0,.25);cursor:pointer;z-index:40}
 #searchHint{margin:-10px 0 12px}
 [hidden]{display:none !important}
@@ -344,7 +362,7 @@ dialog::backdrop{background:rgba(13,29,22,.55);backdrop-filter:blur(3px)}
 .vgame .gt .muted{font-size:.88rem;line-height:1.35}
 .vgame .gp{flex:0 0 auto;display:flex;gap:8px}
 .vgame .gbtns{display:flex;gap:8px;flex-wrap:wrap}
-@media (max-width:480px){.vgame .gp.two{display:none}.vgame .gbtns{flex-wrap:nowrap;width:100%}.vgame .gbtns .btn{flex:1 1 0;padding:8px 6px;font-size:.8rem;white-space:nowrap}}
+@media (max-width:480px){.vgame .gp.two{display:none}.vgame .gbtns{flex-wrap:nowrap;width:100%}.vgame .gbtns .btn{flex:1 1 0;padding:8px 4px;font-size:.72rem;white-space:nowrap}}
 .vgame .gp i{display:flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:12px;font-style:normal}
 .vgame .gp .o{background:#fff;border:1px solid var(--line)}
 .vgame .gp .o svg{width:40px;height:40px}
@@ -519,13 +537,13 @@ dialog.viewer::backdrop{background:#000}
     </section>
     <section>
       <div class="section-head"><div><div class="eyebrow" id="listEyebrow">Каталог</div><h2 id="listTitle">Речі, які передають далі</h2></div><button class="btn btn-soft" id="allBtn" hidden>← Усі речі</button><span class="muted" id="itemCount">Завантаження…</span></div>
-      <div class="tabs" id="homeTabs" style="margin:0 0 12px"></div>
+      <div id="stickyBar"><div class="tabs" id="homeTabs" style="margin:0 0 8px"></div>
+      <div class="search-wrap" id="searchBar"><span class="search-icon">⌕</span><input id="searchInput" type="search" placeholder="Пошук за назвою або описом…" autocomplete="off"></div></div>
       <p class="muted" id="modeNote" style="margin:0 0 12px;line-height:1.45" hidden><span class="nm-d">Гараж, ваш міні-аукціон. Покупці пропонують ціну, а ви обираєте найкращу. Гараж може бути відкритим для всіх або закритим.</span><span class="nm-m">Міні-аукціон: покупці пропонують ціну, ви обираєте найкращу. Відкритий чи закритий.</span></p>
       <div class="tabs" id="genreChips" style="margin:0 0 12px" hidden></div>
       <div class="cardbox" id="pubBox" hidden><b>Books store: читачі й видавництва</b><span class="muted small">Продавайте свої книги.</span><div class="row"><button class="btn btn-primary btn-sm" id="addBookBtn" type="button">Додати книгу</button></div></div>
       <div id="adHome" class="adslot" hidden></div>
       <div class="toolbar" id="toolbar">
-        <div class="search-wrap"><span class="search-icon">⌕</span><input id="searchInput" type="search" placeholder="Пошук за назвою або описом…" autocomplete="off"></div>
         <select id="categoryFilter"><option value="">Категорії</option><option>Одяг</option><option>Дім</option><option>Техніка</option><option>Книги</option><option>Дитяче</option><option>Спорт</option><option>Інше</option></select>
         <select id="subFilter" hidden><option value="">Усе</option></select>
         <select id="sortFilter"><option value="pop">Популярні</option><option value="new">Спершу нові</option><option value="cheap">Спершу дешевші</option><option value="exp">Спершу дорожчі</option></select>
@@ -552,7 +570,7 @@ dialog.viewer::backdrop{background:#000}
       <a href="#" class="linkbtn" id="langLink">English</a>
       <a href="#" class="linkbtn" id="pwaLink" hidden>Додати на екран</a>
       <a href="#" class="linkbtn" id="gamesLink">Ігри</a>
-      <a href="#" id="gameLink" hidden></a><a href="#" id="carLink" hidden></a>
+      <a href="#" id="gameLink" hidden></a><a href="#" id="carLink" hidden></a><a href="#" id="richLink" hidden></a>
       <a href="#" class="linkbtn" id="adOrderLink">Замовити рекламу</a>
     </div>
     <div class="fbottom small">© 2026 GARAGE 22 · Київ, Україна · Доставка: Нова пошта</div>
@@ -658,7 +676,23 @@ dialog.viewer::backdrop{background:#000}
   <div class="form-body">
     <p class="muted" style="margin-top:0">Хвилинка відпочинку. Оберіть гру:</p>
     <button type="button" class="btn btn-primary" id="pickPair" style="width:100%;margin-bottom:10px">Знайди пару</button>
-    <button type="button" class="btn btn-soft" id="pickCar" style="width:100%">Авто в гараж</button>
+    <button type="button" class="btn btn-soft" id="pickCar" style="width:100%;margin-bottom:10px">Авто в гараж</button>
+    <button type="button" class="btn btn-soft" id="pickRich" style="width:100%">Багате життя</button>
+  </div>
+</dialog>
+<dialog id="richDlg">
+  <div class="modal-head"><h2>Багате життя</h2><button class="close" type="button" id="richX" aria-label="Закрити">×</button></div>
+  <div class="form-body">
+    <div class="gm-meta" id="richMeta"></div>
+    <div class="gm-top"><div class="gm-lv" id="richLv"></div><div class="gm-st" id="richSt"></div></div>
+    <div class="rl-bar"><i id="richBar"></i></div>
+    <div class="rl-stage">
+      <div class="rl-card"><div class="rl-ic" id="richIc"></div><div class="rl-n" id="richN"></div><div class="rl-d" id="richD"></div><div class="rl-p" id="richP"></div></div>
+      <div class="rl-btns"><button type="button" class="btn btn-primary" id="richBuy">Купити</button><button type="button" class="btn btn-soft" id="richSkip">Пропустити</button></div>
+      <div class="rl-fb" id="richFb"></div>
+      <div class="gm-win gm-over" id="richWin" hidden><b id="richWinT"></b><span class="small" id="richWinS"></span><div class="form-actions"><button type="button" class="btn btn-primary" id="richNext">Наступний рівень</button><button type="button" class="btn btn-soft" id="richAgain">Ще раз</button><button type="button" class="btn" id="richClose">До каталогу</button></div></div>
+    </div>
+    <div class="rl-leg">Продайте дорожче, ніж купили. Ціна перепродажу = ціна нової × стан: «як новий» 100% · «сліди використання» 80% · «потертий» 50% · «оригінал» без чека 10%.</div>
   </div>
 </dialog>
 <dialog id="carDlg">
@@ -1523,11 +1557,12 @@ function gameNode() {
   const t = el("div", "gt");
   t.appendChild(el("small", "", "Хвилинка відпочинку"));
   t.appendChild(el("b", "", "Пограй з нами"));
-  t.appendChild(el("span", "muted", "Дві міні-ігри: знайди пару та розсортуй авто по гаражах."));
+  t.appendChild(el("span", "muted", "Три міні-ігри: знайди пару, розсортуй авто та збагатись на перепродажі."));
   const row = el("div", "gbtns");
   const b1 = el("button", "btn btn-primary btn-sm", "Знайди пару"); b1.type = "button"; b1.onclick = () => $("gameLink").click();
   const b2 = el("button", "btn btn-soft btn-sm", "Авто в гараж"); b2.type = "button"; b2.onclick = () => $("carLink").click();
-  row.append(b1, b2); t.appendChild(row);
+  const b3 = el("button", "btn btn-soft btn-sm", "Багате життя"); b3.type = "button"; b3.onclick = () => $("richLink").click();
+  row.append(b1, b2, b3); t.appendChild(row);
   c.appendChild(t);
   const pic = el("div", "gp two");
   pic.innerHTML = '<i class="o"><svg viewBox="0 0 48 48" fill="none" stroke="#6B4E9B" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M16 6l-11 7 5 7 5-3v22h18V17l5 3 5-7-11-7c-1 4-4 6-8 6s-7-2-8-6z"/></svg></i><i class="o"><svg viewBox="0 0 48 48" fill="none" stroke="#A33A32" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 30c0-3 2-5 5-5l6-8c1-1 2-2 4-2h12c2 0 3 1 4 2l5 8c3 1 4 3 4 5v3H5z"/><circle cx="15" cy="36" r="4"/><circle cx="35" cy="36" r="4"/></svg></i>';
@@ -1625,7 +1660,7 @@ function renderHome() {
   }
   const sl = sellerFilter ? allItems.find(i => i.ownerId === sellerFilter) : null, sbr = brandView && sellerFilter ? brandMap[sellerFilter] : null;
   const brandsMode = catMode === "brands" && !sellerFilter && !focusItem, garagesMode = catMode === "garage" && !garageFilter && !sellerFilter && !focusItem;
-  $("heroSec").hidden = !!(sellerFilter || focusItem || catMode !== "all"); $("toolbar").hidden = !!(focusItem || brandsMode || catMode === "garage"); $("itemCount").hidden = !!focusItem;
+  $("heroSec").hidden = !!(sellerFilter || focusItem || catMode !== "all"); $("toolbar").hidden = !!(focusItem || brandsMode || catMode === "garage"); $("searchBar").hidden = $("toolbar").hidden; $("itemCount").hidden = !!focusItem;
   daySlot();
   adSlot($("adHome"), "home", true, !!focusItem); adSlot($("adItem"), "item", false, !focusItem);
   $("allBtn").hidden = !((sellerFilter && !brandView) || focusItem || garageFilter);
@@ -2957,7 +2992,7 @@ $("closeDoc").onclick = () => $("docDialog").close();
   }
   function stat(){
     const L = LV[lvl], sec = t0 ? Math.round((Date.now()-t0)/1000) : 0;
-    let t = "Рівень " + (lvl+1) + " · Ходів: " + moves + " · " + (L.t ? "Лишилось: " + fmt(left) : fmt(sec));
+    let t = "Ходів: " + moves + " · " + (L.t ? "Лишилось: " + fmt(left) : fmt(sec));
     if (streak >= 2) t += " · Серія ×" + streak;
     $g("gmSt").textContent = t;
   }
@@ -3032,7 +3067,7 @@ $("closeDoc").onclick = () => $("docDialog").close();
     if (hits >= 3 && now - lastShake > 3000) {
       hits = 0; lastShake = now;
       if (document.querySelector("dialog[open]")) return;
-      if (Math.random() < .5) open(); else $g("carLink").click();
+      const r = Math.random(); if (r < .34) open(); else if (r < .67) $g("carLink").click(); else $g("richLink").click();
     }
   }
   function enableShake(){
@@ -3058,6 +3093,7 @@ $("closeDoc").onclick = () => $("docDialog").close();
   $g("gamesX").onclick = () => picker.close();
   $g("pickPair").onclick = () => {picker.close(); open();};
   $g("pickCar").onclick = () => {picker.close(); $g("carLink").click();};
+  $g("pickRich").onclick = () => {picker.close(); $g("richLink").click();};
 })();
 
 /* ===== game: cars to garages ===== */
@@ -3137,6 +3173,106 @@ $("closeDoc").onclick = () => $("docDialog").close();
   $c("carX").onclick = $c("carClose").onclick = () => $c("carDlg").close();
   $c("carDlg").addEventListener("close", stop);
   document.addEventListener("visibilitychange", () => {if (document.hidden && $c("carDlg").open && running) start();});
+})();
+
+/* ===== game: rich life ===== */
+(function(){
+  const $r = id => document.getElementById(id);
+  const IC = {
+   shoe:'<path d="M6 30c0-4 3-5 6-6l8-3 4 3h10c4 0 8 3 8 8v3H6z"/><path d="M6 36h36"/>',
+   lamp:'<path d="M14 8h20l6 18H8z"/><path d="M24 26v12M16 40h16"/>',
+   book:'<path d="M8 10c6-3 12-3 16 1 4-4 10-4 16-1v28c-6-3-12-3-16 1-4-4-10-4-16-1z"/><path d="M24 11v28"/>',
+   vase:'<path d="M18 6h12M20 6v8c-8 4-10 12-8 20 1 4 4 8 12 8s11-4 12-8c2-8 0-16-8-20V6"/>',
+   mug:'<path d="M8 14h24v20a6 6 0 0 1-6 6H14a6 6 0 0 1-6-6z"/><path d="M32 18h4a5 5 0 0 1 0 12h-4"/>',
+   bag:'<path d="M9 16h30l3 26H6z"/><path d="M17 20v-6a7 7 0 0 1 14 0v6"/>',
+   shirt:'<path d="M16 6l-11 7 5 7 5-3v22h18V17l5 3 5-7-11-7c-1 4-4 6-8 6s-7-2-8-6z"/>',
+   phone:'<rect x="14" y="5" width="20" height="38" rx="4"/><path d="M21 38h6"/>',
+   watch:'<circle cx="24" cy="24" r="11"/><path d="M24 18v6l4 3M19 4h10l1 9H18zM19 44h10l1-9H18z"/>',
+   guitar:'<path d="M30 6l6 6-8 8"/><path d="M28 20c-6-2-11 2-12 6-5 1-9 5-6 10 3 5 10 3 14-1 4-4 6-9 4-15z"/>',
+   camera:'<rect x="5" y="14" width="38" height="25" rx="4"/><circle cx="24" cy="26" r="7"/><path d="M17 14l3-5h8l3 5"/>',
+   laptop:'<rect x="9" y="12" width="30" height="21" rx="2"/><path d="M5 38h38"/>',
+   art:'<rect x="6" y="8" width="36" height="30" rx="2"/><path d="M6 32l10-10 8 8 6-6 12 10"/><circle cx="32" cy="17" r="3"/>',
+   ring:'<circle cx="24" cy="30" r="11"/><path d="M19 11l5-5 5 5-5 7z"/>',
+   moto:'<circle cx="11" cy="33" r="7"/><circle cx="37" cy="33" r="7"/><path d="M11 33l8-14h10l8 14M19 19l-3-5h-5M29 19l3-5h5"/>',
+   gold:'<path d="M8 34l6-14h20l6 14z"/><path d="M14 20l-2 6M34 20l2 6"/>',
+   gem:'<path d="M12 8h24l8 11-20 22L4 19z"/><path d="M4 19h40M18 8l-4 11 10 22M30 8l4 11-10 22"/>',
+   car:'<path d="M5 30c0-3 2-5 5-5l6-8c1-1 2-2 4-2h12c2 0 3 1 4 2l5 8c3 1 4 3 4 5v3H5z"/><circle cx="15" cy="36" r="4"/><circle cx="35" cy="36" r="4"/>',
+   boat:'<path d="M24 6v26M24 8l14 22H24M24 14L12 30h12"/><path d="M6 36h36l-5 6H11z"/>'
+  };
+  const ico = (k) => '<svg viewBox="0 0 48 48" fill="none" stroke="#1B4D3E" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">' + IC[k] + '</svg>';
+  const POOL = [
+    [["Кросівки","shoe",2400],["Настільна лампа","lamp",900],["Книга-раритет","book",600],["Ваза","vase",1500],["Колекційна чашка","mug",350],["Шкіряна сумка","bag",2800],["Худі","shirt",1200]],
+    [["Смартфон","phone",18000],["Швейцарський годинник","watch",12000],["Гітара","guitar",15000],["Фотоапарат","camera",22000],["Ноутбук","laptop",35000],["Колекційна лампа","lamp",9000]],
+    [["Картина","art",180000],["Каблучка","ring",90000],["Мотоцикл","moto",250000],["Золотий злиток","gold",400000],["Діамант","gem",500000]],
+    [["Автомобіль","car",1500000],["Катер","boat",2200000],["Колекційний годинник","watch",900000],["Великий діамант","gem",1800000],["Картина відомого автора","art",1200000]]
+  ];
+  const CASH = [2000,20000,200000,2000000], GOALK = [1.1,1.15,1.2,1.25,1.3];
+  const COND = {new:["Як новий",1],good:["Є сліди використання",.8],worn:["Потертий, з дефектами",.5],fake:["«Оригінал», але без чека",.1]};
+  const LV = []; for (let i = 0; i < 20; i++) LV.push({t: Math.floor(i/5), cash: CASH[Math.floor(i/5)], n: 10 + i%5, g: GOALK[i%5]});
+  const RANKS = [[60,"Магнат"],[48,"Мільйонер"],[33,"Бізнесмен"],[18,"Антиквар"],[6,"Перекупник"],[0,"Початківець"]];
+  let prog = {}; try { prog = JSON.parse(localStorage.getItem("g22_rich_prog")||"{}") || {}; } catch(e){}
+  const stars = i => prog[i] || 0, total = () => LV.reduce((a,_,i) => a + stars(i), 0), unlocked = i => i === 0 || stars(i-1) > 0;
+  const rank = () => RANKS.find(x => total() >= x[0])[1];
+  const save = () => { try { localStorage.setItem("g22_rich_prog", JSON.stringify(prog)); } catch(e){} };
+  const star = k => "★".repeat(k) + "☆".repeat(3-k);
+  const money = n => {
+    n = Math.round(n); const a = Math.abs(n), sg = n < 0 ? "−" : "";
+    if (a >= 1e6) { let v = (a/1e6).toFixed(a >= 1e7 ? 0 : 1).replace(".", ","); if (v.endsWith(",0")) v = v.slice(0, -2); return sg + v + " млн ₴"; }
+    if (a >= 1e5) return sg + Math.round(a/1000) + " тис ₴";
+    return sg + a.toLocaleString("uk-UA") + " ₴";
+  };
+  let lvl = 0, cash = 0, left = 0, cur = null, busy = false;
+  function pickItem(){
+    const L = LV[lvl], p = POOL[L.t][Math.floor(Math.random()*POOL[L.t].length)], r = Math.random();
+    let c = r < .2 ? "new" : r < .5 ? "good" : r < .8 ? "worn" : "fake"; if (lvl < 2 && c === "fake") c = "good";
+    const price = Math.max(10, Math.round(p[2] * (c === "fake" ? .15 + Math.random()*.35 : .35 + Math.random()*1.0) / 10) * 10);
+    return {name: p[0], ic: p[1], market: p[2], c, price, resale: p[2] * COND[c][1]};
+  }
+  function head(){
+    $r("richMeta").textContent = "★ " + total() + "/" + (LV.length*3) + " · " + rank();
+    $r("richLv").innerHTML = '<button type="button" id="rlPrev" '+(lvl>0?"":"disabled")+'>‹</button><span class="lvl">Рівень '+(lvl+1)+' з '+LV.length+'</span><button type="button" id="rlNxt" '+(lvl<LV.length-1 && unlocked(lvl+1)?"":"disabled")+'>›</button>';
+    $r("rlPrev").onclick = () => {lvl--; start();}; $r("rlNxt").onclick = () => {lvl++; start();};
+  }
+  function stat(){
+    const L = LV[lvl], goal = L.cash * L.g;
+    $r("richSt").textContent = "Гроші: " + money(cash) + " · Мета: " + money(goal) + " · Угод: " + left;
+    $r("richBar").style.width = Math.max(0, Math.min(100, (cash - L.cash) / (goal - L.cash) * 100)) + "%";
+  }
+  function show(){
+    cur = pickItem();
+    $r("richIc").innerHTML = ico(cur.ic); $r("richN").textContent = cur.name;
+    $r("richD").innerHTML = "Нова коштує ≈ " + money(cur.market) + "<br>Стан: " + COND[cur.c][0];
+    $r("richP").textContent = "Ціна: " + money(cur.price);
+    const can = cur.price <= cash; $r("richBuy").disabled = !can; $r("richBuy").textContent = can ? "Купити" : "Не вистачає грошей";
+    busy = false;
+  }
+  function start(){
+    const L = LV[lvl]; cash = L.cash; left = L.n; busy = false; $r("richWin").hidden = true; $r("richFb").textContent = ""; $r("richFb").className = "rl-fb";
+    head(); stat(); show();
+  }
+  function fb(t, cls){ const e = $r("richFb"); e.textContent = t; e.className = "rl-fb " + cls; }
+  function decide(buy){
+    if (busy || !cur) return; busy = true; const it = cur, gain = it.resale - it.price;
+    if (buy) { cash += gain; fb(gain >= 0 ? "Продали дорожче: +" + money(gain) : "Збиток: " + money(gain) + " (справжня ціна перепродажу " + money(it.resale) + ")", gain >= 0 ? "g" : "b"); }
+    else fb(gain > 0 ? "Пропустили: могли заробити +" + money(gain) : "Вдала пауза: ця покупка була б збитковою", gain > 0 ? "n" : "g");
+    left--; stat(); $r("richBuy").disabled = true;
+    setTimeout(() => { if (left <= 0) finish(); else {$r("richFb").textContent = ""; show();} }, 1300);
+  }
+  function finish(){
+    const L = LV[lvl], r = cash / L.cash; let k = r >= L.g + .45 ? 3 : r >= L.g + .2 ? 2 : r >= L.g ? 1 : 0;
+    const was = stars(lvl); if (k > was) {prog[lvl] = k; save();} head();
+    const last = lvl === LV.length-1;
+    $r("richWinT").innerHTML = (k ? '<span class="stars">'+star(k)+'</span>' : "") + (k ? (last ? "Усі рівні пройдено!" : "Рівень " + (lvl+1) + " пройдено!") : "Мети не досягнуто");
+    $r("richWinS").textContent = "Капітал: " + money(cash) + " з " + money(L.cash) + " · Мета: " + money(L.cash*L.g) + " · " + rank() + " (★ " + total() + "/" + (LV.length*3) + ")";
+    $r("richNext").hidden = !(k && !last); $r("richWin").hidden = false;
+  }
+  $r("richBuy").onclick = () => decide(true);
+  $r("richSkip").onclick = () => decide(false);
+  const open = () => { const d = $r("richDlg"); if (!d.open) d.showModal(); let i = 0; while (i < LV.length-1 && stars(i) > 0) i++; lvl = i; start(); };
+  $r("richLink").onclick = e => {e.preventDefault(); open();};
+  $r("richAgain").onclick = start;
+  $r("richNext").onclick = () => {if (lvl < LV.length-1) lvl++; start();};
+  $r("richX").onclick = $r("richClose").onclick = () => $r("richDlg").close();
 })();
 
 $("docOk").onclick = () => $("docDialog").close();
