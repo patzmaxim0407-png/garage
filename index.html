@@ -3048,8 +3048,8 @@ $("closeDoc").onclick = () => $("docDialog").close();
   gl.onclick = e => {
     e.preventDefault();
     if (!touch) {if (!picker.open) picker.showModal(); return;}
-    if (ios && !shakeOn) enableShake().then(ok => {gl.textContent = ok ? "📳 Готово! Труси телефон" : "📳 Не вдалося увімкнути";});
-    else showNotice("Просто потруси телефон: відкриється випадкова гра.");
+    if (ios && !shakeOn) enableShake().then(ok => {gl.textContent = ok ? "Готово! Труси телефон" : "Не вдалося увімкнути";});
+    else showNotice("Потруси телефон: відкриється гра.");
   };
   $g("gamesX").onclick = () => picker.close();
   $g("pickPair").onclick = () => {picker.close(); open();};
