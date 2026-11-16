@@ -3293,7 +3293,7 @@ $("closeDoc").onclick = () => $("docDialog").close();
   $r("richRulesOk").onclick = () => showRules(false);
   $r("richBuy").onclick = () => decide(true);
   $r("richSkip").onclick = () => decide(false);
-  const open = () => { const d = $r("richDlg"); if (!d.open) d.showModal(); let seen = false; try { seen = !!localStorage.getItem("g22_rich_seen"); } catch(e){} showRules(!seen); let i = 0; while (i < LV.length-1 && stars(i) > 0) i++; lvl = i; start(); };
+  const open = () => { const d = $r("richDlg"); if (!d.open) d.showModal(); $r("richRules").hidden = true; let i = 0; while (i < LV.length-1 && stars(i) > 0) i++; lvl = i; start(); };
   $r("richLink").onclick = e => {e.preventDefault(); open();};
   $r("richAgain").onclick = start;
   $r("richNext").onclick = () => {if (lvl < LV.length-1) lvl++; start();};
