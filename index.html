@@ -2952,7 +2952,11 @@ $("heroCard").onclick = openRules;
 $("heroCard").onkeydown = e => {if (e.key === "Enter" || e.key === " ") {e.preventDefault(); openRules();}};
 $("adOrderLink").onclick = e => {e.preventDefault(); openAdOrder();};
 setInterval(() => {if (!(view === "cabinet" && currentUser)) renderHome();}, 300000);
-$("toTop").onclick = () => window.scrollTo({top: 0, behavior: "smooth"});
+$("toTop").onclick = () => {
+  const b = $("heroVideo"); let y = 0;
+  if (b && !b.hidden && b.offsetHeight) y = Math.max(0, Math.round(b.getBoundingClientRect().top + window.scrollY - 12));
+  window.scrollTo({top: y, behavior: "smooth"});
+};
 $("closeDoc").onclick = () => $("docDialog").close();
 /* ===== game: find the pair ===== */
 (function(){
