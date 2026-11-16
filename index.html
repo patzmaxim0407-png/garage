@@ -108,6 +108,8 @@ dialog{border:0;padding:0;width:min(560px,calc(100% - 28px));border-radius:22px;
 #carLv{align-items:center;gap:8px}#carLv .lvl{font-weight:700;font-size:.92rem}#carLv button{width:34px;padding:6px 0}
 .gm-meta{font-size:.92rem;font-weight:700;margin-bottom:8px;color:var(--green)}
 .gm-grid.c5{max-width:520px;grid-template-columns:repeat(5,1fr);gap:6px}
+.gm-grid.c6{max-width:520px;grid-template-columns:repeat(6,1fr);gap:5px}
+#gmLv{align-items:center;gap:8px}#gmLv .lvl{font-weight:700;font-size:.92rem}#gmLv button{width:34px;padding:6px 0}
 .gm-win .stars{font-size:1.8rem;letter-spacing:4px;display:block;margin:2px 0 4px}
 .gm-card.done .gm-f{animation:gmpop .35s}
 @keyframes gmpop{0%{transform:rotateY(180deg) scale(1)}50%{transform:rotateY(180deg) scale(1.12)}100%{transform:rotateY(180deg) scale(1)}}
@@ -2934,8 +2936,10 @@ $("closeDoc").onclick = () => $("docDialog").close();
   const KEYS = Object.keys(IC);
   const col = ["#1B4D3E","#B8860B","#A33A32","#2F6F8F","#6B4E9B"];
   const icon = (k,i) => '<svg viewBox="0 0 48 48" fill="none" stroke="'+col[i%col.length]+'" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">'+IC[k]+'</svg>';
-  const LV = [{p:3,c:3},{p:6,c:3},{p:8,c:4},{p:10,c:4,t:70},{p:12,c:4},{p:12,c:4,t:75},{p:15,c:5},{p:15,c:5,t:90}];
-  const TITLES = [[24,"Легенда GARAGE 22"],[18,"Майстер ресейлу"],[12,"Колекціонер"],[6,"Новачок гаража"],[0,"Гість гаража"]];
+  const SEQ = [[3,0],[4,0],[5,0],[6,0],[6,50],[8,0],[8,60],[9,0],[9,60],[10,0],[10,60],[12,0],[12,70],[12,0],[15,0],[15,90],[15,0],[18,0],[18,110],[10,45],[12,55],[15,75],[18,100],[12,45],[15,65],[18,90],[15,55],[18,80],[18,70],[18,60]];
+  const COLS_FOR = {3:3,4:4,5:5,6:4,8:4,9:6,10:5,12:6,15:6,18:6};
+  const LV = SEQ.map(x => ({p:x[0], c:COLS_FOR[x[0]], t:x[1]}));
+  const TITLES = [[90,"Легенда GARAGE 22"],[66,"Майстер ресейлу"],[45,"Колекціонер"],[18,"Новачок гаража"],[0,"Гість гаража"]];
   const $g = id => document.getElementById(id);
   const fmt = sec => Math.floor(sec/60) + ":" + String(Math.max(0,sec)%60).padStart(2,"0");
   let prog = {}; try { prog = JSON.parse(localStorage.getItem("g22_memo_prog")||"{}") || {}; } catch(e){}
@@ -2948,8 +2952,8 @@ $("closeDoc").onclick = () => $("docDialog").close();
   const star = k => "★".repeat(k) + "☆".repeat(3-k);
   function head(){
     $g("gmMeta").textContent = "★ " + total() + "/" + (LV.length*3) + " · " + title();
-    $g("gmLv").innerHTML = LV.map((x,i) => '<button type="button" data-i="'+i+'" class="'+(i===lvl?"on":"")+'"'+(unlocked(i)?"":" disabled")+'>'+(unlocked(i)?(i+1):"🔒")+'</button>').join("");
-    $g("gmLv").querySelectorAll("button").forEach(b => b.onclick = () => {lvl = Number(b.dataset.i); start();});
+    $g("gmLv").innerHTML = '<button type="button" id="gmPrev" '+(lvl>0?"":"disabled")+'>‹</button><span class="lvl">Рівень '+(lvl+1)+' з '+LV.length+'</span><button type="button" id="gmNxt" '+(lvl<LV.length-1 && unlocked(lvl+1)?"":"disabled")+'>›</button>';
+    $g("gmPrev").onclick = () => {lvl--; start();}; $g("gmNxt").onclick = () => {lvl++; start();};
   }
   function stat(){
     const L = LV[lvl], sec = t0 ? Math.round((Date.now()-t0)/1000) : 0;
@@ -3011,7 +3015,7 @@ $("closeDoc").onclick = () => $("docDialog").close();
       setTimeout(() => { a.classList.remove("open"); c.classList.remove("open"); lock = false; }, 800);
     }
   });
-  const open = () => { const d = $g("gameDlg"); if (!d.open) d.showModal(); let i = 0; while (i < LV.length-1 && stars(i) > 0) i++; lvl = unlocked(lvl) ? lvl : i; start(); };
+  const open = () => { const d = $g("gameDlg"); if (!d.open) d.showModal(); let i = 0; while (i < LV.length-1 && stars(i) > 0) i++; lvl = i; start(); };
   $g("gameLink").onclick = e => { e.preventDefault(); open(); };
   $g("gmAgain").onclick = start;
   $g("gmNext").onclick = () => { if (lvl < LV.length-1) lvl++; start(); };
@@ -3041,15 +3045,15 @@ $("closeDoc").onclick = () => $("docDialog").close();
   const gl = $g("gamesLink"), picker = $g("gamesDlg");
   const ios = typeof DeviceMotionEvent !== "undefined" && typeof DeviceMotionEvent.requestPermission === "function";
   if (touch) {
-    gl.textContent = "Потруси телефон: ігри";
+    gl.textContent = "📳 Потруси телефон: випадкова гра";
     let on = false; try {on = localStorage.getItem("g22_shake") === "1";} catch(e){}
     window.addEventListener("devicemotion", onMotion);
   }
   gl.onclick = e => {
     e.preventDefault();
     if (!touch) {if (!picker.open) picker.showModal(); return;}
-    if (ios && !shakeOn) enableShake().then(ok => {gl.textContent = ok ? "Готово! Труси телефон" : "Не вдалося увімкнути";});
-    else showNotice("Потруси телефон: відкриється гра.");
+    if (ios && !shakeOn) enableShake().then(ok => {gl.textContent = ok ? "📳 Готово! Труси телефон" : "📳 Не вдалося увімкнути";});
+    else showNotice("Просто потруси телефон: відкриється випадкова гра.");
   };
   $g("gamesX").onclick = () => picker.close();
   $g("pickPair").onclick = () => {picker.close(); open();};
