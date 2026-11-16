@@ -3045,15 +3045,15 @@ $("closeDoc").onclick = () => $("docDialog").close();
   const gl = $g("gamesLink"), picker = $g("gamesDlg");
   const ios = typeof DeviceMotionEvent !== "undefined" && typeof DeviceMotionEvent.requestPermission === "function";
   if (touch) {
-    gl.textContent = "📳 Потруси телефон: випадкова гра";
+    gl.textContent = "Потруси телефон: ігри";
     let on = false; try {on = localStorage.getItem("g22_shake") === "1";} catch(e){}
     window.addEventListener("devicemotion", onMotion);
   }
   gl.onclick = e => {
     e.preventDefault();
     if (!touch) {if (!picker.open) picker.showModal(); return;}
-    if (ios && !shakeOn) enableShake().then(ok => {gl.textContent = ok ? "📳 Готово! Труси телефон" : "📳 Не вдалося увімкнути";});
-    else showNotice("Просто потруси телефон: відкриється випадкова гра.");
+    if (ios && !shakeOn) enableShake().then(ok => {gl.textContent = ok ? "Готово! Труси телефон" : "Не вдалося увімкнути";});
+    else showNotice("Потруси телефон: відкриється гра.");
   };
   $g("gamesX").onclick = () => picker.close();
   $g("pickPair").onclick = () => {picker.close(); open();};
